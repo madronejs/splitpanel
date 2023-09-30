@@ -141,29 +141,29 @@ describe('SplitPanel', () => {
     it('calculates absoluteMin as zero', () => {
       const splitPanel = create4SplitPanel();
 
-      Object.values(IDS).forEach((id) => {
+      for (const id of Object.values(IDS)) {
         expect(splitPanel.byId(id).absoluteMin).toEqual(0);
-      });
+      }
     });
 
     it('calculates absoluteMax as full width if no minSize defined', () => {
       const splitPanel = create4SplitPanel();
 
-      Object.values(IDS).forEach((id) => {
+      for (const id of Object.values(IDS)) {
         expect(splitPanel.byId(id).absoluteMax).toEqual(BASE_WIDTH);
-      });
+      }
     });
 
     it('calculates absoluteMax based on minSize of siblings', () => {
       const splitPanel = create4SplitPanel();
 
-      Object.values(IDS).forEach((id) => {
+      for (const id of Object.values(IDS)) {
         splitPanel.byId(id).setConstraints({ minSize: 100 });
-      });
+      }
 
-      Object.values(IDS).forEach((id) => {
+      for (const id of Object.values(IDS)) {
         expect(splitPanel.byId(id).absoluteMax).toEqual(700);
-      });
+      }
     });
 
     it('can have its size set to a value between the minSize and maxSize', () => {

@@ -7,15 +7,15 @@ function getChildren(item: SplitPanelDef) {
 export function flattenDepthFirst(items: SplitPanelDef | SplitPanelDef[]) {
   const flat: SplitPanelDef[] = [];
 
-  [items].flat().forEach((item) => {
+  for (const item of [items].flat()) {
     const children = getChildren(item);
 
     flat.push(item);
 
-    if (children.length) {
+    if (children.length > 0) {
       flat.push(...flattenDepthFirst(children));
     }
-  });
+  }
 
   return flat;
 }
@@ -23,13 +23,13 @@ export function flattenDepthFirst(items: SplitPanelDef | SplitPanelDef[]) {
 export function flattenBreadthFirst(items: SplitPanelDef | SplitPanelDef[]) {
   const flat: SplitPanelDef[] = [items].flat();
 
-  flat.forEach((item) => {
+  for (const item of flat) {
     const children = getChildren(item);
 
-    if (children.length) {
+    if (children.length > 0) {
       flat.push(...flattenBreadthFirst(children));
     }
-  });
+  }
 
   return flat;
 }

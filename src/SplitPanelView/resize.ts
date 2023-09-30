@@ -1,21 +1,23 @@
 import {
-  ConstraintType,
+  type ConstraintType,
   estimateSizeInfo,
   findFurthestSibling,
   findNearestSibling,
-  PanelConstraints,
+  type PanelConstraints,
   relativeToPercent,
   roundVal,
   SIBLING_RELATION,
   sumMinSizes,
-  SumOptions,
+  type SumOptions,
   sumSizes,
   sumSizesBetween,
 } from './defs';
 import type SplitPanel from './SplitPanel';
 
 export function resizeAll(panel: SplitPanel, val: ConstraintType) {
-  if (!panel?.parent) return;
+  if (!panel?.parent) {
+    return;
+  }
 
   const {
     appliedMin, relativeSize, parsedSize, siblingsNeedGrow,
@@ -47,13 +49,15 @@ export function resizeAll(panel: SplitPanel, val: ConstraintType) {
     }
   }
 
-  if (toSatisfy.length) {
+  if (toSatisfy.length > 0) {
     panel.parent.satisfyConstraints(toSatisfy);
   }
 }
 
 export function resizeNeighbors(panel: SplitPanel, val: ConstraintType) {
-  if (!panel?.parent) return;
+  if (!panel?.parent) {
+    return;
+  }
 
   const {
     appliedMin, parsedSize, siblingsNeedGrow, panelGrowing,
@@ -99,10 +103,10 @@ export function resizeNeighbors(panel: SplitPanel, val: ConstraintType) {
         (sibling) => sibling.canGrow && (
           !sibling.sizeInfoSnapshot
           || sibling.sizeInfoSnapshot.relativeSize >= sibling.sizeInfo.relativeSize
-        )
+        ),
       );
 
-      // set a max size constraint to its initial size so it doesn't get bigger
+      // Set a max size constraint to its initial size so it doesn't get bigger
       // than the size it initially started at
       constrainPanel(siblingAfter, {
         maxSize: siblingAfter.sizeInfoSnapshot.exactSize,
@@ -145,10 +149,10 @@ export function resizeNeighbors(panel: SplitPanel, val: ConstraintType) {
           (sibling) => sibling.canGrow && (
             !sibling.sizeInfoSnapshot
             || sibling.sizeInfoSnapshot.relativeSize >= sibling.sizeInfo.relativeSize
-          )
+          ),
         );
 
-        // set a max size constraint to its initial size so it doesn't get bigger
+        // Set a max size constraint to its initial size so it doesn't get bigger
         // than the size it initially started at
         constrainPanel(growableBefore, {
           maxSize: growableBefore.sizeInfoSnapshot.exactSize,
@@ -172,18 +176,18 @@ export function resizeNeighbors(panel: SplitPanel, val: ConstraintType) {
     }
   }
 
-  if (toSatisfy.length) {
+  if (toSatisfy.length > 0) {
     panel.parent.satisfyConstraints(toSatisfy);
   }
 
-  // in the event that we're not dragging, and the relative size of all children exceeds 100%,
+  // In the event that we're not dragging, and the relative size of all children exceeds 100%,
   // we need to rebalance all siblings to match the constraints.
   if (!panel.dragging && panel.parent?.totalChildRelativeSizes > 1) {
     panel.parent.satisfyConstraints(panel.siblings);
   }
 
-  // clear out any strategy constraints
-  constrainedPanels.forEach((item) => {
+  // Clear out any strategy constraints
+  for (const item of constrainedPanels) {
     item.setStrategyConstraints(null);
-  });
+  }
 }

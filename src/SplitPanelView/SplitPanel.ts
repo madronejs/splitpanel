@@ -8,31 +8,31 @@ import { v4 as uuid } from 'uuid';
 
 import {
   AXIS,
-  BoxCoord,
-  BoxRect,
+  type BoxCoord,
+  type BoxRect,
   camelCaseObject,
-  ConstraintType,
+  type ConstraintType,
   DIMENSION,
   exactToPx,
-  FlattenStrategy,
+  type FlattenStrategy,
   getChildInfo,
   getCoordFromMouseEvent,
   getDistance,
   getSizeInfo,
   mergePanelConstraints,
-  MouseEventCallback,
+  type MouseEventCallback,
   negateChildren,
   PANEL_DIRECTION,
-  PanelConstraints,
+  type PanelConstraints,
   parseConstraint,
   parsePanelConstraints,
   relativeToPercent,
   resizeEntryToBoxRect,
-  ResizeObserverCallback,
-  ResizeStrategy,
+  type ResizeObserverCallback,
+  type ResizeStrategy,
   SIBLING_RELATION,
-  SplitPanelArgs,
-  SplitPanelDef,
+  type SplitPanelArgs,
+  type SplitPanelDef,
   sumMinSizes,
   sumSizes,
 } from './defs';
@@ -40,13 +40,13 @@ import { flattenDepthFirst } from './flatten';
 import { resizeNeighbors } from './resize';
 
 type CbMap = {
-  resize?: ResizeObserverCallback,
-  mousemove?: MouseEventCallback,
-  mouseup?: MouseEventCallback,
+  resize?: ResizeObserverCallback;
+  mousemove?: MouseEventCallback;
+  mouseup?: MouseEventCallback;
 };
 
 function makeUniqueId() {
-  // human readable but universally unique id
+  // Human readable but universally unique id
   return `${uniqueId('panel-')}__${uuid()}`;
 }
 
@@ -56,7 +56,7 @@ class SplitPanel<DType = any> {
   }
 
   constructor(options?: SplitPanelArgs<DType>) {
-    // bindings
+    // Bindings
     this._onElementResize = this._onElementResize.bind(this);
     this._onResizeElMouseDown = this._onResizeElMouseDown.bind(this);
     this._onResizeElResize = this._onResizeElResize.bind(this);
@@ -65,7 +65,7 @@ class SplitPanel<DType = any> {
     this._onMouseMove = this._onMouseMove.bind(this);
     this._onMouseover = this._onMouseover.bind(this);
     this._onMouseout = this._onMouseout.bind(this);
-    // this._onElementClick = this._onElementClick.bind(this);
+    // This._onElementClick = this._onElementClick.bind(this);
     // setup
     this._children = [];
     this._resizeElSelector = options?.resizeElSelector ?? '.resizer';
@@ -109,7 +109,7 @@ class SplitPanel<DType = any> {
   /** Size of the resize bar */
   @reactive resizeElRect: BoxRect;
   /** If we should add listeners to the elements */
-  @reactive private _observeElement: boolean;
+  @reactive private readonly _observeElement: boolean;
   /** Size info snapshot, taken before a resize event */
   @reactive sizeInfoSnapshot: ReturnType<typeof getSizeInfo>;
   /** If the mouse is hovering over the resizer */
@@ -122,7 +122,7 @@ class SplitPanel<DType = any> {
   }
 
   @computed get shouldShowResizeEl() {
-    return !this.isFirstChild || !!this.parent?.showFirstResizeEl;
+    return !this.isFirstChild || Boolean(this.parent?.showFirstResizeEl);
   }
 
   @computed get canResize() {
@@ -148,7 +148,10 @@ class SplitPanel<DType = any> {
   @computed get resizeElSize() {
     const size = this._resizeElSize ?? this.parent?.resizeElSize;
 
-    if (size == null) return 8;
+    if (size == null) {
+      return 8;
+    }
+
     return parseConstraint(size, this.comparativeSize).exactValue;
   }
 
@@ -194,7 +197,7 @@ class SplitPanel<DType = any> {
 
   /** If the panel is currently being resized via drag events */
   @computed get dragging() {
-    return !!this.dragPosStart;
+    return Boolean(this.dragPosStart);
   }
 
   /** If any child panel is being dragged */
@@ -222,14 +225,14 @@ class SplitPanel<DType = any> {
     return this.relativeDragDistance + (this.sizeInfoSnapshot?.relativeSize ?? this.sizeInfo.relativeSize);
   }
 
-  private _debouncedSatisfyConstraints: () => void;
+  private readonly _debouncedSatisfyConstraints: () => void;
 
   /** If this panel is the root of the panel */
   @computed get isRoot() {
     return !this.parent;
   }
 
-  @reactive private _root?: SplitPanel<DType>;
+  @reactive private readonly _root?: SplitPanel<DType>;
   /** The root panel item */
   @computed get root(): SplitPanel<DType> {
     return this._root ?? this;
@@ -243,9 +246,9 @@ class SplitPanel<DType = any> {
     };
   }
 
-  @reactive private _children: SplitPanel<DType>[];
+  @reactive private _children: Array<SplitPanel<DType>>;
   /** The children of this panel */
-  @computed get children(): SplitPanel<DType>[] {
+  @computed get children(): Array<SplitPanel<DType>> {
     return uniqBy(this._children, 'id') || [];
   }
 
@@ -271,9 +274,9 @@ class SplitPanel<DType = any> {
   @computed get allChildMap() {
     const map: Record<string, SplitPanel<DType>> = {};
 
-    this.allChildren.forEach((child) => {
+    for (const child of this.allChildren) {
       map[child.id] = child;
-    });
+    }
 
     return map;
   }
@@ -315,13 +318,15 @@ class SplitPanel<DType = any> {
   @computed get absoluteMin() {
     return Math.max(
       this.parsedUserConstraints.minSize?.exactValue || 0,
-      Math.max(this.shouldShowResizeEl ? this.resizeElSize : 0, 0)
+      Math.max(this.shouldShowResizeEl ? this.resizeElSize : 0, 0),
     );
   }
 
   /** The absolute maximum size this panel can be while still respecting the minSizes of its siblings */
   @computed get absoluteMax() {
-    if (!this.parent) return Number.POSITIVE_INFINITY;
+    if (!this.parent) {
+      return Number.POSITIVE_INFINITY;
+    }
 
     return this.parent.totalExactAvailableSpace + this.absoluteMin;
   }
@@ -388,7 +393,7 @@ class SplitPanel<DType = any> {
 
   /** If a size has been explicitly set on this panel */
   @computed get hasSize() {
-    return !!this._size;
+    return Boolean(this._size);
   }
 
   @reactive private _size?: ConstraintType;
@@ -475,12 +480,12 @@ class SplitPanel<DType = any> {
 
   /** If this panel is the last child of its parent */
   @computed get isLastChild() {
-    return !!(this.parent && this.index === this.parent.children.length - 1);
+    return Boolean(this.parent && this.index === this.parent.children.length - 1);
   }
 
   /** If this panel is not the first or last child of its parent */
   @computed get isMiddleChild() {
-    return !!(this.parent && !this.isFirstChild && !this.isLastChild);
+    return Boolean(this.parent && !this.isFirstChild && !this.isLastChild);
   }
 
   /** Siblings that are immediate neighbors to this panel */
@@ -550,16 +555,25 @@ class SplitPanel<DType = any> {
   }
 
   /** The raw definition for this panel and all of its children */
-  getRawDefinition(options?: { includeData?: boolean }): SplitPanelDef<DType> {
+  getRawDefinition(options?: {includeData?: boolean}): SplitPanelDef<DType> {
     const def: SplitPanelDef<DType> = { id: this.id };
 
-    if (this.data != null && options?.includeData) { def.data = this.data; }
+    if (this.data != null && options?.includeData) {
+      def.data = this.data;
+    }
 
-    if (Object.keys(this.constraints || {}).length) { def.constraints = this.constraints; }
+    if (Object.keys(this.constraints || {}).length > 0) {
+      def.constraints = this.constraints;
+    }
 
-    if (this.numChildren) { def.children = this.children.map((item) => item.getRawDefinition(options)); }
+    if (this.numChildren) {
+      def.children = this.children.map((item) => item.getRawDefinition(options));
+    }
 
-    if (this._direction) { def.direction = this._direction; }
+    if (this._direction) {
+      def.direction = this._direction;
+    }
+
     return def;
   }
 
@@ -674,7 +688,9 @@ class SplitPanel<DType = any> {
 
   /** Clear all size info snapshots of all direct children */
   clearChildSizeInfoSnapshot() {
-    this.children.forEach((item) => item.clearSizeInfoSnapshot());
+    for (const item of this.children) {
+      item.clearSizeInfoSnapshot();
+    }
   }
 
   /** Snapshot this panel's current size info to aid in size calculations */
@@ -684,7 +700,9 @@ class SplitPanel<DType = any> {
 
   /** Snapshot the size info of all direct children */
   snapshotChildSizeInfo() {
-    this.children.forEach((item) => item.snapshotSizeInfo());
+    for (const item of this.children) {
+      item.snapshotSizeInfo();
+    }
   }
 
   /** Calculate a new size based on the current size and the value passed in */
@@ -715,7 +733,7 @@ class SplitPanel<DType = any> {
   ) {
     const needsSnapshot = !this.sizeInfoSnapshot;
 
-    // handle the case where we're resizing outside the context of a drag event
+    // Handle the case where we're resizing outside the context of a drag event
     if (needsSnapshot) {
       this.parent?.snapshotChildSizeInfo();
     }
@@ -761,11 +779,11 @@ class SplitPanel<DType = any> {
     this.parent?.clearChildSizeInfoSnapshot();
   }
 
-  maximize() {
+  async maximize() {
     return this.animateResize('100%');
   }
 
-  minimize() {
+  async minimize() {
     return this.animateResize('0%');
   }
 
@@ -784,11 +802,13 @@ class SplitPanel<DType = any> {
   }
 
   /** Satisfy the constraints for the given items, or all children if no items passed in */
-  satisfyConstraints(items?: SplitPanel<DType> | SplitPanel<DType>[]) {
+  satisfyConstraints(items?: SplitPanel<DType> | Array<SplitPanel<DType>>) {
     const newItems = items ? [items].flat().filter(Boolean) : undefined;
     const itemsToConsider = newItems || this.children;
 
-    if (!itemsToConsider.length) return;
+    if (itemsToConsider.length === 0) {
+      return;
+    }
 
     const diff = this.rectSize - sumSizes(this.children);
     let leftToAllocate = this.rectSize;
@@ -812,7 +832,7 @@ class SplitPanel<DType = any> {
       const remainingGrowable = getRemaining(itemsToConsider.filter((item) => item.canGrow).length);
       const remainingShrinkable = getRemaining(itemsToConsider.filter((item) => item.canShrink).length);
 
-      itemsToConsider.forEach((item) => {
+      for (const item of itemsToConsider) {
         if (!item.hasSize) {
           item.setSize(remaining.percent);
           leftToAllocate -= item.sizeInfo.exactSize;
@@ -823,7 +843,7 @@ class SplitPanel<DType = any> {
           item.addSize(remainingShrinkable.addAmt);
           leftToAllocate -= item.sizeInfo.exactSize;
         }
-      });
+      }
     }
   }
 
@@ -848,7 +868,7 @@ class SplitPanel<DType = any> {
   /** Attach a dom element to this panel */
   attachEl(
     /** The element to attach */
-    el: HTMLElement
+    el: HTMLElement,
   ) {
     if (this.containerEl !== el) {
       if (this.containerEl && this._observeElement) {
@@ -875,7 +895,7 @@ class SplitPanel<DType = any> {
   /** Attach a dom element to act as the resize */
   attachResizeEl(
     /** The element to use as the resize or a css selector */
-    el: HTMLElement | string
+    el: HTMLElement | string,
   ) {
     if ((typeof el === 'string' && this._resizeElSelector !== el) || this.resizeEl !== el) {
       this._unbindResizeEl?.();
@@ -924,21 +944,23 @@ class SplitPanel<DType = any> {
   }
 
   /** Create multiple children. If the id conflicts with an existing id, it will be ignored. */
-  private _createChildren(items: SplitPanelDef<DType>[]) {
-    const children: SplitPanel<DType>[] = [];
+  private _createChildren(items: Array<SplitPanelDef<DType>>) {
+    const children: Array<SplitPanel<DType>> = [];
 
-    items?.forEach((item) => {
-      const child = this._createChild(item);
+    if (items) {
+      for (const item of items) {
+        const child = this._createChild(item);
 
-      if (!this.childMap[child.id]) {
-        children.push(child);
+        if (!this.childMap[child.id]) {
+          children.push(child);
+        }
       }
-    });
+    }
     return children;
   }
 
   /** Add child panels */
-  addChild(...items: SplitPanelDef<DType>[]) {
+  addChild(...items: Array<SplitPanelDef<DType>>) {
     const children = this._createChildren(items);
 
     this._children.push(...children);
@@ -954,10 +976,10 @@ class SplitPanel<DType = any> {
   }
 
   /** Remove a child panel */
-  removeChild(...ids: (string | SplitPanel<DType>)[]) {
-    const removed: SplitPanel<DType>[] = [];
+  removeChild(...ids: Array<string | SplitPanel<DType>>) {
+    const removed: Array<SplitPanel<DType>> = [];
 
-    if (ids.length) {
+    if (ids.length > 0) {
       const toRemove = new Set(ids.map((item) => (typeof item === 'string' ? item : item?.id)));
 
       this._children = this._children.filter((item) => {
@@ -971,6 +993,7 @@ class SplitPanel<DType = any> {
         return !needsRemove;
       });
     }
+
     return removed;
   }
 
@@ -987,14 +1010,14 @@ class SplitPanel<DType = any> {
   syncNumChildren(
     num: number,
     options?: {
-      childTemplate?: SplitPanelDef<DType>,
-    }
+      childTemplate?: SplitPanelDef<DType>;
+    },
   ) {
     const diff = num - this.numChildren;
     const numToCreate = Math.max(diff, 0);
     const numToRemove = diff < 0 ? Math.abs(diff) : 0;
-    let created: SplitPanel<DType>[];
-    let removed: SplitPanel<DType>[];
+    let created: Array<SplitPanel<DType>>;
+    let removed: Array<SplitPanel<DType>>;
 
     if (numToCreate) {
       created = this.addNumChildren(numToCreate, options?.childTemplate);
@@ -1009,7 +1032,7 @@ class SplitPanel<DType = any> {
   }
 
   /** Set the children for this panel (will remove existing panels) */
-  setChildren(items: SplitPanelDef<DType>[]) {
+  setChildren(items: Array<SplitPanelDef<DType>>) {
     this._children = this._createChildren(items);
   }
 
@@ -1031,11 +1054,11 @@ class SplitPanel<DType = any> {
     e.preventDefault();
   }
 
-  private _onMouseover(e: MouseEvent) {
+  private _onMouseover() {
     this.hovering = true;
   }
 
-  private _onMouseout(e: MouseEvent) {
+  private _onMouseout() {
     this.hovering = false;
   }
 
@@ -1047,14 +1070,16 @@ class SplitPanel<DType = any> {
   }
 
   private _onMouseMove(e: MouseEvent) {
-    if (!this.canResize) return;
+    if (!this.canResize) {
+      return;
+    }
 
     this.prevDragPos = this.dragPos;
     this.dragPos = getCoordFromMouseEvent(e);
     this.resize(relativeToPercent(this.relativeDragSize));
   }
 
-  private _onDblClick() {
+  private async _onDblClick() {
     return this.toggleExpanded();
   }
 
@@ -1066,19 +1091,23 @@ class SplitPanel<DType = any> {
     if (this.isRoot && this._observeElement) {
       this._rootCallbacks = new WeakMap();
       this._resizeObserver = new ResizeObserver((entries) => {
-        entries.forEach((entry) => {
+        for (const entry of entries) {
           this.rootCallbacks.get(entry.target as HTMLElement)?.resize?.(entry);
-        });
+        }
       });
 
       // MOUSE UP
-      const onMouseUp = (e) => this._cbAllChildren('mouseup', e);
+      const onMouseUp = (e) => {
+        this._cbAllChildren('mouseup', e);
+      };
 
       document.addEventListener('mouseup', onMouseUp);
 
       // MOUSE MOVE
 
-      const onMouseMove = (e) => this._cbAllChildren('mousemove', e, (child) => child.dragging);
+      const onMouseMove = (e) => {
+        this._cbAllChildren('mousemove', e, (child) => child.dragging);
+      };
 
       document.addEventListener('mousemove', onMouseMove);
 
@@ -1091,13 +1120,13 @@ class SplitPanel<DType = any> {
   }
 
   private _cbAllChildren<T extends keyof CbMap>(type: T, payload, filter?: ((child: SplitPanel<DType>) => boolean)) {
-    this.allChildren.forEach((child) => {
+    for (const child of this.allChildren) {
       const result = filter?.(child);
 
       if (result ?? result === undefined) {
         this.rootCallbacks.get(child.containerEl)?.[type]?.(payload);
       }
-    });
+    }
   }
 }
 

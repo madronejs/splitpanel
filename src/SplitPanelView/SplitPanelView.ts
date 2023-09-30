@@ -1,10 +1,10 @@
 import { reactive, computed, watch } from 'madronejs';
 import difference from 'lodash/difference';
-import SplitPanel from './SplitPanel';
+import type SplitPanel from './SplitPanel';
 
 export default class SplitPanelView<DType = any> extends HTMLElement {
   @reactive static tag = 'split-panel';
-  
+
   static classNames = {
     root: 'split-panel-root',
     dragging: 'dragging',
@@ -37,7 +37,7 @@ export default class SplitPanelView<DType = any> extends HTMLElement {
   @reactive private _panelElementMap: Record<string, HTMLElement>;
   @reactive private _panelSlotMap: Record<string, HTMLSlotElement>;
   @reactive private _splitPanel: SplitPanel<DType>;
-  @reactive private _styleTasks: (() => void)[];
+  @reactive private _styleTasks: Array<() => void>;
   @reactive.shallow private _disposeWatchers: () => void;
 
   @reactive private _root: SplitPanelView<DType>;
@@ -86,7 +86,7 @@ export default class SplitPanelView<DType = any> extends HTMLElement {
   }
 
   getSlot(name: string) {
-    return this._panelSlotMap[name] as HTMLSlotElement;
+    return this._panelSlotMap[name];
   }
 
   setParentView(val: SplitPanelView<DType>) {
@@ -126,39 +126,47 @@ export default class SplitPanelView<DType = any> extends HTMLElement {
       // STYLE
       watch(() => splitPanel.style, (val) => {
         this._styleTasks.push(() => {
-          Object.keys(val).forEach((key) => {
+          for (const key of Object.keys(val)) {
             this.style[key] = val[key];
-          });
-        })
+          }
+        });
         this._runStyleTasks();
       }),
       // RESIZE EL STYLE
       watch(() => splitPanel.resizeElStyle, (val) => {
         if (this.resizeEl) {
-          Object.keys(val).forEach((key) => {
+          for (const key of Object.keys(val)) {
             this.resizeEl.style[key] = val[key];
-          });
+          }
         }
       }),
     ];
 
     this._disposeWatchers = () => {
-      toDispose.forEach((dispose) => dispose());
+      for (const dispose of toDispose) {
+        dispose();
+      }
     };
+
     this.sync();
   }
 
   private _runStyleTasks() {
     if (this.splitPanel) {
       const todo = [...this._styleTasks].reverse();
+
       this._styleTasks = [];
-      todo.forEach((task) => task());
+
+      for (const task of todo) {
+        task();
+      }
     }
   }
 
   private _createPanel(panel: SplitPanel<DType>) {
     const panelEl = document.createElement(SplitPanelView.tag) as SplitPanelView<DType>;
-    panelEl.setSplitPanel(panel)
+
+    panelEl.setSplitPanel(panel);
     panelEl.setRootView(this.root);
     panelEl.setParentView(this);
     return panelEl;
@@ -166,6 +174,7 @@ export default class SplitPanelView<DType = any> extends HTMLElement {
 
   private _createPanelSlot(name: string) {
     const slotEl = document.createElement('slot');
+
     slotEl.setAttribute('name', name);
     return slotEl;
   }
@@ -175,9 +184,9 @@ export default class SplitPanelView<DType = any> extends HTMLElement {
 
     if (!this._panelElementMap[name] && this.splitPanel?.shouldShowResizeEl) {
       const el = document.createElement('div');
-      const slot = this._createPanelSlot(name)
-  
-      el.classList.add(SplitPanelView.classNames.resizer)
+      const slot = this._createPanelSlot(name);
+
+      el.classList.add(SplitPanelView.classNames.resizer);
       el.append(slot);
       this.append(el);
       this._panelElementMap[name] = el;
@@ -191,9 +200,9 @@ export default class SplitPanelView<DType = any> extends HTMLElement {
 
     if (!this._panelElementMap[name]) {
       const el = document.createElement('div');
-      const slot = this._createPanelSlot(name)
-  
-      el.classList.add(SplitPanelView.classNames.content)
+      const slot = this._createPanelSlot(name);
+
+      el.classList.add(SplitPanelView.classNames.content);
       el.append(slot);
       this.append(el);
       this._panelElementMap[name] = el;
@@ -202,46 +211,50 @@ export default class SplitPanelView<DType = any> extends HTMLElement {
   }
 
   private _addContentElements() {
-    if (!this.splitPanel) return;
-    
+    if (!this.splitPanel) {
+      return;
+    }
+
     this._createItemResizerIfNeeded();
     this._createItemContentIfNeeded();
   }
 
   private _removeContentElements() {
-    Object.keys(this._panelElementMap).forEach((key) => {
+    for (const key of Object.keys(this._panelElementMap)) {
       this._panelElementMap[key]?.remove();
       delete this._panelElementMap[key];
       delete this._panelSlotMap[key];
-    })
+    }
   }
 
   private _removeChild(...ids: string[]) {
-    ids.forEach((id) => {
+    for (const id of ids) {
       this._panelViewMap[id]?.remove();
       delete this._panelViewMap[id];
-    });
+    }
   }
 
-  private _addChild(...panels: SplitPanel<DType>[]) {
+  private _addChild(...panels: Array<SplitPanel<DType>>) {
     for (const panel of panels) {
       if (!this._panelViewMap[panel.id]) {
         const panelEl = this._createPanel(panel);
 
         this._panelViewMap[panel.id] = panelEl;
-        this.append(panelEl)
+        this.append(panelEl);
       }
     }
   }
 
   private _moveSlots() {
     if (this.splitPanel.isRoot) {
-      Array.from(this.children).forEach((item: HTMLElement) => {
+      const items = [...this.children] as HTMLElement[];
+
+      for (const item of items) {
         const slotName = item.slot;
         const id = SplitPanelView.idFromSlotName(slotName);
         const panel = this.splitPanel.allChildMap[id];
         const container = panel?.containerEl as SplitPanelView<DType>;
-        const slot = container?.getSlot(slotName)
+        const slot = container?.getSlot(slotName);
 
         if (slot) {
           item.style.display = null;
@@ -249,7 +262,7 @@ export default class SplitPanelView<DType = any> extends HTMLElement {
         } else if (!(item instanceof SplitPanelView)) {
           item.style.display = 'none';
         }
-      });
+      }
     }
   }
 
@@ -260,7 +273,9 @@ export default class SplitPanelView<DType = any> extends HTMLElement {
 
     this._removeChild(...oldIds);
 
-    if (!this.splitPanel) return;
+    if (!this.splitPanel) {
+      return;
+    }
 
     if (!this.splitPanel.containerEl) {
       this.splitPanel.attachEl(this);

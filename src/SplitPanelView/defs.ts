@@ -9,24 +9,24 @@ export type ConstraintType = string | number;
 export type ResizeStrategy = (panel: SplitPanel, val: ConstraintType) => void;
 export type FlattenStrategy = (items: SplitPanelDef[]) => SplitPanelDef[];
 
-export interface PanelConstraints {
+export type PanelConstraints = {
   /** Minimum size */
   minSize?: ConstraintType;
   /** Maximum size */
   maxSize?: ConstraintType;
   /** Default size */
   size?: ConstraintType;
-}
+};
 
-export interface BoxDims {
-  width?: number,
-  height?: number,
-}
+export type BoxDims = {
+  width?: number;
+  height?: number;
+};
 
-export interface BoxCoord {
-  x: number,
-  y: number,
-}
+export type BoxCoord = {
+  x: number;
+  y: number;
+};
 
 export type BoxRect = BoxDims & BoxCoord;
 
@@ -49,63 +49,63 @@ export enum DIMENSION {
 
 export enum AXIS {
   x = 'x',
-  y = 'y'
+  y = 'y',
 }
 
-export interface SplitPanelDef<DType = any> {
+export type SplitPanelDef<DType = any> = {
   /** Panel id. If not set, one will be automatically generated */
-  id?: string,
+  id?: string;
   /** Optional data to associate with the panel */
-  data?: DType,
+  data?: DType;
   /** Sizing constraints for the panel */
-  constraints?: PanelConstraints,
+  constraints?: PanelConstraints;
   /** This panel's children */
-  children?: SplitPanelDef<DType>[],
+  children?: Array<SplitPanelDef<DType>>;
   /** This panel's direction */
-  direction?: PANEL_DIRECTION,
-}
+  direction?: PANEL_DIRECTION;
+};
 
 export type SplitPanelArgs<DType = any> = SplitPanelDef<DType> & {
   /** The parent of the current panel */
-  parent?: SplitPanel<DType>,
+  parent?: SplitPanel<DType>;
   /** The root panel */
-  root?: SplitPanel<DType>,
+  root?: SplitPanel<DType>;
   /** Push other panels if current panel can no longer be resized */
-  pushPanels?: boolean,
+  pushPanels?: boolean;
   /** How to re-balance remaining child sizes after a child's sizes is set */
-  resizeStrategy?: ResizeStrategy,
+  resizeStrategy?: ResizeStrategy;
   /** How to flatten the tree structure to calculate indices */
-  flattenStrategy?: FlattenStrategy,
+  flattenStrategy?: FlattenStrategy;
   /** Use built in resize observer or not (defaults to true) */
-  observe?: boolean,
+  observe?: boolean;
   /** Starting box size */
-  rect?: BoxRect,
+  rect?: BoxRect;
   /** Animation duration in milliseconds */
-  animationDuration?: number,
+  animationDuration?: number;
   /** How far the panel can be from its max with before its considered fully expanded */
-  expandTolerance?: number,
+  expandTolerance?: number;
   /** Show the first resize element */
-  showFirstResizeEl?: boolean,
+  showFirstResizeEl?: boolean;
   /** Selector for the resize element */
-  resizeElSelector?: string,
+  resizeElSelector?: string;
   /** The width/height of the resize element */
-  resizeElSize?: ConstraintType,
+  resizeElSize?: ConstraintType;
   /** Border styles for the resize element */
-  resizeElBorderStyle?: string,
+  resizeElBorderStyle?: string;
 };
 
-export interface ParsedConstraint {
+export type ParsedConstraint = {
   /** If constraint is relative */
-  relative: boolean,
+  relative: boolean;
   /** Number between 0 and 1 */
-  relativeValue: number,
+  relativeValue: number;
   /** Exact pixel value */
-  exactValue: number,
-}
+  exactValue: number;
+};
 
 export type ParsedPanelConstraints = {
   [K in keyof PanelConstraints]: ParsedConstraint;
-}
+};
 
 export type ResizeObserverCallback = (event: ResizeObserverEntry) => void;
 export type MouseEventCallback = (event: MouseEvent) => void;
@@ -121,9 +121,9 @@ export function roundVal(val: number, precision?: number) {
 export function camelCaseObject(obj: Record<string, any>) {
   const newStyle = {};
 
-  Object.keys(obj || {}).forEach((key) => {
+  for (const key of Object.keys(obj || {})) {
     newStyle[camelCase(key)] = obj[key];
-  });
+  }
 
   return newStyle;
 }
@@ -151,9 +151,9 @@ export function parseConstraint(val: string | number, comparativeSize: number): 
 export function parsePanelConstraints(val: PanelConstraints, comparativeSize: number) {
   const constraints: ParsedPanelConstraints = {};
 
-  Object.keys(val || {}).forEach((key) => {
+  for (const key of Object.keys(val || {})) {
     constraints[key] = parseConstraint(val[key], comparativeSize);
-  });
+  }
 
   return constraints;
 }
@@ -179,17 +179,20 @@ export function getCoordFromMouseEvent(e: MouseEvent): BoxCoord {
 export function getDistance(
   coord1: BoxCoord,
   coord2: BoxCoord,
-  direction?: PANEL_DIRECTION
+  direction?: PANEL_DIRECTION,
 ): number {
-  if (!coord1 || !coord2) return 0;
+  if (!coord1 || !coord2) {
+    return 0;
+  }
 
   const { x: x1, y: y1 } = coord1;
   const { x: x2, y: y2 } = coord2;
 
-  // don't need to be too fancy here... diagonal distance doesn't matter.
+  // Don't need to be too fancy here... diagonal distance doesn't matter.
   if (direction === PANEL_DIRECTION.row) {
     return x2 - x1;
   }
+
   return y2 - y1;
 }
 
@@ -205,9 +208,13 @@ function mergeConstraint(
 ): ParsedConstraint {
   const filtered = constraints.filter(Boolean);
 
-  if (!filtered.length) return null;
+  if (filtered.length === 0) {
+    return null;
+  }
 
-  if (filtered.length === 1) return filtered[0];
+  if (filtered.length === 1) {
+    return filtered[0];
+  }
 
   if (compare) {
     filtered.sort(compare);
@@ -221,40 +228,46 @@ export function mergePanelConstraints(...constraints: ParsedPanelConstraints[]) 
   const minSize: ParsedConstraint[] = [];
   const maxSize: ParsedConstraint[] = [];
 
-  constraints.forEach((item) => {
-    if (item.size) size.push(item.size);
+  for (const item of constraints) {
+    if (item.size?.exactValue > 0) {
+      size.push(item.size);
+    }
 
-    if (item.minSize) minSize.push(item.minSize);
+    if (item.minSize) {
+      minSize.push(item.minSize);
+    }
 
-    if (item.maxSize) maxSize.push(item.maxSize);
-  });
+    if (item.maxSize) {
+      maxSize.push(item.maxSize);
+    }
+  }
 
   const merged: ParsedPanelConstraints = {
-    // default to the override
+    // Default to the override
     size: mergeConstraint(size, null, (items) => items.at(-1)),
-    // get the larger of the two constraints
+    // Get the larger of the two constraints
     minSize: mergeConstraint(minSize, (c1, c2) => (c1.exactValue > c2.exactValue ? -1 : 1)),
-    // get the smaller of the two constraints
+    // Get the smaller of the two constraints
     maxSize: mergeConstraint(maxSize, (c1, c2) => (c1.exactValue > c2.exactValue ? 1 : -1)),
   };
   const normalized: ParsedPanelConstraints = {};
 
-  Object.keys(merged).forEach((key) => {
+  for (const key of Object.keys(merged)) {
     if (merged[key]) {
       normalized[key] = merged[key];
     }
-  });
+  }
 
   return normalized;
 }
 
-export function getChildInfo<T>(children: SplitPanel<T>[]) {
+export function getChildInfo<T>(children: Array<SplitPanel<T>>) {
   const map: Record<string, SplitPanel<T>> = {};
   const indexMap: Record<string, number> = {};
   const leafIndexMap: Record<string, number> = {};
   let leafIndex = 0;
 
-  (children || []).forEach((child, index) => {
+  for (const [index, child] of (children || []).entries()) {
     map[child.id] = child;
     indexMap[child.id] = index;
 
@@ -262,10 +275,10 @@ export function getChildInfo<T>(children: SplitPanel<T>[]) {
       leafIndexMap[child.id] = leafIndex;
       leafIndex += 1;
     }
-  });
+  }
 
   return {
-    /** id to panel mapping */
+    /** Id to panel mapping */
     map,
     /** An id to numeric index map showing where in the top level array each child is */
     indexMap,
@@ -278,12 +291,12 @@ export function getChildInfo<T>(children: SplitPanel<T>[]) {
 
 export function getSizeInfo(
   options: {
-    parsedConstraints?: ParsedPanelConstraints,
-    size?: ConstraintType,
-    rectSize?: number,
-    relativeSize?: number,
-    comparativeSize?: number,
-  }
+    parsedConstraints?: ParsedPanelConstraints;
+    size?: ConstraintType;
+    rectSize?: number;
+    relativeSize?: number;
+    comparativeSize?: number;
+  },
 ) {
   const { minSize, maxSize, size } = options.parsedConstraints;
   const parsedSize = options.size === undefined ? undefined : parseConstraint(options.size, options.comparativeSize);
@@ -336,7 +349,7 @@ export function getSizeInfo(
     newRelativeSize = newSize / options.comparativeSize;
   }
 
-  // if we applied a min or max, we didn't apply the given size
+  // If we applied a min or max, we didn't apply the given size
   appliedSize &&= !(appliedMin || appliedMax);
 
   return {
@@ -360,34 +373,38 @@ type NumberKeys<T> = {
 }[keyof T];
 
 export type SumOptions = {
-  includeNegative?: boolean,
-  sumSource?: 'sizeInfo' | 'sizeInfoSnapshot',
-  sumProperty?: NumberKeys<ReturnType<typeof getSizeInfo>>,
-  getter?: (panel: SplitPanel) => number,
-}
+  includeNegative?: boolean;
+  sumSource?: 'sizeInfo' | 'sizeInfoSnapshot';
+  sumProperty?: NumberKeys<ReturnType<typeof getSizeInfo>>;
+  getter?: (panel: SplitPanel) => number;
+};
 
 /** Get the total combined width in pixels of the items passed */
 export function sumSizes(items: SplitPanel[], options?: SumOptions) {
   let sum = 0;
 
-  items.forEach((item) => {
+  for (const item of items) {
     const px = options?.getter?.(item) ?? item?.[options?.sumSource || 'sizeInfo']?.[options?.sumProperty || 'exactSize'];
 
     if (typeof px === 'number' && !Number.isNaN(px)) {
       sum += options?.includeNegative ? px : Math.max(px, 0);
     }
-  });
+  }
 
   return sum;
 }
 
 export function sumSizesBetween(item1: SplitPanel, item2: SplitPanel, options?: SumOptions) {
-  if (item1?.parent !== item2?.parent || !item1?.parent) return 0;
+  if (item1?.parent !== item2?.parent || !item1?.parent) {
+    return 0;
+  }
 
   const { parent, index: index1 } = item1;
   const { index: index2 } = item2;
 
-  if (index1 === index2) return options?.getter?.(item1) ?? item1[options?.sumSource || 'sizeInfo'][options?.sumProperty || 'exactSize'];
+  if (index1 === index2) {
+    return options?.getter?.(item1) ?? item1[options?.sumSource || 'sizeInfo'][options?.sumProperty || 'exactSize'];
+  }
 
   const allInRange = parent.children.slice(index1, index2 + 1);
 
@@ -404,6 +421,7 @@ function getSiblingArray(panel: SplitPanel, relation: SIBLING_RELATION) {
   if (panel.pushPanels) {
     return [...((relation === SIBLING_RELATION.before ? panel.siblingsBefore : panel.siblingsAfter) || [])];
   }
+
   return relation === SIBLING_RELATION.before ? [panel.siblingBefore].filter(Boolean) : [panel.siblingAfter].filter(Boolean);
 }
 
@@ -420,7 +438,7 @@ function findPanelMatch(items: SplitPanel[], condition: (sibling: SplitPanel) =>
 export function findNearestSibling(
   panel: SplitPanel,
   relation: SIBLING_RELATION,
-  condition: (sibling: SplitPanel) => boolean
+  condition: (sibling: SplitPanel) => boolean,
 ) {
   const siblings = getSiblingArray(panel, relation);
 
@@ -434,7 +452,7 @@ export function findNearestSibling(
 export function findFurthestSibling(
   panel: SplitPanel,
   relation: SIBLING_RELATION,
-  condition: (sibling: SplitPanel) => boolean
+  condition: (sibling: SplitPanel) => boolean,
 ) {
   const siblings = getSiblingArray(panel, relation);
 

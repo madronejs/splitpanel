@@ -1,3 +1,1 @@
-import SplitPanelView from './SplitPanelView';
-
-export default SplitPanelView;
+export { default } from './SplitPanelView';
