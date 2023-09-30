@@ -1,11 +1,10 @@
 import './style.scss';
 
-import SplitPanelView from './SplitPanelView';
-import SplitPanel from './SplitPanelView/SplitPanel';
+import { SplitPanel, SplitPanelView } from './SplitPanelView';
 
 customElements.define(SplitPanelView.tag, SplitPanelView);
 
-await customElements.whenDefined(SplitPanelView.tag);
+await SplitPanelView.register();
 
 const el = document.querySelector(SplitPanelView.tag) as SplitPanelView;
 

@@ -5,6 +5,13 @@ import type SplitPanel from './SplitPanel';
 export default class SplitPanelView<DType = any> extends HTMLElement {
   @reactive static tag = 'split-panel';
 
+  static register() {
+    if (!customElements.get(SplitPanelView.tag)) {
+      customElements.define(SplitPanelView.tag, SplitPanelView);
+    }
+    return customElements.whenDefined(SplitPanelView.tag);
+  }
+
   static classNames = {
     root: 'split-panel-root',
     dragging: 'dragging',
