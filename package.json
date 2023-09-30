@@ -1,6 +1,5 @@
 {
-  "name": "madrone-splitpanel",
-  "private": true,
+  "name": "@madronejs/split-panel",
   "version": "0.0.0",
   "scripts": {
     "dev": "vite",
