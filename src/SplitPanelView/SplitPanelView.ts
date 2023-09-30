@@ -265,7 +265,7 @@ export default class SplitPanelView<DType = any> extends HTMLElement {
 
         if (slot) {
           item.style.display = null;
-          slot.append(item);
+          slot.replaceChildren(item);
         } else if (!(item instanceof SplitPanelView)) {
           item.style.display = 'none';
         }
