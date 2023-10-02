@@ -109,7 +109,7 @@ class SplitPanel<DType = any> {
   /** Size of the resize bar */
   @reactive resizeElRect: BoxRect;
   /** If we should add listeners to the elements */
-  @reactive private readonly _observeElement: boolean;
+  @reactive private _observeElement: boolean;
   /** Size info snapshot, taken before a resize event */
   @reactive sizeInfoSnapshot: ReturnType<typeof getSizeInfo>;
   /** If the mouse is hovering over the resizer */
@@ -225,14 +225,14 @@ class SplitPanel<DType = any> {
     return this.relativeDragDistance + (this.sizeInfoSnapshot?.relativeSize ?? this.sizeInfo.relativeSize);
   }
 
-  private readonly _debouncedSatisfyConstraints: () => void;
+  private _debouncedSatisfyConstraints: () => void;
 
   /** If this panel is the root of the panel */
   @computed get isRoot() {
     return !this.parent;
   }
 
-  @reactive private readonly _root?: SplitPanel<DType>;
+  @reactive private _root?: SplitPanel<DType>;
   /** The root panel item */
   @computed get root(): SplitPanel<DType> {
     return this._root ?? this;
