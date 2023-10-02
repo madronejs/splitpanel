@@ -2,7 +2,9 @@
   "name": "@madronejs/split-panel",
   "version": "0.0.0",
   "type": "module",
-  "files": ["dist"],
+  "files": [
+    "dist"
+  ],
   "exports": {
     ".": {
       "import": "./index.js",
@@ -10,9 +12,9 @@
       "types": "./index.d.ts"
     },
     "./*": {
-      "import": "./*/index.js",
-      "require": "./*/index.cjs",
-      "types": "./*/index.d.ts"
+      "import": "./*.js",
+      "require": "./*.cjs",
+      "types": "./*.d.ts"
     }
   },
   "scripts": {

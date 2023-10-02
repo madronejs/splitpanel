@@ -5,10 +5,17 @@ export default defineConfig({
   build: {
     lib: {
       // Could also be a dictionary or array of multiple entry points
-      entry: resolve(__dirname, 'src/index.ts'),
+      entry: [
+        resolve(__dirname, 'lib/core.ts'),
+        resolve(__dirname, 'lib/webComponent.ts'),
+      ],
       name: 'SplitPanel',
       // the proper extensions will be added
-      fileName: 'split-panel',
+      // esm - default format. cjs - for node require api (single bundle)
+      // fileName: (format, entryName, ...rest) => {
+      //   console.log('fileName:', format, entryName, ...rest);
+      //   return `${entryName}.${format}`;
+      // }
     },
     // rollupOptions: {
 
