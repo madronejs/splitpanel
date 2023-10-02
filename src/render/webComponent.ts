@@ -105,6 +105,8 @@ export default class SplitPanelView<DType = any> extends HTMLElement {
   }
 
   setSplitPanel(splitPanel: SplitPanel<DType>) {
+    if (!splitPanel) return;
+
     this._splitPanel = splitPanel;
     splitPanel.attachEl(this);
 

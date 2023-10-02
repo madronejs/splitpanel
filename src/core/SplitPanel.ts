@@ -266,12 +266,12 @@ class SplitPanel<DType = any> {
   }
 
   /** All descendants of this panel */
-  @computed get allChildren() {
+  @computed get allChildren(): SplitPanel<DType>[] {
     return this.flattenStrategy(this.children);
   }
 
   /** A dictionary of all descendants of this panel */
-  @computed get allChildMap() {
+  @computed get allChildMap(): Record<string, SplitPanel<DType>> {
     const map: Record<string, SplitPanel<DType>> = {};
 
     for (const child of this.allChildren) {

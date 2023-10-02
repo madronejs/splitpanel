@@ -25,7 +25,8 @@
     "eslint-plugin-unicorn": "^48.0.1",
     "sass": "^1.68.0",
     "typescript": "^5.2.2",
-    "vite": "^4.4.5"
+    "vite": "^4.4.5",
+    "vue": "^3.3.4"
   },
   "dependencies": {
     "animejs": "^3.2.1",
