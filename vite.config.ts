@@ -6,8 +6,8 @@ export default defineConfig({
     lib: {
       // Could also be a dictionary or array of multiple entry points
       entry: [
-        resolve(__dirname, 'lib/core.ts'),
-        resolve(__dirname, 'lib/webComponent.ts'),
+        resolve(__dirname, 'lib/index.ts'),
+        // resolve(__dirname, 'lib/webc.ts'),
       ],
       name: 'SplitPanel',
       // the proper extensions will be added
