@@ -1,6 +1,6 @@
 import { reactive, computed, watch } from 'madronejs';
 import difference from 'lodash/difference';
-import type SplitPanel from './SplitPanel';
+import type SplitPanel from '@/core/SplitPanel';
 
 export default class SplitPanelView<DType = any> extends HTMLElement {
   @reactive static tag = 'split-panel';
