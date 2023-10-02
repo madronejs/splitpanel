@@ -1,1 +1,1 @@
-# split-panel
+# splitpanel
