@@ -23,7 +23,7 @@ export function flattenDepthFirst(items: SplitPanelDef | SplitPanelDef[]) {
 export function flattenBreadthFirst(items: SplitPanelDef | SplitPanelDef[]) {
   const flat: SplitPanelDef[] = [items].flat();
 
-  for (const item of flat) {
+  for (const item of flat.slice()) {
     const children = getChildren(item);
 
     if (children.length > 0) {
