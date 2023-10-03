@@ -1,6 +1,7 @@
 import { createApp, defineComponent, reactive, computed, watch, toRaw, h } from 'vue';
 import Madrone, { MadroneVue3 } from 'madronejs';
-import { SplitPanel, SplitPanelView } from './src';
+import { SplitPanel } from './src';
+import SplitPanelView from './src/render/webComponent';
 import { default as VueSplitPanelView } from './src/render/vue3';
 import configureAnimate from './src/plugins/animate';
 

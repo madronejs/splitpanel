@@ -6,11 +6,18 @@
     "dist/*.js",
     "types/**/*.d.ts"
   ],
-  "types": "types/lib/index.d.ts",
+  "types": "types/core/index.d.ts",
   "typesVersions": {
     "*": {
-      "vue3": ["./types/lib/vue3.d.ts"],
-      "animate": ["./types/lib/animate.d.ts"]
+      "vue3": [
+        "./types/render/vue3.d.ts"
+      ],
+      "webc": [
+        "./types/render/webComponent.d.ts"
+      ],
+      "animate": [
+        "./types/plugins/animate.d.ts"
+      ]
     }
   },
   "exports": {
@@ -22,6 +29,10 @@
       "import": "./dist/vue3.js",
       "require": "./dist/vue3.cjs"
     },
+    "./webc": {
+      "import": "./dist/webComponent.js",
+      "require": "./dist/webComponent.cjs"
+    },
     "./animate": {
       "import": "./dist/animate.js",
       "require": "./dist/animate.cjs"
@@ -32,8 +43,8 @@
     "dev": "vite",
     "test": "vitest",
     "lint": "eslint src/ --ext .js,.jsx,.ts,.tsx",
-    "build-types": "tsc -p ./tsconfig.json && tsc-alias -p tsconfig.json",
-    "build": "pnpm build-types && vite build",
+    "build-types": "rm -rf types && tsc -p ./tsconfig.json && tsc-alias -p tsconfig.json",
+    "build": "rm -rf dist && pnpm build-types && vite build",
     "preview": "vite preview"
   },
   "devDependencies": {
