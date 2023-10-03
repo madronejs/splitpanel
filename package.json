@@ -6,6 +6,17 @@
     "dist/*.js",
     "types/**/*.d.ts"
   ],
+  "keywords": [
+    "splitpanel",
+    "splitpane",
+    "panel",
+    "drag",
+    "draggable",
+    "resizable",
+    "madrone",
+    "vue",
+    "web components"
+  ],
   "types": "types/core/index.d.ts",
   "typesVersions": {
     "*": {
