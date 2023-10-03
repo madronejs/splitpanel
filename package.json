@@ -1,0 +1,52 @@
+{
+  "name": "@madronejs/splitpanel",
+  "version": "0.0.0",
+  "type": "module",
+  "files": [
+    "dist/*.js",
+    "types/**/*.d.ts"
+  ],
+  "types": "types",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "require": "./dist/index.umd.js"
+    },
+    "./vue3": {
+      "import": "./dist/vue3.js",
+      "require": "./dist/vue3.cjs"
+    },
+    "./style": "./dist/style.css"
+  },
+  "scripts": {
+    "dev": "vite",
+    "test": "vitest",
+    "lint": "eslint src/ --ext .js,.jsx,.ts,.tsx",
+    "build": "tsc && vite build",
+    "preview": "vite preview"
+  },
+  "devDependencies": {
+    "@typescript-eslint/eslint-plugin": "^6.7.3",
+    "@typescript-eslint/parser": "^6.7.3",
+    "eslint": "^8.50.0",
+    "eslint-config-airbnb-base": "^15.0.0",
+    "eslint-plugin-import": "^2.28.1",
+    "eslint-plugin-unicorn": "^48.0.1",
+    "sass": "^1.68.0",
+    "typescript": "^5.2.2",
+    "vite": "^4.4.5",
+    "vue": "^3.3.4"
+  },
+  "dependencies": {
+    "animejs": "^3.2.1",
+    "lodash": "^4.17.21",
+    "madronejs": "^1.0.12",
+    "uuid": "^9.0.1",
+    "vitest": "^0.34.6"
+  },
+  "engines": {
+    "node": "^18.8",
+    "pnpm": "^8.7.0"
+  },
+  "packageManager": "pnpm@8.7.0"
+}
