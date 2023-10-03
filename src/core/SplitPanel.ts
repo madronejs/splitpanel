@@ -424,6 +424,7 @@ class SplitPanel<DType = any> {
     const style: Record<string, any> = {};
 
     if (!this.isRoot) {
+      style[this.directionInfo.dimensionInverse] = null;
       style[this.directionInfo.dimension] = formatted;
 
       if (this.canResize && (this.dragging || this.hovering)) {
@@ -433,9 +434,11 @@ class SplitPanel<DType = any> {
       }
     }
 
-    style['flex-direction'] = this.parent?.direction ?? this.direction;
+    style[`min-${this.directionInfo.dimensionInverse}`] = null;
+    style[`max-${this.directionInfo.dimensionInverse}`] = null;
     style[`min-${this.directionInfo.dimension}`] = appliedMin ? formatted : null;
     style[`max-${this.directionInfo.dimension}`] = appliedMax ? formatted : null;
+
     return camelCaseObject(style);
   }
 
@@ -640,6 +643,7 @@ class SplitPanel<DType = any> {
   /** Set the direction of this panel */
   setDirection(direction: PANEL_DIRECTION) {
     this._direction = direction;
+    this.satisfyConstraints();
   }
 
   /** Set this panel's size constraints */
