@@ -6,15 +6,17 @@
     "dist/*.js",
     "types/**/*.d.ts"
   ],
-  "types": "types",
+  "types": "types/lib/index.d.ts",
   "exports": {
     ".": {
       "import": "./dist/index.js",
-      "require": "./dist/index.umd.js"
+      "require": "./dist/index.umd.js",
+      "types": "./types/lib/index.d.ts"
     },
     "./vue3": {
       "import": "./dist/vue3.js",
-      "require": "./dist/vue3.cjs"
+      "require": "./dist/vue3.cjs",
+      "types": "./types/lib/vue3.d.ts"
     },
     "./style": "./dist/style.css"
   },
@@ -22,7 +24,8 @@
     "dev": "vite",
     "test": "vitest",
     "lint": "eslint src/ --ext .js,.jsx,.ts,.tsx",
-    "build": "tsc && vite build",
+    "build-types": "tsc -p ./tsconfig.json && tsc-alias -p tsconfig.json",
+    "build": "pnpm build-types && vite build",
     "preview": "vite preview"
   },
   "devDependencies": {
@@ -33,6 +36,7 @@
     "eslint-plugin-import": "^2.28.1",
     "eslint-plugin-unicorn": "^48.0.1",
     "sass": "^1.68.0",
+    "tsc-alias": "^1.8.8",
     "typescript": "^5.2.2",
     "vite": "^4.4.5",
     "vue": "^3.3.4"
