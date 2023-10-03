@@ -2,7 +2,7 @@ import cloneDeep from 'lodash/cloneDeep';
 import debounce from 'lodash/debounce';
 import uniqBy from 'lodash/uniqBy';
 import uniqueId from 'lodash/uniqueId';
-import { computed, reactive } from 'madronejs';
+import { computed, reactive } from '@madronejs/core';
 import { v4 as uuid } from 'uuid';
 
 import {

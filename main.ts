@@ -1,5 +1,5 @@
 import { createApp, defineComponent, reactive, computed, watch, toRaw, h } from 'vue';
-import Madrone, { MadroneVue3 } from 'madronejs';
+import Madrone, { MadroneVue3 } from '@madronejs/core';
 import { SplitPanel } from './src';
 import SplitPanelView from './src/render/webComponent';
 import { default as VueSplitPanelView } from './src/render/vue3';

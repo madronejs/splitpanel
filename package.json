@@ -1,7 +1,7 @@
 {
   "name": "@madronejs/splitpanel",
   "version": "0.0.0",
-  "type": "module",
+  "private": false,
   "files": [
     "dist/*.js",
     "types/**/*.d.ts"
@@ -74,9 +74,9 @@
     "vue": "^3.3.4"
   },
   "dependencies": {
+    "@madronejs/core": "^1.0.16",
     "animejs": "^3.2.1",
     "lodash": "^4.17.21",
-    "madronejs": "^1.0.16",
     "uuid": "^9.0.1",
     "vitest": "^0.34.6"
   },

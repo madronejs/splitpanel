@@ -1,4 +1,4 @@
-import { reactive, computed, watch } from 'madronejs';
+import { computed, reactive, watch } from '@madronejs/core';
 import difference from 'lodash/difference';
 import type SplitPanel from '@/core/SplitPanel';
 
