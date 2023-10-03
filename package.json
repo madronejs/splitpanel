@@ -6,9 +6,18 @@
     "dist/*.js",
     "types/**/*.d.ts"
   ],
-  "main": "dist/index.umd.js",
-  "module": "dist/index.js",
   "types": "types",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "require": "./dist/index.umd.js"
+    },
+    "./vue3": {
+      "import": "./dist/vue3.js",
+      "require": "./dist/vue3.cjs"
+    },
+    "./style": "./dist/style.css"
+  },
   "scripts": {
     "dev": "vite",
     "test": "vitest",

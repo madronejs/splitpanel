@@ -7,15 +7,11 @@ export default defineConfig({
       // Could also be a dictionary or array of multiple entry points
       entry: [
         resolve(__dirname, 'lib/index.ts'),
-        // resolve(__dirname, 'lib/webc.ts'),
+        resolve(__dirname, 'lib/vue3.ts'),
+        resolve(__dirname, 'lib/style.ts'),
       ],
-      name: 'SplitPanel',
       // the proper extensions will be added
-      // esm - default format. cjs - for node require api (single bundle)
-      // fileName: (format, entryName, ...rest) => {
-      //   console.log('fileName:', format, entryName, ...rest);
-      //   return `${entryName}.${format}`;
-      // }
+      name: 'SplitPanel',
     },
     rollupOptions: {
       // make sure to externalize deps that shouldn't be bundled
