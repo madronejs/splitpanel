@@ -8,6 +8,7 @@ export default defineConfig({
       entry: [
         resolve(__dirname, 'lib/index.ts'),
         resolve(__dirname, 'lib/vue3.ts'),
+        resolve(__dirname, 'lib/animate.ts'),
         resolve(__dirname, 'lib/style.ts'),
       ],
       // the proper extensions will be added

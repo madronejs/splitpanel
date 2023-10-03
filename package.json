@@ -9,7 +9,8 @@
   "types": "types/lib/index.d.ts",
   "typesVersions": {
     "*": {
-      "vue3": ["./types/lib/vue3.d.ts"]
+      "vue3": ["./types/lib/vue3.d.ts"],
+      "animate": ["./types/lib/animate.d.ts"]
     }
   },
   "exports": {
@@ -20,6 +21,10 @@
     "./vue3": {
       "import": "./dist/vue3.js",
       "require": "./dist/vue3.cjs"
+    },
+    "./animate": {
+      "import": "./dist/animate.js",
+      "require": "./dist/animate.cjs"
     },
     "./style": "./dist/style.css"
   },
@@ -32,6 +37,7 @@
     "preview": "vite preview"
   },
   "devDependencies": {
+    "@types/animejs": "^3.1.8",
     "@typescript-eslint/eslint-plugin": "^6.7.3",
     "@typescript-eslint/parser": "^6.7.3",
     "eslint": "^8.50.0",
