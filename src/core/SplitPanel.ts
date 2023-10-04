@@ -872,11 +872,12 @@ class SplitPanel<DType = any> {
       const growableToObserve = new Set<SplitPanel<DType>>(itemsToConsider.filter((item) => item.canGrow));
 
       for (const item of itemsToConsider) {
-        const remaining = getRemaining(remainingToObserve.size);
         const remainingGrowable = getRemaining(growableToObserve.size);
         const remainingShrinkable = getRemaining(shrinkableToObserve.size);
 
         if (!item.hasSize) {
+          const remaining = getRemaining(remainingToObserve.size);
+
           item.setSize(parsedToFormatted(item.parsedConstraints?.size) ?? relativeToPercent(remaining.relativeSize));
           leftToAllocate -= item.sizeInfo.exactSize;
         } else if (item.canGrow && remainingGrowable.addAmt >= 0) {
