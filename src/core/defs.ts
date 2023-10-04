@@ -161,11 +161,16 @@ export function exactToPx(val: number) {
   return `${val}${EXACT_SYMBOL}`;
 }
 
-export function parsedToFormatted(parsed: ParsedConstraint): string {
+export function parsedToFormatted(parsed: ParsedConstraint | ReturnType<typeof getSizeInfo>): string {
   if (!parsed) return undefined;
+  if ('relativeValue' in parsed) {
+    return parsed.relative
+      ? relativeToPercent(parsed.relativeValue)
+      : exactToPx(parsed.exactValue);
+  }
   return parsed.relative
-    ? relativeToPercent(parsed.relativeValue)
-    : exactToPx(parsed.exactValue);
+    ? relativeToPercent(parsed.relativeSize)
+    : exactToPx(parsed.exactSize);
 }
 
 export function parsePanelConstraints(val: PanelConstraints, comparativeSize: number) {
