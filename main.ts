@@ -37,6 +37,9 @@ function createTestPanel() {
 }
 
 const vSplitPanel = createTestPanel();
+
+(window as any).splitPanel = vSplitPanel;
+
 // vue app
 const app = createApp(defineComponent({
   name: 'TestApp',
@@ -45,10 +48,8 @@ const app = createApp(defineComponent({
     { class: 'h-100 w-100', splitPanel: vSplitPanel },
     {
       resize: (scope) => h('div', { class: 'panel-resize w-100 h-100' }, [`${scope.panel.id}: ${scope.panel.sizeInfo.formatted}`]),
+      drag: () => h('div', { class: 'split-panel-handle__inner' }),
       item: (scope) => h('div', { class: 'panel-item w-100 h-100' }, [
-        h('div', { class: 'split-panel-handle' }, [
-          h('div', { class: 'split-panel-handle__inner' }),
-        ]),
         `${scope.panel.id}: ${scope.panel.sizeInfo.formatted}`,
       ]),
     }
