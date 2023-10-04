@@ -664,6 +664,7 @@ class SplitPanel<DType = any> {
     this.strategyConstraints = constraints ?? {};
   }
 
+  /** Set the animation strategy for this panel */
   setAnimateStrategy(strategy: AnimateStrategy) {
     this._animateStrategy = strategy;
   }
@@ -681,11 +682,6 @@ class SplitPanel<DType = any> {
   /** Set if the current sizing strategy should turn off panel pushing */
   setPushPanels(val: boolean) {
     this._pushPanels = val;
-  }
-
-  /** Set the animation duration for auto resizing panels */
-  setAnimationDuration(val: number) {
-    this.animationDuration = val || 750;
   }
 
   /** Configure this panel based on the provided panel definition */
@@ -761,22 +757,39 @@ class SplitPanel<DType = any> {
     }
   }
 
-  /** Animate to a new size */
-  async animateResize(val: ConstraintType) {
+  async animateChildren(val: ConstraintType, items?: SplitPanel<DType>[],) {
     this._animateStrategyData?.cancel?.();
-    this.parent?.snapshotChildSizeInfo();
+    this.snapshotChildSizeInfo();
 
+    const newItems = items ?? this.children;
     const parsed = this.getSizeInfo(val);
 
-    this._animateStrategyData = this.animateStrategy?.(this, parsed);
+    this._animateStrategyData = this.animateStrategy?.(this, newItems, parsed);
     await this._animateStrategyData?.promise;
-    this.setSize(parsed.formatted);
 
-    if (!this.animateStrategy) {
-      this.parent?.satisfyConstraints({ items: this.siblings });
+    for (const item of newItems) {
+      item.setSize(parsed.formatted);
     }
 
-    this.parent?.clearChildSizeInfoSnapshot();
+    const others = negateChildren(this, newItems);
+
+    if (!this.animateStrategy) {
+      this.satisfyConstraints({ items: others });
+    }
+
+    this.clearChildSizeInfoSnapshot();
+  }
+
+  /** Animate this panel to a new size */
+  async animateResize(val: ConstraintType) {
+    await this.parent?.animateChildren(val, [this]);
+  }
+
+  /** Set all children to equal sizes */
+  async equalizeChildren() {
+    if (this.numChildren) {
+      await this.animateChildren(relativeToPercent(1 / this.numChildren));
+    }
   }
 
   async maximize() {

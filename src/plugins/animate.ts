@@ -1,28 +1,40 @@
 import anime from 'animejs';
 import {
-  relativeToPercent, exactToPx, type getSizeInfo, AnimateStrategy,
+  relativeToPercent, exactToPx, type getSizeInfo, AnimateStrategy, negateChildren,
 } from '@/core/defs';
 import type SplitPanel from '@/core/SplitPanel';
 
 export default function configureAnimate(config?: Omit<anime.AnimeAnimParams, 'update'>): AnimateStrategy {
-  return (panel: SplitPanel, sizeInfo: ReturnType<typeof getSizeInfo>) => {
+  return (panel: SplitPanel, items: SplitPanel[], sizeInfo: ReturnType<typeof getSizeInfo>) => {
     const timeline = anime.timeline();
-    const vals = {
-      size: sizeInfo.relative
-        ? relativeToPercent(panel.sizeInfo.relativeSize)
-        : exactToPx(panel.sizeInfo.exactSize),
-    };
+    const panelMap: Record<string, {
+      item: SplitPanel,
+      size: string,
+    }> = {};
+    const others = negateChildren(panel, items);
+    const vals = items.map((item) => {
+      panelMap[item.id] = {
+        item,
+        size: sizeInfo.relative
+          ? relativeToPercent(item.sizeInfo.relativeSize)
+          : exactToPx(item.sizeInfo.exactSize),
+      };
+      return panelMap[item.id];
+    });
 
     timeline
       .add({
-        duration: panel.animationDuration,
+        duration: config?.duration ?? 750,
         easing: 'easeInOutQuart',
         size: sizeInfo.formatted,
         ...config,
         targets: vals,
         update: () => {
-          panel.setSize(vals.size);
-          panel.parent?.satisfyConstraints({ incremental: true });
+          for (const id of Object.keys(panelMap)) {
+            panelMap[id].item.setSize(panelMap[id].size);
+          }
+
+          panel.satisfyConstraints({ incremental: true, items: others });
         },
       });
 

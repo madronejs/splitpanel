@@ -12,7 +12,7 @@ export type AnimateStrategyReturn = {
   promise: Promise<void>,
   cancel: () => void,
 };
-export type AnimateStrategy = (panel: SplitPanel, sizeInfo: ReturnType<typeof getSizeInfo>) => AnimateStrategyReturn
+export type AnimateStrategy = (panel: SplitPanel, items: SplitPanel[], sizeInfo: ReturnType<typeof getSizeInfo>) => AnimateStrategyReturn;
 
 export type PanelConstraints = {
   /** Minimum size */
