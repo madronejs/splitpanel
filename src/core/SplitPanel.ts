@@ -99,6 +99,10 @@ class SplitPanel<DType = any> {
   @reactive rect: BoxRect;
   /** The html element this panel represents */
   @reactive containerEl: HTMLElement;
+  /** Unbind all events for container el */
+  @reactive private _unbindContainerEl: () => void;
+  /** The html element containing the content of the panel */
+  @reactive contentEl: HTMLElement;
   /** Unbind all events for resize el */
   @reactive private _unbindResizeEl: () => void;
   /** Selector for the resize element */
@@ -246,10 +250,14 @@ class SplitPanel<DType = any> {
 
   @reactive private _unbindRoot?: () => void;
   /** Unbind all the event listeners and cleanup */
-  @computed get unbind() {
-    return this.isRoot ? this._unbindRoot : () => {
-      this._unbindResizeEl?.();
-    };
+  unbind() {
+    this._unbindResizeEl?.();
+    this._unbindContainerEl?.();
+    this._draggableStrategyData?.unbind?.();
+
+    if (this.isRoot) {
+      this._unbindRoot?.();
+    }
   }
 
   @reactive private _children: Array<SplitPanel<DType>>;
@@ -909,15 +917,21 @@ class SplitPanel<DType = any> {
     }
   }
 
-  /** Attach a dom element to this panel */
+  /** Attach a DOM element to this panel */
   attachEl(
     /** The element to attach */
     el: HTMLElement,
   ) {
     if (this.containerEl !== el) {
+      this._unbindContainerEl?.();
+
+      const toUnbind: Array<(() => void)> = [];
+
       if (this.containerEl && this._observeElement) {
-        this.resizeObserver.unobserve(this.containerEl);
-        this._removeRootCb(this.containerEl, 'resize');
+        toUnbind.push(() => {
+          this.resizeObserver.unobserve(this.containerEl);
+          this._removeRootCb(this.containerEl, 'resize');
+        });
       }
 
       this.containerEl = el;
@@ -933,10 +947,24 @@ class SplitPanel<DType = any> {
       if (!this.resizeEl && this._resizeElSelector) {
         this.attachResizeEl(this._resizeElSelector);
       }
+
+      this._unbindContainerEl = () => {
+        for (const cb of toUnbind) cb();
+      };
     }
   }
 
-  /** Attach a dom element to act as the resize */
+  /** Attach a DOM element to act as the content for this panel */
+  attachContentEl(el: HTMLElement) {
+    this._draggableStrategyData?.unbind?.();
+    this.contentEl = el;
+
+    if (el) {
+      this._draggableStrategyData = this.draggableStrategy?.(this);
+    }
+  }
+
+  /** Attach a DOM element to act as the resize */
   attachResizeEl(
     /** The element to use as the resize or a css selector */
     el: HTMLElement | string,
