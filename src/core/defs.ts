@@ -315,7 +315,6 @@ export function getSizeInfo(
   if (size) {
     newRelativeSize = Math.max(size.relativeValue, newRelativeSize);
     newSize = Math.max(size.exactValue, newSize);
-    // useRelative = size.relative;
     appliedSize = true;
   }
 
@@ -337,10 +336,6 @@ export function getSizeInfo(
     newRelativeSize = Math.min(maxSize.relativeValue, newRelativeSize);
     newSize = Math.min(maxSize.exactValue, newSize);
     appliedMax = originSize !== newSize;
-
-    // if (appliedMax) {
-    //   useRelative = false;
-    // }
   }
 
   newRelativeSize = roundVal(newRelativeSize);
