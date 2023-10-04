@@ -1,5 +1,7 @@
 import anime from 'animejs';
-import { relativeToPercent, exactToPx, type getSizeInfo, AnimateStrategy } from '@/core/defs'
+import {
+  relativeToPercent, exactToPx, type getSizeInfo, AnimateStrategy,
+} from '@/core/defs';
 import type SplitPanel from '@/core/SplitPanel';
 
 export default function configureAnimate(config?: Omit<anime.AnimeAnimParams, 'update'>): AnimateStrategy {
@@ -28,6 +30,5 @@ export default function configureAnimate(config?: Omit<anime.AnimeAnimParams, 'u
       promise: timeline.finished,
       cancel: () => timeline.pause(),
     };
-  }
+  };
 }
-

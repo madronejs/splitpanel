@@ -843,14 +843,18 @@ class SplitPanel<DType = any> {
           item.setSize(remaining.percent);
           leftToAllocate -= item.sizeInfo.exactSize;
         } else if (item.canGrow && remainingGrowable.addAmt >= 0) {
-          options?.incremental
-            ? item.addSize(remainingGrowable.addAmt)
-            : item.setSize(remainingGrowable.percent);
+          if (options?.incremental) {
+            item.addSize(remainingGrowable.addAmt);
+          } else {
+            item.setSize(remainingGrowable.percent);
+          }
           leftToAllocate -= item.sizeInfo.exactSize;
         } else if (item.canShrink && remainingShrinkable.addAmt < 0) {
-          options?.incremental
-            ? item.addSize(remainingShrinkable.addAmt)
-            : item.setSize(remainingShrinkable.percent);
+          if (options?.incremental) {
+            item.addSize(remainingShrinkable.addAmt);
+          } else {
+            item.setSize(remainingShrinkable.percent);
+          }
           leftToAllocate -= item.sizeInfo.exactSize;
         }
       }
