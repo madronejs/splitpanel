@@ -26,6 +26,7 @@ import {
   PANEL_DIRECTION,
   type PanelConstraints,
   parseConstraint,
+  parsedToFormatted,
   parsePanelConstraints,
   relativeToPercent,
   resizeEntryToBoxRect,
@@ -80,7 +81,6 @@ class SplitPanel<DType = any> {
     this.setResizeElSize(options?.resizeElSize);
     this.setResizeElBorderStyle(options?.resizeElBorderStyle);
     this.setShowFirstResizeEl(options?.showFirstResizeEl);
-    this.setAnimationDuration(options?.animationDuration);
     this.setExpandTolerance(options?.expandTolerance);
     this.setRect(options?.rect);
     this.setFlattenStrategy(options?.flattenStrategy);
@@ -95,8 +95,6 @@ class SplitPanel<DType = any> {
   @reactive constraints: PanelConstraints;
   /** Constraints defined by the resize strategy */
   @reactive strategyConstraints: PanelConstraints;
-  /** Animation duration in milliseconds */
-  @reactive animationDuration: number;
   /** Current element's box */
   @reactive rect: BoxRect;
   /** The html element this panel represents */
@@ -404,6 +402,8 @@ class SplitPanel<DType = any> {
     return Boolean(this._size);
   }
 
+  /** The first size this panel was set to */
+  @reactive originalSize?: ConstraintType;
   @reactive private _size?: ConstraintType;
   /** The finalized size information based on all constraints */
   @computed get sizeInfo() {
@@ -735,6 +735,7 @@ class SplitPanel<DType = any> {
     /** The new size (can be in px or %) */
     val: ConstraintType,
   ) {
+    this.originalSize ??= val;
     this._size = val;
   }
 
@@ -757,18 +758,20 @@ class SplitPanel<DType = any> {
     }
   }
 
-  async animateChildren(val: ConstraintType, items?: SplitPanel<DType>[],) {
+  async animateChildren(val?: ConstraintType, items?: SplitPanel<DType>[],) {
     this._animateStrategyData?.cancel?.();
     this.snapshotChildSizeInfo();
 
     const newItems = items ?? this.children;
-    const parsed = this.getSizeInfo(val);
+    const parsed = val == null ? undefined : this.getSizeInfo(val);
 
     this._animateStrategyData = this.animateStrategy?.(this, newItems, parsed);
     await this._animateStrategyData?.promise;
 
-    for (const item of newItems) {
-      item.setSize(parsed.formatted);
+    if (parsed) {
+      for (const item of newItems) {
+        item.setSize(parsed.formatted);
+      }
     }
 
     const others = negateChildren(this, newItems);
@@ -786,9 +789,16 @@ class SplitPanel<DType = any> {
   }
 
   /** Set all children to equal sizes */
-  async equalizeChildren() {
+  async equalizeChildrenSizes() {
     if (this.numChildren) {
       await this.animateChildren(relativeToPercent(1 / this.numChildren));
+    }
+  }
+
+  /** Set all children to their original sizes */
+  async resetChildrenSizes() {
+    if (this.numChildren) {
+      await this.animateChildren();
     }
   }
 
@@ -841,35 +851,42 @@ class SplitPanel<DType = any> {
       const relativeSize = fractionRemaining / divideBy;
       return (Number.isNaN(relativeSize) || !Number.isFinite(relativeSize)) ? undefined : {
         addAmt: diff / divideBy,
-        percent: relativeToPercent(fractionRemaining / divideBy),
+        relativeSize,
       };
     };
 
-    const remaining = getRemaining(itemsToConsider.length);
-
-    if (remaining) {
-      const remainingGrowable = getRemaining(itemsToConsider.filter((item) => item.canGrow).length);
-      const remainingShrinkable = getRemaining(itemsToConsider.filter((item) => item.canShrink).length);
+    if (this.rectSize && Number.isFinite(this.rectSize)) {
+      const remainingToObserve = new Set<SplitPanel<DType>>(itemsToConsider);
+      const shrinkableToObserve = new Set<SplitPanel<DType>>(itemsToConsider.filter((item) => item.canShrink));
+      const growableToObserve = new Set<SplitPanel<DType>>(itemsToConsider.filter((item) => item.canGrow));
 
       for (const item of itemsToConsider) {
+        const remaining = getRemaining(remainingToObserve.size);
+        const remainingGrowable = getRemaining(growableToObserve.size);
+        const remainingShrinkable = getRemaining(shrinkableToObserve.size);
+
         if (!item.hasSize) {
-          item.setSize(remaining.percent);
+          item.setSize(parsedToFormatted(item.parsedConstraints?.size) ?? relativeToPercent(remaining.relativeSize));
           leftToAllocate -= item.sizeInfo.exactSize;
         } else if (item.canGrow && remainingGrowable.addAmt >= 0) {
           if (options?.incremental) {
             item.addSize(remainingGrowable.addAmt);
           } else {
-            item.setSize(remainingGrowable.percent);
+            item.setSize(relativeToPercent(remainingGrowable.relativeSize));
           }
           leftToAllocate -= item.sizeInfo.exactSize;
         } else if (item.canShrink && remainingShrinkable.addAmt < 0) {
           if (options?.incremental) {
             item.addSize(remainingShrinkable.addAmt);
           } else {
-            item.setSize(remainingShrinkable.percent);
+            item.setSize(relativeToPercent(remainingShrinkable.relativeSize));
           }
           leftToAllocate -= item.sizeInfo.exactSize;
         }
+
+        remainingToObserve.delete(item);
+        shrinkableToObserve.delete(item);
+        growableToObserve.delete(item);
       }
     }
   }

@@ -12,7 +12,7 @@ export type AnimateStrategyReturn = {
   promise: Promise<void>,
   cancel: () => void,
 };
-export type AnimateStrategy = (panel: SplitPanel, items: SplitPanel[], sizeInfo: ReturnType<typeof getSizeInfo>) => AnimateStrategyReturn;
+export type AnimateStrategy = (panel: SplitPanel, items: SplitPanel[], sizeInfo?: ReturnType<typeof getSizeInfo>) => AnimateStrategyReturn;
 
 export type PanelConstraints = {
   /** Minimum size */
@@ -153,6 +153,21 @@ export function parseConstraint(val: string | number, comparativeSize: number): 
   return { relative, relativeValue, exactValue };
 }
 
+export function relativeToPercent(val: number) {
+  return `${val * RELATIVE_MULTIPLIER}${RELATIVE_SYMBOL}`;
+}
+
+export function exactToPx(val: number) {
+  return `${val}${EXACT_SYMBOL}`;
+}
+
+export function parsedToFormatted(parsed: ParsedConstraint): string {
+  if (!parsed) return undefined;
+  return parsed.relative
+    ? relativeToPercent(parsed.relativeValue)
+    : exactToPx(parsed.exactValue);
+}
+
 export function parsePanelConstraints(val: PanelConstraints, comparativeSize: number) {
   const constraints: ParsedPanelConstraints = {};
 
@@ -167,14 +182,6 @@ export function resizeEntryToBoxRect(data: ResizeObserverEntry) {
   const target = data.target as HTMLElement;
   const rect = target.getBoundingClientRect();
   return pick(rect, ['x', 'y', 'width', 'height']) as BoxRect;
-}
-
-export function relativeToPercent(val: number) {
-  return `${val * RELATIVE_MULTIPLIER}${RELATIVE_SYMBOL}`;
-}
-
-export function exactToPx(val: number) {
-  return `${val}${EXACT_SYMBOL}`;
 }
 
 export function getCoordFromMouseEvent(e: MouseEvent): BoxCoord {
@@ -303,7 +310,7 @@ export function getSizeInfo(
     comparativeSize?: number;
   },
 ) {
-  const { minSize, maxSize, size } = options.parsedConstraints;
+  const { minSize, maxSize } = options.parsedConstraints;
   const parsedSize = options.size === undefined ? undefined : parseConstraint(options.size, options.comparativeSize);
   let newRelativeSize = parsedSize?.relativeValue ?? options.relativeSize;
   let newSize = parsedSize?.exactValue ?? options.rectSize ?? 0;
@@ -311,12 +318,6 @@ export function getSizeInfo(
   let appliedMin = false;
   let appliedMax = false;
   let appliedSize = false;
-
-  if (size) {
-    newRelativeSize = Math.max(size.relativeValue, newRelativeSize);
-    newSize = Math.max(size.exactValue, newSize);
-    appliedSize = true;
-  }
 
   if (minSize) {
     const originSize = newSize;
