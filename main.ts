@@ -1,16 +1,18 @@
-import { createApp, defineComponent, reactive, computed, watch, toRaw, h } from 'vue';
+import {
+  createApp, defineComponent, reactive, computed, watch, toRaw, h,
+} from 'vue';
 import Madrone, { MadroneVue3 } from '@madronejs/core';
 import { SplitPanel } from './src';
 import SplitPanelView from './src/render/webComponent';
 import { default as VueSplitPanelView } from './src/render/vue3';
 import configureAnimate from './src/plugins/animate';
 
+import './src/style.scss';
+import './testStyle.scss';
+
 Madrone.use(MadroneVue3({
   reactive, computed, watch, toRaw,
 }));
-
-import './src/style.scss';
-import './testStyle.scss';
 
 function createTestPanel() {
   const panel = SplitPanel.create({
@@ -25,7 +27,7 @@ function createTestPanel() {
     ],
   });
 
-  panel.setAnimateStrategy(configureAnimate())
+  panel.setAnimateStrategy(configureAnimate());
 
   return panel;
 }
