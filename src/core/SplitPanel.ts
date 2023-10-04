@@ -744,8 +744,10 @@ class SplitPanel<DType = any> {
     /** The new size (can be in px or %) */
     val: ConstraintType,
   ) {
+    const info = this.getSizeInfo(val);
+
     this.originalSize ??= val;
-    this._size = val;
+    this._size = parsedToFormatted(info);
   }
 
   /** Set the size of this panel and resize its siblings based on the resize strategy */

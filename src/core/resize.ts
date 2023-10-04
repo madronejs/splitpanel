@@ -102,7 +102,7 @@ export function resizeNeighbors(panel: SplitPanel, val: ConstraintType) {
         SIBLING_RELATION.after,
         (sibling) => sibling.canGrow && (
           !sibling.sizeInfoSnapshot
-          || sibling.sizeInfoSnapshot.relativeSize >= sibling.sizeInfo.relativeSize
+          || sibling.sizeInfoSnapshot.relativeSize > sibling.sizeInfo.relativeSize
         ),
       );
 
@@ -142,13 +142,13 @@ export function resizeNeighbors(panel: SplitPanel, val: ConstraintType) {
       const beforeSumLess = beforeSumCurrent < beforeSumOriginal;
       let growableBefore: SplitPanel;
 
-      if (panel.dragRelation === SIBLING_RELATION.after && beforeSumLess) {
+      if ((panel.dragRelation === SIBLING_RELATION.after || panelGrowing) && beforeSumLess) {
         growableBefore = findFurthestSibling(
           panel,
           SIBLING_RELATION.before,
           (sibling) => sibling.canGrow && (
             !sibling.sizeInfoSnapshot
-            || sibling.sizeInfoSnapshot.relativeSize >= sibling.sizeInfo.relativeSize
+            || sibling.sizeInfoSnapshot.relativeSize > sibling.sizeInfo.relativeSize
           ),
         );
 
