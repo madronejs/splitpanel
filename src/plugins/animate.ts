@@ -18,7 +18,7 @@ export default function configureAnimate(config?: Omit<anime.AnimeAnimParams, 'u
         ? relativeToPercent(item.sizeInfo.relativeSize)
         : exactToPx(item.sizeInfo.exactSize);
       const targets = { size: startSize };
-      const finalSize = item.getSizeInfo(sizeInfo?.formatted ?? item.originalSize);
+      const finalSize = item.getSizeInfo(sizeInfo?.formatted ?? item.originalSize).formatted;
 
       timeline
         .add({
