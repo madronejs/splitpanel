@@ -4,6 +4,8 @@
   "private": false,
   "files": [
     "dist/*.js",
+    "dist/*.mjs",
+    "dist/*.css",
     "types/**/*.d.ts"
   ],
   "keywords": [
@@ -33,20 +35,20 @@
   },
   "exports": {
     ".": {
-      "import": "./dist/index.js",
-      "require": "./dist/index.umd.js"
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.js"
     },
     "./vue3": {
-      "import": "./dist/vue3.js",
-      "require": "./dist/vue3.cjs"
+      "import": "./dist/vue3.mjs",
+      "require": "./dist/vue3.js"
     },
     "./webc": {
-      "import": "./dist/webComponent.js",
-      "require": "./dist/webComponent.cjs"
+      "import": "./dist/webComponent.mjs",
+      "require": "./dist/webComponent.js"
     },
     "./animate": {
-      "import": "./dist/animate.js",
-      "require": "./dist/animate.cjs"
+      "import": "./dist/animate.mjs",
+      "require": "./dist/animate.js"
     },
     "./style": "./dist/style.css"
   },
