@@ -1,5 +1,11 @@
 import {
-  defineComponent, VNode, h, shallowRef, PropType, watch, useSlots,
+  defineComponent,
+  type VNode,
+  h,
+  shallowRef,
+  type PropType,
+  watch,
+  useSlots,
 } from 'vue';
 
 import SplitPanel from '@/core/SplitPanel';
