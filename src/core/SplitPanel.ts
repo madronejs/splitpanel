@@ -67,6 +67,7 @@ class SplitPanel<DType = any> {
     this._onMouseMove = this._onMouseMove.bind(this);
     this._onMouseover = this._onMouseover.bind(this);
     this._onMouseout = this._onMouseout.bind(this);
+    this.unbind = this.unbind.bind(this);
     // This._onElementClick = this._onElementClick.bind(this);
     // setup
     this._children = [];
