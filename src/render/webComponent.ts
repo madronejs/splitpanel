@@ -128,6 +128,12 @@ export default class SplitPanelView<DType = any> extends HTMLElement {
         }
       }, { immediate: true }),
       // DRAGGING
+      watch(() => splitPanel.id, (val) => {
+        if (val) {
+          this.dataset.panelId = val;
+        }
+      }, { immediate: true }),
+      // DRAGGING
       watch(() => splitPanel.dragging, (val) => {
         if (val) {
           this.classList.add(SplitPanelView.classNames.dragging);
@@ -222,6 +228,7 @@ export default class SplitPanelView<DType = any> extends HTMLElement {
       this.append(el);
       this._panelElementMap[name] = el;
       this._panelSlotMap[name] = slot;
+      this.splitPanel.attachContentEl(el);
     }
   }
 
