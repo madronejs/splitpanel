@@ -22,8 +22,11 @@ export function flattenDepthFirst(items: SplitPanelDef | SplitPanelDef[]) {
 
 export function flattenBreadthFirst(items: SplitPanelDef | SplitPanelDef[]) {
   const flat: SplitPanelDef[] = [items].flat();
+  // need to shallow clone array otherwise we iterate
+  // over the new items we're adding
+  const shallowClone = [...flat];
 
-  for (const item of flat.slice()) {
+  for (const item of shallowClone) {
     const children = getChildren(item);
 
     if (children.length > 0) {

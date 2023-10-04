@@ -1,9 +1,8 @@
-import anime from 'animejs';
 import cloneDeep from 'lodash/cloneDeep';
 import debounce from 'lodash/debounce';
 import uniqBy from 'lodash/uniqBy';
 import uniqueId from 'lodash/uniqueId';
-import { computed, reactive } from 'madronejs';
+import { computed, reactive } from '@madronejs/core';
 import { v4 as uuid } from 'uuid';
 
 import {
@@ -14,6 +13,8 @@ import {
   type ConstraintType,
   DIMENSION,
   exactToPx,
+  type AnimateStrategy,
+  type AnimateStrategyReturn,
   type FlattenStrategy,
   getChildInfo,
   getCoordFromMouseEvent,
@@ -159,6 +160,13 @@ class SplitPanel<DType = any> {
   /** The border style for the resize element */
   @computed get resizeElBorderStyle() {
     return this._resizeElBorderStyle ?? this.parent?._resizeElBorderStyle;
+  }
+
+  @reactive private _animateStrategy: AnimateStrategy;
+  @reactive private _animateStrategyData: AnimateStrategyReturn;
+  /** How to animate the panel */
+  @computed get animateStrategy() {
+    return this._animateStrategy ?? this.parent?.animateStrategy;
   }
 
   @reactive private _flattenStrategy: FlattenStrategy;
@@ -420,10 +428,11 @@ class SplitPanel<DType = any> {
 
   /** Styles to apply to the attached element */
   @computed get style() {
-    const { formatted, appliedMin, appliedMax } = this.sizeInfo;
+    const { formatted, exactMin, exactMax } = this.sizeInfo;
     const style: Record<string, any> = {};
 
     if (!this.isRoot) {
+      style[this.directionInfo.dimensionInverse] = null;
       style[this.directionInfo.dimension] = formatted;
 
       if (this.canResize && (this.dragging || this.hovering)) {
@@ -433,9 +442,11 @@ class SplitPanel<DType = any> {
       }
     }
 
-    style['flex-direction'] = this.parent?.direction ?? this.direction;
-    style[`min-${this.directionInfo.dimension}`] = appliedMin ? formatted : null;
-    style[`max-${this.directionInfo.dimension}`] = appliedMax ? formatted : null;
+    style[`min-${this.directionInfo.dimensionInverse}`] = null;
+    style[`max-${this.directionInfo.dimensionInverse}`] = null;
+    style[`min-${this.directionInfo.dimension}`] = exactToPx(exactMin);
+    style[`max-${this.directionInfo.dimension}`] = exactToPx(exactMax);
+
     return camelCaseObject(style);
   }
 
@@ -640,6 +651,7 @@ class SplitPanel<DType = any> {
   /** Set the direction of this panel */
   setDirection(direction: PANEL_DIRECTION) {
     this._direction = direction;
+    this.satisfyConstraints();
   }
 
   /** Set this panel's size constraints */
@@ -650,6 +662,10 @@ class SplitPanel<DType = any> {
   /** Used in the resize strategies -- strategy specific sizing constraints */
   setStrategyConstraints(constraints: PanelConstraints) {
     this.strategyConstraints = constraints ?? {};
+  }
+
+  setAnimateStrategy(strategy: AnimateStrategy) {
+    this._animateStrategy = strategy;
   }
 
   /** Set the flatten strategy for this panel */
@@ -745,37 +761,21 @@ class SplitPanel<DType = any> {
     }
   }
 
-  private _animationTimeline: ReturnType<typeof anime.timeline>;
-
   /** Animate to a new size */
   async animateResize(val: ConstraintType) {
-    this._animationTimeline?.pause();
+    this._animateStrategyData?.cancel?.();
+    this.parent?.snapshotChildSizeInfo();
 
     const parsed = this.getSizeInfo(val);
-    const vals = {
-      size: parsed.relative
-        ? relativeToPercent(this.sizeInfo.relativeSize)
-        : exactToPx(this.sizeInfo.exactSize),
-    };
-    const timeline = anime.timeline();
 
-    this.parent?.snapshotChildSizeInfo();
-    timeline
-      .add({
-        targets: vals,
-        duration: this.animationDuration,
-        easing: 'easeInOutQuart',
-        size: parsed.formatted,
-        update: () => {
-          this.setSize(vals.size);
-          this.parent?.satisfyConstraints();
-        },
-      });
-
-    this._animationTimeline = timeline;
-    await timeline.finished;
+    this._animateStrategyData = this.animateStrategy?.(this, parsed);
+    await this._animateStrategyData?.promise;
     this.setSize(parsed.formatted);
-    this.parent?.satisfyConstraints();
+
+    if (!this.animateStrategy) {
+      this.parent?.satisfyConstraints({ items: this.siblings });
+    }
+
     this.parent?.clearChildSizeInfoSnapshot();
   }
 
@@ -802,7 +802,13 @@ class SplitPanel<DType = any> {
   }
 
   /** Satisfy the constraints for the given items, or all children if no items passed in */
-  satisfyConstraints(items?: SplitPanel<DType> | Array<SplitPanel<DType>>) {
+  satisfyConstraints(
+    options?: {
+      incremental?: boolean,
+      items?: SplitPanel<DType> | Array<SplitPanel<DType>>,
+    }
+  ) {
+    const items = options?.items;
     const newItems = items ? [items].flat().filter(Boolean) : undefined;
     const itemsToConsider = newItems || this.children;
 
@@ -837,10 +843,18 @@ class SplitPanel<DType = any> {
           item.setSize(remaining.percent);
           leftToAllocate -= item.sizeInfo.exactSize;
         } else if (item.canGrow && remainingGrowable.addAmt >= 0) {
-          item.addSize(remainingGrowable.addAmt);
+          if (options?.incremental) {
+            item.addSize(remainingGrowable.addAmt);
+          } else {
+            item.setSize(remainingGrowable.percent);
+          }
           leftToAllocate -= item.sizeInfo.exactSize;
         } else if (item.canShrink && remainingShrinkable.addAmt < 0) {
-          item.addSize(remainingShrinkable.addAmt);
+          if (options?.incremental) {
+            item.addSize(remainingShrinkable.addAmt);
+          } else {
+            item.setSize(remainingShrinkable.percent);
+          }
           leftToAllocate -= item.sizeInfo.exactSize;
         }
       }

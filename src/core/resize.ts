@@ -50,7 +50,7 @@ export function resizeAll(panel: SplitPanel, val: ConstraintType) {
   }
 
   if (toSatisfy.length > 0) {
-    panel.parent.satisfyConstraints(toSatisfy);
+    panel.parent.satisfyConstraints({ items: toSatisfy });
   }
 }
 
@@ -177,13 +177,13 @@ export function resizeNeighbors(panel: SplitPanel, val: ConstraintType) {
   }
 
   if (toSatisfy.length > 0) {
-    panel.parent.satisfyConstraints(toSatisfy);
+    panel.parent.satisfyConstraints({ items: toSatisfy });
   }
 
   // In the event that we're not dragging, and the relative size of all children exceeds 100%,
   // we need to rebalance all siblings to match the constraints.
   if (!panel.dragging && panel.parent?.totalChildRelativeSizes > 1) {
-    panel.parent.satisfyConstraints(panel.siblings);
+    panel.parent.satisfyConstraints({ items: panel.siblings });
   }
 
   // Clear out any strategy constraints

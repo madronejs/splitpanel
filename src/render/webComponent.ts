@@ -1,4 +1,4 @@
-import { reactive, computed, watch } from 'madronejs';
+import { computed, reactive, watch } from '@madronejs/core';
 import difference from 'lodash/difference';
 import type SplitPanel from '@/core/SplitPanel';
 
@@ -104,6 +104,14 @@ export default class SplitPanelView<DType = any> extends HTMLElement {
     this._root = val;
   }
 
+  setStyles(styles?: Record<string, any>) {
+    const val = styles || this.splitPanel?.style || {};
+
+    for (const key of Object.keys(val)) {
+      this.style[key] = val[key];
+    }
+  }
+
   setSplitPanel(splitPanel: SplitPanel<DType>) {
     if (!splitPanel) return;
 
@@ -135,9 +143,7 @@ export default class SplitPanelView<DType = any> extends HTMLElement {
       // STYLE
       watch(() => splitPanel.style, (val) => {
         this._styleTasks.push(() => {
-          for (const key of Object.keys(val)) {
-            this.style[key] = val[key];
-          }
+          this.setStyles(val);
         });
         this._runStyleTasks();
       }),

@@ -8,6 +8,11 @@ import type SplitPanel from './SplitPanel';
 export type ConstraintType = string | number;
 export type ResizeStrategy = (panel: SplitPanel, val: ConstraintType) => void;
 export type FlattenStrategy = (items: SplitPanelDef[]) => SplitPanelDef[];
+export type AnimateStrategyReturn = {
+  promise: Promise<void>,
+  cancel: () => void,
+};
+export type AnimateStrategy = (panel: SplitPanel, sizeInfo: ReturnType<typeof getSizeInfo>) => AnimateStrategyReturn
 
 export type PanelConstraints = {
   /** Minimum size */
@@ -302,7 +307,7 @@ export function getSizeInfo(
   const parsedSize = options.size === undefined ? undefined : parseConstraint(options.size, options.comparativeSize);
   let newRelativeSize = parsedSize?.relativeValue ?? options.relativeSize;
   let newSize = parsedSize?.exactValue ?? options.rectSize ?? 0;
-  let useRelative = parsedSize?.relative ?? false;
+  let useRelative = true;
   let appliedMin = false;
   let appliedMax = false;
   let appliedSize = false;
@@ -310,27 +315,22 @@ export function getSizeInfo(
   if (size) {
     newRelativeSize = Math.max(size.relativeValue, newRelativeSize);
     newSize = Math.max(size.exactValue, newSize);
-    useRelative = size.relative;
     appliedSize = true;
   }
 
   if (minSize) {
-    if (minSize.exactValue >= newSize) {
-      useRelative = false;
-    }
-
     const originSize = newSize;
 
     newRelativeSize = Math.max(minSize.relativeValue, newRelativeSize);
     newSize = Math.max(minSize.exactValue, newSize);
     appliedMin = originSize !== newSize;
+
+    if (appliedMin) {
+      useRelative = false;
+    }
   }
 
   if (maxSize) {
-    if (maxSize.exactValue <= newSize) {
-      useRelative = false;
-    }
-
     const originSize = newSize;
 
     newRelativeSize = Math.min(maxSize.relativeValue, newRelativeSize);

@@ -1,7 +1,13 @@
-import { defineComponent, VNode, Slots, h, shallowRef, PropType, watch, useSlots } from 'vue';
+import {
+  defineComponent, VNode, h, shallowRef, PropType, watch, useSlots,
+} from 'vue';
 
-import SplitPanel from '@/core/SplitPanel'
+import SplitPanel from '@/core/SplitPanel';
 import SplitPanelView from './webComponent';
+
+function makeScope(panel: SplitPanel) {
+  return { panel };
+}
 
 export default defineComponent({
   name: 'SplitPanelView',
@@ -11,10 +17,6 @@ export default defineComponent({
   setup(props) {
     const splitPanelRef = shallowRef<SplitPanelView>();
     const slots = useSlots();
-
-    function makeScope(panel: SplitPanel) {
-      return { panel };
-    }
 
     watch(() => splitPanelRef.value, async (panelRef) => {
       await SplitPanelView.register();
@@ -32,13 +34,13 @@ export default defineComponent({
     };
   },
   render() {
-    const slots: Slots = this.slots;
-    const splitPanel: SplitPanel = this.splitPanel;
+    const { slots } = this;
+    const { splitPanel } = this;
     const itemContainers: VNode[] = [];
     const resizeContainers: VNode[] = [];
 
     if (splitPanel?.allChildren && (slots.item || slots.resize)) {
-      splitPanel.allChildren.forEach((child) => {
+      for (const child of splitPanel.allChildren) {
         const scope = this.makeScope(child);
 
         if (slots.item) {
@@ -47,7 +49,7 @@ export default defineComponent({
               'div',
               {
                 slot: SplitPanelView.itemSlotName(child),
-                class: 'split-panel-content__inner'
+                class: 'split-panel-content__inner',
               },
               slots.item(scope)
             )
@@ -60,13 +62,13 @@ export default defineComponent({
               'div',
               {
                 slot: SplitPanelView.resizeSlotName(child),
-                class: 'split-panel-resize__inner'
+                class: 'split-panel-resize__inner',
               },
               slots.resize(scope)
             )
           );
         }
-      });
+      }
     }
 
     return h(SplitPanelView.tag, {

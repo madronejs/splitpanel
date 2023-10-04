@@ -1,12 +1,36 @@
 {
   "name": "@madronejs/splitpanel",
   "version": "0.0.0",
-  "type": "module",
+  "private": false,
   "files": [
     "dist/*.js",
     "types/**/*.d.ts"
   ],
-  "types": "types",
+  "keywords": [
+    "splitpanel",
+    "splitpane",
+    "panel",
+    "drag",
+    "draggable",
+    "resizable",
+    "madrone",
+    "vue",
+    "web components"
+  ],
+  "types": "types/core/index.d.ts",
+  "typesVersions": {
+    "*": {
+      "vue3": [
+        "./types/render/vue3.d.ts"
+      ],
+      "webc": [
+        "./types/render/webComponent.d.ts"
+      ],
+      "animate": [
+        "./types/plugins/animate.d.ts"
+      ]
+    }
+  },
   "exports": {
     ".": {
       "import": "./dist/index.js",
@@ -16,16 +40,27 @@
       "import": "./dist/vue3.js",
       "require": "./dist/vue3.cjs"
     },
+    "./webc": {
+      "import": "./dist/webComponent.js",
+      "require": "./dist/webComponent.cjs"
+    },
+    "./animate": {
+      "import": "./dist/animate.js",
+      "require": "./dist/animate.cjs"
+    },
     "./style": "./dist/style.css"
   },
   "scripts": {
     "dev": "vite",
     "test": "vitest",
     "lint": "eslint src/ --ext .js,.jsx,.ts,.tsx",
-    "build": "tsc && vite build",
+    "build-types": "rm -rf types && tsc -p ./tsconfig.json && tsc-alias -p tsconfig.json",
+    "build": "rm -rf dist && pnpm build-types && vite build",
     "preview": "vite preview"
   },
   "devDependencies": {
+    "@rollup/plugin-terser": "^0.4.3",
+    "@types/animejs": "^3.1.8",
     "@typescript-eslint/eslint-plugin": "^6.7.3",
     "@typescript-eslint/parser": "^6.7.3",
     "eslint": "^8.50.0",
@@ -33,16 +68,19 @@
     "eslint-plugin-import": "^2.28.1",
     "eslint-plugin-unicorn": "^48.0.1",
     "sass": "^1.68.0",
+    "tsc-alias": "^1.8.8",
     "typescript": "^5.2.2",
-    "vite": "^4.4.5",
+    "vite": "^4.4.10",
     "vue": "^3.3.4"
   },
   "dependencies": {
     "animejs": "^3.2.1",
     "lodash": "^4.17.21",
-    "madronejs": "^1.0.16",
     "uuid": "^9.0.1",
     "vitest": "^0.34.6"
+  },
+  "peerDependencies": {
+    "@madronejs/core": "^1.0.16"
   },
   "engines": {
     "node": "^18.8",
