@@ -254,7 +254,6 @@ class SplitPanel<DType = any> {
   unbind() {
     this._unbindResizeEl?.();
     this._unbindContainerEl?.();
-    this._draggableStrategyData?.unbind?.();
 
     if (this.isRoot) {
       this._unbindRoot?.();
@@ -960,12 +959,7 @@ class SplitPanel<DType = any> {
 
   /** Attach a DOM element to act as the content for this panel */
   attachContentEl(el: HTMLElement) {
-    this._draggableStrategyData?.unbind?.();
     this.contentEl = el;
-
-    if (el) {
-      this._draggableStrategyData = this.draggableStrategy?.(this);
-    }
   }
 
   /** Attach a DOM element to act as the resize */
