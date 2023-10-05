@@ -1,13 +1,17 @@
 import {
   defineComponent,
+  getCurrentInstance,
+  render,
+  ref,
   type VNode,
   h,
   shallowRef,
   type PropType,
   watch,
+  watchEffect,
   useSlots,
 } from 'vue';
-
+import pick from 'lodash/pick';
 import SplitPanel from '@/core/SplitPanel';
 import SplitPanelView from './webComponent';
 
@@ -24,6 +28,60 @@ export default defineComponent({
     const splitPanelRef = shallowRef<SplitPanelView>();
     const slots = useSlots();
 
+    type SlotType = 'item' | 'resize';
+    type ContentMapEntryType = Record<SlotType, HTMLElement> & {
+      added: boolean,
+    }
+
+    const instance = getCurrentInstance();
+    const refreshContent = ref(0);
+    let contentElementMap: Record<string, ContentMapEntryType> = {};
+
+    function renderToDiv(vnode: VNode, element: HTMLDivElement) {
+      // Took some inspiration from https://github.com/pearofducks/mount-vue-component
+      vnode.appContext = instance.appContext;
+
+      render(vnode, element);
+      return element;
+    }
+
+    function renderItem(item: SplitPanel, element: HTMLDivElement) {
+      if (element) {
+        return renderToDiv(h(slots.item, makeScope(item)), element);
+      }
+
+      return '';
+    }
+
+    function generateContent() {
+      const val = props.splitPanel.allChildren;
+      const ids = Object.keys(props.splitPanel.allChildMap);
+
+      contentElementMap = pick(contentElementMap, ids);
+
+      for (const item of val) {
+        const itemEl = document.createElement('div');
+
+        itemEl.slot = SplitPanelView.itemSlotName(item);
+        renderItem(item, itemEl);
+
+        const itemResizeEl = document.createElement('div');
+
+        itemResizeEl.slot = SplitPanelView.resizeSlotName(item);
+        renderItem(item, itemResizeEl);
+
+        if (!contentElementMap[item.id]) {
+          contentElementMap[item.id] ??= {
+            item: itemEl,
+            resize: itemResizeEl,
+            added: false,
+          };
+
+          refreshContent.value += 1;
+        }
+      }
+    }
+
     watch(() => splitPanelRef.value, async (panelRef) => {
       await SplitPanelView.register();
       panelRef?.setSplitPanel(props.splitPanel);
@@ -33,52 +91,31 @@ export default defineComponent({
       splitPanelRef.value?.setSplitPanel(val);
     });
 
+    watchEffect(() => {
+      if (splitPanelRef.value && refreshContent.value) {
+        for (const id of Object.keys(contentElementMap)) {
+          if (!contentElementMap[id].added) {
+            splitPanelRef.value.append(
+              contentElementMap[id].item,
+              contentElementMap[id].resize,
+            );
+          }
+        }
+      }
+    });
+
     return {
       slots,
       splitPanelRef,
       makeScope,
+      contentElementMap,
+      generateContent,
     };
   },
   render() {
-    const { slots } = this;
-    const { splitPanel } = this;
-    const itemContainers: VNode[] = [];
-    const resizeContainers: VNode[] = [];
-
-    if (splitPanel?.allChildren && (slots.item || slots.resize)) {
-      for (const child of splitPanel.allChildren) {
-        const scope = this.makeScope(child);
-
-        if (slots.item) {
-          itemContainers.push(
-            h(
-              'div',
-              {
-                slot: SplitPanelView.itemSlotName(child),
-                class: 'split-panel-content__inner',
-              },
-              slots.item(scope)
-            )
-          );
-        }
-
-        if (slots.resize) {
-          resizeContainers.push(
-            h(
-              'div',
-              {
-                slot: SplitPanelView.resizeSlotName(child),
-                class: 'split-panel-resize__inner',
-              },
-              slots.resize(scope)
-            )
-          );
-        }
-      }
-    }
-
+    this.generateContent();
     return h(SplitPanelView.tag, {
       ref: (el) => { this.splitPanelRef = el; },
-    }, [...itemContainers, ...resizeContainers]);
+    });
   },
 });

@@ -14,14 +14,6 @@ split-panel {
     flex-shrink: 0;
     flex-grow: 0;
   }
-
-  &.direction-column {
-    flex-direction: column;
-  }
-
-  &.direction-row {
-    flex-direction: row;
-  }
 }
 
 .split-panel {
@@ -43,9 +35,18 @@ split-panel {
   }
 
   &-content {
+    display: flex;
     flex: auto;
     overflow: hidden;
     text-overflow: ellipsis;
+
+    &.direction-column {
+      flex-direction: column;
+    }
+
+    &.direction-row {
+      flex-direction: row;
+    }
 
     &__inner {
       width: 100%;
