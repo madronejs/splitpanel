@@ -3,10 +3,9 @@ import {
 } from 'vue';
 import Madrone, { MadroneVue3 } from '@madronejs/core';
 import { SplitPanel } from './src';
-import SplitPanelView from './src/render/webComponent';
+// import SplitPanelView from './src/render/webComponent';
 import VueSplitPanelView from './src/render/vue3';
 import configureAnimate from './src/plugins/animate';
-import configureDraggable from './src/plugins/draggable';
 
 import './src/style.scss';
 import './testStyle.scss';
@@ -21,17 +20,16 @@ function createTestPanel() {
     resizeElSize: 20,
     showFirstResizeEl: true,
     children: [
-      { id: 'foo1', constraints: { size: '10%' } },
-      { id: 'foo2', constraints: { size: '20%' } },
-      { id: 'foo3' },
-      { id: 'foo4' },
+      { id: 'foo1' },
+      { id: 'foo2' },
+      // { id: 'foo1', constraints: { size: '10%' } },
+      // { id: 'foo2', constraints: { size: '20%' } },
+      // { id: 'foo3' },
+      // { id: 'foo4' },
     ],
   });
 
   panel.setAnimateStrategy(configureAnimate());
-  panel.setDraggableStrategy(configureDraggable({
-    dragSelector: '.split-panel-handle',
-  }));
 
   return panel;
 }
@@ -58,9 +56,9 @@ const app = createApp(defineComponent({
 
 app.mount('#app');
 
-// web component
-SplitPanelView.register().then(() => {
-  const el = document.querySelector('#webc') as SplitPanelView;
+// // web component
+// SplitPanelView.register().then(() => {
+//   const el = document.querySelector('#webc') as SplitPanelView;
 
-  el.splitPanel = createTestPanel();
-});
+//   el.splitPanel = createTestPanel();
+// });
