@@ -46,7 +46,9 @@ const SplitPanelView = defineComponent({
                   dragging: sPanel.dragging,
                 }}
               >
-                {this.slots.resize?.(makeScope(sPanel))}
+                <div class="split-panel-resize-inner">
+                  {this.slots.resize?.(makeScope(sPanel))}
+                </div>
               </div>
             )
         }
