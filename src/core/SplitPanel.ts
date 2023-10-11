@@ -798,16 +798,28 @@ class SplitPanel<DType = any> {
   }
 
   /** Set all children to equal sizes */
-  async equalizeChildrenSizes() {
+  async equalizeChildrenSizes(options?: { recursive?: boolean }) {
     if (this.numChildren) {
-      await this.animateChildren(relativeToPercent(1 / this.numChildren));
+      const promises = [this.animateChildren(relativeToPercent(1 / this.numChildren))];
+
+      if (options?.recursive) {
+        promises.push(...this.children.map((child) => child.equalizeChildrenSizes(options)));
+      }
+
+      await Promise.all(promises);
     }
   }
 
   /** Set all children to their original sizes */
-  async resetChildrenSizes() {
+  async resetChildrenSizes(options?: { recursive?: boolean }) {
     if (this.numChildren) {
-      await this.animateChildren();
+      const promises = [this.animateChildren()];
+
+      if (options?.recursive) {
+        promises.push(...this.children.map((child) => child.resetChildrenSizes(options)));
+      }
+
+      await Promise.all(promises);
     }
   }
 
