@@ -334,7 +334,7 @@ export function getSizeInfo(
     comparativeSize?: number;
   },
 ) {
-  const { minSize, maxSize } = options.parsedConstraints;
+  const { minSize, maxSize } = options.parsedConstraints || {};
   const parsedSize = options.size === undefined ? undefined : parseConstraint(options.size, options.comparativeSize);
   let newRelativeSize = parsedSize?.relativeValue ?? options.relativeSize;
   let newSize = parsedSize?.exactValue ?? options.rectSize ?? 0;

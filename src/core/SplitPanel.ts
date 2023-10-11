@@ -2,14 +2,13 @@ import cloneDeep from 'lodash/cloneDeep';
 import debounce from 'lodash/debounce';
 import uniqBy from 'lodash/uniqBy';
 import uniqueId from 'lodash/uniqueId';
+import sortBy from 'lodash/sortBy';
 import { computed, reactive } from '@madronejs/core';
 import { v4 as uuid } from 'uuid';
 
 import {
-  AXIS,
   type BoxCoord,
   type BoxRect,
-  camelCaseObject,
   type ConstraintType,
   exactToPx,
   type AnimateStrategy,
@@ -300,11 +299,6 @@ class SplitPanel<DType = any> {
     return map;
   }
 
-  /** The size this panel is compared to calculate relative size */
-  @computed get comparativeSize() {
-    return this.isRoot ? this.rectSize : this.parent.rectSize;
-  }
-
   /** Current size relative to parent (between 0 and 1) */
   @computed get relativeSize() {
     return this.rectSize / this.comparativeSize;
@@ -398,6 +392,20 @@ class SplitPanel<DType = any> {
   /** Current container size in pixels */
   @computed get rectSize() {
     return this.rect?.[this.directionInfo.dimension] || 0;
+  }
+
+  /** Current content size in pixels */
+  @computed get contentRectSize() {
+    return this.rect?.[this.contentDirectionInfo.dimension] || 0;
+  }
+
+  /** The size this panel is compared to calculate relative size */
+  @computed get comparativeSize() {
+    if (this.isRoot) {
+      return this.rectSize;
+    }
+
+    return this.parent?.rectSize;
   }
 
   /** Current container size in pixels */
@@ -555,7 +563,7 @@ class SplitPanel<DType = any> {
   }
 
   /** Calculate size information based on this panel's constraints */
-  getSizeInfo(size?: ConstraintType) {
+  getSizeInfo(size?: ConstraintType): ReturnType<typeof getSizeInfo> {
     return getSizeInfo({
       size,
       parsedConstraints: this.parsedConstraints,
@@ -764,7 +772,11 @@ class SplitPanel<DType = any> {
     this.snapshotChildSizeInfo();
 
     const newItems = items ?? this.children;
-    const parsed = val == null ? undefined : this.getSizeInfo(val);
+    const parsed = val == null ? undefined : getSizeInfo({
+      size: val,
+      rectSize: this.contentRectSize,
+      comparativeSize: this.contentRectSize,
+    });
 
     this._animateStrategyData = this.animateStrategy?.(this, newItems, parsed);
     await this._animateStrategyData?.promise;
@@ -872,8 +884,10 @@ class SplitPanel<DType = any> {
       const remainingToObserve = new Set<SplitPanel<DType>>(itemsToConsider);
       const shrinkableToObserve = new Set<SplitPanel<DType>>(itemsToConsider.filter((item) => item.canShrink));
       const growableToObserve = new Set<SplitPanel<DType>>(itemsToConsider.filter((item) => item.canGrow));
+      // find the items with the smallest set size and address those first so the remaining items can be given more space
+      const sortedItems = sortBy(itemsToConsider, (item: SplitPanel<DType>) => item.parsedConstraints?.size);
 
-      for (const item of itemsToConsider) {
+      for (const item of sortedItems) {
         const remainingGrowable = getRemaining(growableToObserve.size);
         const remainingShrinkable = getRemaining(shrinkableToObserve.size);
 
