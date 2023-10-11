@@ -1,8 +1,11 @@
-import { resolve } from 'path'
-import { defineConfig } from 'vite'
+/* eslint-disable unicorn/prefer-module */
+import { resolve } from 'node:path';
+import { defineConfig } from 'vite';
 import terser from '@rollup/plugin-terser';
+import jsxPlugin from '@vitejs/plugin-vue-jsx';
 
 export default defineConfig({
+  plugins: [jsxPlugin()],
   build: {
     minify: 'terser',
     cssMinify: true,
@@ -23,7 +26,7 @@ export default defineConfig({
         terser({
           compress: true,
           mangle: true,
-        })
+        }),
       ],
       // make sure to externalize deps that shouldn't be bundled
       // into your library
@@ -42,4 +45,4 @@ export default defineConfig({
       '@': resolve(__dirname, './src'),
     },
   },
-})
+});

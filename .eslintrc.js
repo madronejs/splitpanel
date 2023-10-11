@@ -7,6 +7,7 @@ module.exports = {
     'airbnb-base',
     'plugin:@typescript-eslint/recommended',
     'plugin:unicorn/recommended',
+    'plugin:react/jsx-runtime',
   ],
   env: {
     browser: true,
