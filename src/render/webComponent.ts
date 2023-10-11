@@ -119,14 +119,6 @@ export default class SplitPanelView<DType = any> extends HTMLElement {
     }
   }
 
-  private _syncResizeStyles() {
-    if (this.splitPanel && this.resizeEl) {
-      for (const key of Object.keys(this.splitPanel.resizeElStyle)) {
-        this.resizeEl.style[key] = this.splitPanel.resizeElStyle[key];
-      }
-    }
-  }
-
   private _setupMutationObserver() {
     if (this.splitPanel?.isRoot && !this._mutationObserver) {
       this._mutationObserver = new MutationObserver(this._syncDebounced);
@@ -178,7 +170,7 @@ export default class SplitPanelView<DType = any> extends HTMLElement {
       }, { immediate: true }),
       // STYLE
       watch(() => splitPanel.style, this._syncStyles.bind(this)),
-      watch(() => splitPanel.resizeElStyle, this._syncResizeStyles.bind(this)),
+      // watch(() => splitPanel.resizeElStyle, this._syncResizeStyles.bind(this)),
       watch(() => splitPanel.children, this._rebalanceDebounced),
     ];
 
@@ -220,7 +212,6 @@ export default class SplitPanelView<DType = any> extends HTMLElement {
       this._panelElementMap[name] = el;
       this._panelSlotMap[name] = slot;
       this.splitPanel.attachResizeEl(el);
-      this._syncResizeStyles();
     }
   }
 
@@ -265,14 +256,14 @@ export default class SplitPanelView<DType = any> extends HTMLElement {
     }
   }
 
-  private _removeSlotElements() {
-    for (const key of Object.keys(this._panelSlotMap)) {
-      this._panelSlotMap[key]?.remove();
-      delete this._panelSlotMap[key];
-      // this._panelElementMap[key]?.remove();
-      // delete this._panelElementMap[key];
-    }
-  }
+  // private _removeSlotElements() {
+  //   for (const key of Object.keys(this._panelSlotMap)) {
+  //     this._panelSlotMap[key]?.remove();
+  //     delete this._panelSlotMap[key];
+  //     // this._panelElementMap[key]?.remove();
+  //     // delete this._panelElementMap[key];
+  //   }
+  // }
 
   private _removeChild(...ids: string[]) {
     for (const id of ids) {
