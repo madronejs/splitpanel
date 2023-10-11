@@ -11,7 +11,6 @@ import {
   type BoxRect,
   camelCaseObject,
   type ConstraintType,
-  DIMENSION,
   exactToPx,
   type AnimateStrategy,
   type AnimateStrategyReturn,
@@ -20,6 +19,7 @@ import {
   getCoordFromMouseEvent,
   getDistance,
   getSizeInfo,
+  getDirectionInfo,
   mergePanelConstraints,
   type MouseEventCallback,
   negateChildren,
@@ -68,10 +68,12 @@ class SplitPanel<DType = any> {
     this._onMouseover = this._onMouseover.bind(this);
     this._onMouseout = this._onMouseout.bind(this);
     this.unbind = this.unbind.bind(this);
+    this.attachEl = this.attachEl.bind(this);
+    this.attachContentEl = this.attachContentEl.bind(this);
+    this.attachResizeEl = this.attachResizeEl.bind(this);
     // This._onElementClick = this._onElementClick.bind(this);
     // setup
     this._children = [];
-    this._resizeElSelector = options?.resizeElSelector ?? '.resizer';
     this._root = options?.root;
     this._observeElement = options?.observe ?? true;
     this._debouncedSatisfyConstraints = debounce(this.satisfyConstraints.bind(this));
@@ -106,8 +108,6 @@ class SplitPanel<DType = any> {
   @reactive contentEl: HTMLElement;
   /** Unbind all events for resize el */
   @reactive private _unbindResizeEl: () => void;
-  /** Selector for the resize element */
-  @reactive private _resizeElSelector: string;
   /** The html element to act as the resize for this */
   @reactive resizeEl: HTMLElement;
   /** Size of the resize bar */
@@ -145,6 +145,10 @@ class SplitPanel<DType = any> {
   /** The direction the panel is split */
   @computed get direction(): PANEL_DIRECTION {
     return this._direction ?? this.parent?.direction ?? PANEL_DIRECTION.row;
+  }
+
+  @computed get contentDirection() {
+    return this.parent?.direction ?? this.direction;
   }
 
   @reactive private _resizeElSize: ConstraintType;
@@ -218,12 +222,12 @@ class SplitPanel<DType = any> {
 
   /** Distance between the start drag position and the current drag position */
   @computed get dragDistance() {
-    return getDistance(this.dragPos, this.dragPosStart, this.direction);
+    return getDistance(this.dragPos, this.dragPosStart, this.contentDirection);
   }
 
   /** The direction of the current drag */
   @computed get dragRelation() {
-    return getDistance(this.prevDragPos, this.dragPos, this.direction) <= 0 ? SIBLING_RELATION.before : SIBLING_RELATION.after;
+    return getDistance(this.prevDragPos, this.dragPos, this.contentDirection) <= 0 ? SIBLING_RELATION.before : SIBLING_RELATION.after;
   }
 
   /** Relative distance dragged compared to the parent container's size */
@@ -380,19 +384,14 @@ class SplitPanel<DType = any> {
     );
   }
 
-  /** The dimension and axis taken into account based on the direction of the panel */
+  /** The dimension and axis taken into account based on the direction of this panel's direction */
   @computed get directionInfo() {
-    return this.direction === PANEL_DIRECTION.column ? {
-      dimension: DIMENSION.height,
-      dimensionInverse: DIMENSION.width,
-      axis: AXIS.y,
-      axisInverse: AXIS.x,
-    } : {
-      dimension: DIMENSION.width,
-      dimensionInverse: DIMENSION.height,
-      axis: AXIS.x,
-      axisInverse: AXIS.y,
-    };
+    return getDirectionInfo(this.direction);
+  }
+
+  /** The dimension and axis taken into account based on the direction of the panel's content direction */
+  @computed get contentDirectionInfo() {
+    return getDirectionInfo(this.contentDirection);
   }
 
   /** Current container size in pixels */
@@ -440,20 +439,20 @@ class SplitPanel<DType = any> {
     const style: Record<string, any> = {};
 
     if (!this.isRoot) {
-      style[this.directionInfo.dimensionInverse] = null;
-      style[this.directionInfo.dimension] = formatted;
+      style[this.contentDirectionInfo.dimensionInverse] = null;
+      style[this.contentDirectionInfo.dimension] = formatted;
 
       if (this.canResize && (this.dragging || this.hovering)) {
-        style.cursor = this.direction === PANEL_DIRECTION.column ? 'row-resize' : 'col-resize';
+        style.cursor = this.contentDirection === PANEL_DIRECTION.column ? 'row-resize' : 'col-resize';
       } else {
         style.cursor = null;
       }
     }
 
-    style[`min-${this.directionInfo.dimensionInverse}`] = null;
-    style[`max-${this.directionInfo.dimensionInverse}`] = null;
-    style[`min-${this.directionInfo.dimension}`] = exactToPx(exactMin);
-    style[`max-${this.directionInfo.dimension}`] = exactToPx(exactMax);
+    style[`min-${this.contentDirectionInfo.dimensionInverse}`] = null;
+    style[`max-${this.contentDirectionInfo.dimensionInverse}`] = null;
+    style[`min-${this.contentDirectionInfo.dimension}`] = exactToPx(exactMin);
+    style[`max-${this.contentDirectionInfo.dimension}`] = exactToPx(exactMax);
 
     return camelCaseObject(style);
   }
@@ -461,9 +460,9 @@ class SplitPanel<DType = any> {
   /** Minimum styles to apply to the resize element */
   @computed get resizeElStyle() {
     return camelCaseObject({
-      [this.directionInfo.dimensionInverse]: '100%',
-      [this.directionInfo.dimension]: exactToPx(this.resizeElSize),
-      [`border-${this.directionInfo.axis === AXIS.x ? 'right' : 'top'}`]: this.resizeElBorderStyle,
+      [this.contentDirectionInfo.dimensionInverse]: '100%',
+      [this.contentDirectionInfo.dimension]: exactToPx(this.resizeElSize),
+      [`border-${this.contentDirectionInfo.axis === AXIS.x ? 'right' : 'top'}`]: this.resizeElBorderStyle,
     });
   }
 
@@ -605,7 +604,7 @@ class SplitPanel<DType = any> {
   setRect(val: BoxRect) {
     if (val) {
       this.rect = val;
-      this._debouncedSatisfyConstraints();
+      // this._debouncedSatisfyConstraints();
     }
   }
 
@@ -932,8 +931,10 @@ class SplitPanel<DType = any> {
 
       if (this.containerEl && this._observeElement) {
         toUnbind.push(() => {
-          this.resizeObserver.unobserve(this.containerEl);
-          this._removeRootCb(this.containerEl, 'resize');
+          if (this.containerEl) {
+            this.resizeObserver.unobserve(this.containerEl);
+            this._removeRootCb(this.containerEl, 'resize');
+          }
         });
       }
 
@@ -945,10 +946,6 @@ class SplitPanel<DType = any> {
         this._addRootCb(el, 'mouseup', this._onMouseUp);
         this.resizeObserver.observe(el);
         this._debouncedSatisfyConstraints();
-      }
-
-      if (!this.resizeEl && this._resizeElSelector) {
-        this.attachResizeEl(this._resizeElSelector);
       }
 
       this._unbindContainerEl = () => {
@@ -965,18 +962,11 @@ class SplitPanel<DType = any> {
   /** Attach a DOM element to act as the resize */
   attachResizeEl(
     /** The element to use as the resize or a css selector */
-    el: HTMLElement | string,
+    el: HTMLElement,
   ) {
-    if ((typeof el === 'string' && this._resizeElSelector !== el) || this.resizeEl !== el) {
+    if (this.resizeEl !== el) {
       this._unbindResizeEl?.();
-
-      if (typeof el === 'string') {
-        this._resizeElSelector = el;
-        this.resizeEl = this.containerEl?.querySelector(el);
-      } else {
-        this._resizeElSelector = undefined;
-        this.resizeEl = el;
-      }
+      this.resizeEl = el;
 
       if (this.resizeEl && this._observeElement) {
         this._addRootCb(this.resizeEl, 'resize', this._onResizeElResize);

@@ -193,6 +193,20 @@ export function getCoordFromMouseEvent(e: MouseEvent): BoxCoord {
   return { x: e.pageX, y: e.pageY };
 }
 
+export function getDirectionInfo(direction: PANEL_DIRECTION) {
+  return direction === PANEL_DIRECTION.column ? {
+    dimension: DIMENSION.height,
+    dimensionInverse: DIMENSION.width,
+    axis: AXIS.y,
+    axisInverse: AXIS.x,
+  } : {
+    dimension: DIMENSION.width,
+    dimensionInverse: DIMENSION.height,
+    axis: AXIS.x,
+    axisInverse: AXIS.y,
+  };
+}
+
 export function getDistance(
   coord1: BoxCoord,
   coord2: BoxCoord,

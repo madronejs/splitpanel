@@ -21,11 +21,18 @@ function createTestPanel() {
     showFirstResizeEl: true,
     children: [
       { id: 'foo1' },
-      { id: 'foo2' },
+      {
+        id: 'foo2',
+        direction: 'column',
+        children: [
+          { id: 'foo5' },
+          { id: 'foo6' },
+        ],
+      },
       // { id: 'foo1', constraints: { size: '10%' } },
       // { id: 'foo2', constraints: { size: '20%' } },
-      // { id: 'foo3' },
-      // { id: 'foo4' },
+      { id: 'foo3' },
+      { id: 'foo4' },
     ],
   });
 
