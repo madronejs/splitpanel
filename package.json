@@ -72,8 +72,7 @@
     "sass": "^1.68.0",
     "tsc-alias": "^1.8.8",
     "typescript": "^5.2.2",
-    "vite": "^4.4.10",
-    "vue": "^3.3.4"
+    "vite": "^4.4.10"
   },
   "dependencies": {
     "animejs": "^3.2.1",
@@ -82,7 +81,8 @@
     "vitest": "^0.34.6"
   },
   "peerDependencies": {
-    "@madronejs/core": "^1.0.16"
+    "@madronejs/core": "^1.0.16",
+    "vue": "^3.3.4"
   },
   "engines": {
     "node": "^18.8",
