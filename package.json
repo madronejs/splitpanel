@@ -61,7 +61,6 @@
     "preview": "vite preview"
   },
   "devDependencies": {
-    "@rollup/plugin-terser": "^0.4.3",
     "@types/animejs": "^3.1.8",
     "@typescript-eslint/eslint-plugin": "^6.7.3",
     "@typescript-eslint/parser": "^6.7.3",
