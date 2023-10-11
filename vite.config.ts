@@ -14,7 +14,7 @@ export default defineConfig({
       entry: [
         resolve(__dirname, 'src/core/index.ts'),
         resolve(__dirname, 'src/render/vue3.ts'),
-        resolve(__dirname, 'src/render/webComponent.ts'),
+        // resolve(__dirname, 'src/render/webComponent.ts'),
         resolve(__dirname, 'src/style.ts'),
         resolve(__dirname, 'src/plugins/animate.ts'),
       ],

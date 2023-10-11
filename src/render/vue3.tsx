@@ -15,9 +15,8 @@ const SplitPanelView = defineComponent({
   props: {
     splitPanel: Object as PropType<SplitPanel>,
   },
-  setup(props) {
+  setup() {
     return {
-      // splitPanel: computed(() => props.splitPanel),
       slots: useSlots(),
     };
   },
