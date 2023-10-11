@@ -1,7 +1,5 @@
 import {
   defineComponent,
-  computed,
-  shallowRef,
   useSlots,
   SlotsType,
   type PropType,
@@ -39,7 +37,7 @@ const SplitPanelView = defineComponent({
         style={sPanel.style}
       >
         {
-          sPanel.isRoot
+          sPanel.isRoot || (sPanel.isFirstChild && !sPanel.showFirstResizeEl)
             ? null
             : (
               <div
@@ -48,7 +46,6 @@ const SplitPanelView = defineComponent({
                   'split-panel-resize': true,
                   dragging: sPanel.dragging,
                 }}
-                style={sPanel.resizeElStyle}
               >
                 {this.slots.resize?.(makeScope(sPanel))}
               </div>
@@ -63,9 +60,7 @@ const SplitPanelView = defineComponent({
               <SplitPanelView splitPanel={child}>{panelSlots}</SplitPanelView>
             ))
             : (
-              <div
-                class='split-panel-content-inner'
-              >
+              <div class='split-panel-content-inner'>
                 {this.slots.item?.(makeScope(sPanel))}
               </div>
             )

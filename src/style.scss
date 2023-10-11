@@ -1,8 +1,8 @@
 :root {
-  --split-panel-resize-bg: 0,0,0;
-  --split-panel-resize-opacity: 0.2;
-  --split-panel-resize-bg-active: 81,149,185;
-  --split-panel-resize-opacity-active: 0.6;
+  --sp-resize-bg: 0,0,0;
+  --sp-resize-opacity: 0.2;
+  --sp-resize-bg-active: 81,149,185;
+  --sp-resize-opacity-active: 0.6;
 }
 
 split-panel, .split-panel {
@@ -17,11 +17,36 @@ split-panel, .split-panel {
 }
 
 .split-panel {
+  width: var(--sp-width);
+  height: var(--sp-height);
+  cursor: var(--sp-cursor);
+
   &.direction-column {
     flex-direction: column;
+    min-height: var(--sp-min-size);
+    max-height: var(--sp-max-size);
+    width: 100%;
+    height: var(--sp-size);
 
     &.split-panel-parent {
       flex-direction: row;
+      min-width: var(--sp-min-size);
+      max-width: var(--sp-max-size);
+
+      &:not(.split-panel-root) {
+        width: var(--sp-size);
+        height: 100%;
+      }
+
+      > .split-panel-resize {
+        width: var(--sp-resize-size);
+        height: 100%;
+      }
+    }
+
+    > .split-panel-resize {
+      height: var(--sp-resize-size);
+      width: 100%;
     }
 
     > .split-panel-content {
@@ -31,9 +56,30 @@ split-panel, .split-panel {
 
   &.direction-row {
     flex-direction: row;
+    min-width: var(--sp-min-size);
+    max-width: var(--sp-max-size);
+    height: 100%;
+    width: var(--sp-size);
 
     &.split-panel-parent {
       flex-direction: column;
+      min-height: var(--sp-min-size);
+      max-height: var(--sp-max-size);
+
+      &:not(.split-panel-root) {
+        height: var(--sp-size);
+        width: 100%;
+      }
+
+      > .split-panel-resize {
+        height: var(--sp-resize-size);
+        width: 100%;
+      }
+    }
+
+    > .split-panel-resize {
+      width: var(--sp-resize-size);
+      height: 100%;
     }
 
     > .split-panel-content {
@@ -43,13 +89,13 @@ split-panel, .split-panel {
 
   &-resize {
     overflow: hidden;
-    background-color: rgba(var(--split-panel-resize-bg), var(--split-panel-resize-opacity));
+    background-color: rgba(var(--sp-resize-bg), var(--sp-resize-opacity));
     flex-shrink: 0;
     flex-grow: 0;
     transition: 300ms ease-in-out;
 
     &:hover, .dragging {
-      background-color: rgba(var(--split-panel-resize-bg-active), var(--split-panel-resize-opacity-active));
+      background-color: rgba(var(--sp-resize-bg-active), var(--sp-resize-opacity-active));
     }
 
     &-inner {

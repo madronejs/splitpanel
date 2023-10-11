@@ -57,6 +57,11 @@ export enum AXIS {
   y = 'y',
 }
 
+export enum STYLE_PREFIX {
+  panel = 'sp-',
+  panelResize = 'sp-resize-'
+}
+
 export type SplitPanelDef<DType = any> = {
   /** Panel id. If not set, one will be automatically generated */
   id?: string;

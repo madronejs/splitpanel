@@ -24,6 +24,7 @@ import {
   type MouseEventCallback,
   negateChildren,
   PANEL_DIRECTION,
+  STYLE_PREFIX,
   type PanelConstraints,
   parseConstraint,
   parsedToFormatted,
@@ -439,31 +440,23 @@ class SplitPanel<DType = any> {
     const style: Record<string, any> = {};
 
     if (!this.isRoot) {
-      style[this.contentDirectionInfo.dimensionInverse] = null;
-      style[this.contentDirectionInfo.dimension] = formatted;
+      style[`--${STYLE_PREFIX.panel}size`] = formatted;
 
       if (this.canResize && (this.dragging || this.hovering)) {
-        style.cursor = this.contentDirection === PANEL_DIRECTION.column ? 'row-resize' : 'col-resize';
+        style[`--${STYLE_PREFIX.panel}cursor`] = this.contentDirection === PANEL_DIRECTION.column ? 'row-resize' : 'col-resize';
       } else {
-        style.cursor = null;
+        style[`--${STYLE_PREFIX.panel}cursor`] = null;
       }
     }
 
-    style[`min-${this.contentDirectionInfo.dimensionInverse}`] = null;
-    style[`max-${this.contentDirectionInfo.dimensionInverse}`] = null;
-    style[`min-${this.contentDirectionInfo.dimension}`] = exactToPx(exactMin);
-    style[`max-${this.contentDirectionInfo.dimension}`] = exactToPx(exactMax);
+    style[`--${STYLE_PREFIX.panel}min-size`] = (exactMin !== this.parent?.absoluteMin && Number.isFinite(exactMin)) ? exactToPx(exactMin) : null;
+    style[`--${STYLE_PREFIX.panel}max-size`] = (exactMax !== this.parent?.absoluteMax && Number.isFinite(exactMax)) ? exactToPx(exactMax) : null;
 
-    return camelCaseObject(style);
-  }
+    // RESIZE ELEMENT STYLES
+    style[`--${STYLE_PREFIX.panelResize}size`] = this.isRoot || this._resizeElSize != null ? exactToPx(this.resizeElSize) : null;
+    style[`--${STYLE_PREFIX.panelResize}border`] = this.isRoot || this._resizeElBorderStyle != null ? this.resizeElBorderStyle : null;
 
-  /** Minimum styles to apply to the resize element */
-  @computed get resizeElStyle() {
-    return camelCaseObject({
-      [this.contentDirectionInfo.dimensionInverse]: '100%',
-      [this.contentDirectionInfo.dimension]: exactToPx(this.resizeElSize),
-      [`border-${this.contentDirectionInfo.axis === AXIS.x ? 'right' : 'top'}`]: this.resizeElBorderStyle,
-    });
+    return style;
   }
 
   @reactive private _rootCallbacks: WeakMap<HTMLElement, CbMap>;
@@ -604,7 +597,6 @@ class SplitPanel<DType = any> {
   setRect(val: BoxRect) {
     if (val) {
       this.rect = val;
-      // this._debouncedSatisfyConstraints();
     }
   }
 
