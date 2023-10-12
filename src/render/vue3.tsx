@@ -23,6 +23,7 @@ const SplitPanelView = defineComponent({
   render() {
     const sPanel: SplitPanel = this.splitPanel;
     const panelSlots: SlotsType = this.slots;
+    const scope = makeScope(sPanel);
 
     return (
       <div
@@ -47,7 +48,7 @@ const SplitPanelView = defineComponent({
                 }}
               >
                 <div class="split-panel-resize-inner">
-                  {this.slots.resize?.(makeScope(sPanel))}
+                  {this.slots.resize?.(scope)}
                 </div>
               </div>
             )
@@ -62,7 +63,7 @@ const SplitPanelView = defineComponent({
             ))
             : (
               <div class='split-panel-content-inner'>
-                {this.slots.item?.(makeScope(sPanel))}
+                {this.slots.item?.(scope)}
               </div>
             )
           }
