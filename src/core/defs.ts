@@ -1,7 +1,6 @@
 import differenceBy from 'lodash/differenceBy';
 import pick from 'lodash/pick';
 import round from 'lodash/round';
-import camelCase from 'lodash/camelCase';
 
 import type SplitPanel from './SplitPanel';
 
@@ -13,6 +12,10 @@ export type AnimateStrategyReturn = {
   cancel: () => void,
 };
 export type AnimateStrategy = (panel: SplitPanel, items: SplitPanel[], sizeInfo?: ReturnType<typeof getSizeInfo>) => AnimateStrategyReturn;
+export type DraggableStrategyReturn = {
+  unbind?: () => void,
+};
+export type DraggableStrategy = (panel: SplitPanel) => DraggableStrategyReturn;
 
 export type PanelConstraints = {
   /** Minimum size */
@@ -65,6 +68,8 @@ export enum STYLE_PREFIX {
 export type SplitPanelDef<DType = any> = {
   /** Panel id. If not set, one will be automatically generated */
   id?: string;
+  /** (Root only) Set the data array for the panel tree */
+  dataArray?: DType[],
   /** Optional data to associate with the panel */
   data?: DType;
   /** Sizing constraints for the panel */
@@ -128,16 +133,6 @@ export function roundVal(val: number, precision?: number) {
   return round(val, precision ?? 10);
 }
 
-export function camelCaseObject(obj: Record<string, any>) {
-  const newStyle = {};
-
-  for (const key of Object.keys(obj || {})) {
-    newStyle[camelCase(key)] = obj[key];
-  }
-
-  return newStyle;
-}
-
 export function parseConstraint(val: string | number, comparativeSize: number): ParsedConstraint {
   const isNumber = typeof val === 'number';
   const relative = typeof val === 'string' ? val?.endsWith?.(RELATIVE_SYMBOL) : !isNumber;
@@ -194,7 +189,14 @@ export function resizeEntryToBoxRect(data: ResizeObserverEntry) {
   return pick(rect, ['x', 'y', 'width', 'height']) as BoxRect;
 }
 
-export function getCoordFromMouseEvent(e: MouseEvent): BoxCoord {
+export function getCoordFromMouseEvent(e: MouseEvent | TouchEvent): BoxCoord {
+  if ('touches' in e) {
+    return {
+      x: e.touches[0].clientX,
+      y: e.touches[0].clientY,
+    };
+  }
+
   return { x: e.pageX, y: e.pageY };
 }
 
@@ -301,15 +303,15 @@ export function getChildInfo<T>(children: Array<SplitPanel<T>>) {
   const map: Record<string, SplitPanel<T>> = {};
   const indexMap: Record<string, number> = {};
   const leafIndexMap: Record<string, number> = {};
-  let leafIndex = 0;
+  const leafPanels: SplitPanel<T>[] = [];
 
   for (const [index, child] of (children || []).entries()) {
     map[child.id] = child;
     indexMap[child.id] = index;
 
     if (!child.numChildren) {
-      leafIndexMap[child.id] = leafIndex;
-      leafIndex += 1;
+      leafIndexMap[child.id] = leafPanels.length;
+      leafPanels.push(child);
     }
   }
 
@@ -321,7 +323,9 @@ export function getChildInfo<T>(children: Array<SplitPanel<T>>) {
     /** An id to index map only taking leaf panels into consideration */
     leafIndexMap,
     /** Total number of leaf panels */
-    totalLeafPanels: leafIndex,
+    totalLeafPanels: leafPanels.length,
+    /** All of the leaf panels */
+    leafPanels,
   };
 }
 

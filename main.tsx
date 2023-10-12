@@ -6,6 +6,7 @@ import { SplitPanel } from './src';
 // import SplitPanelView from './src/render/webComponent';
 import VueSplitPanelView from './src/render/vue3';
 import configureAnimate from './src/plugins/animate';
+import configureDraggable from './src/plugins/draggable';
 
 import './src/style.scss';
 import './testStyle.scss';
@@ -20,16 +21,16 @@ function createTestPanel() {
     resizeElSize: 20,
     // showFirstResizeEl: true,
     children: [
-      { id: 'foo1' },
+      { id: 'foo1', data: 'data1' },
       {
         id: 'foo2',
         direction: 'column',
         children: [
-          { id: 'foo5' },
-          { id: 'foo6' },
+          { id: 'foo5', data: 'data2' },
+          { id: 'foo6', data: 'data3' },
         ],
       },
-      { id: 'foo7', constraints: { size: '10%' } },
+      { id: 'foo7', constraints: { size: '10%' }, data: 'data4' },
       // { id: 'foo8', constraints: { size: '20%' } },
       // { id: 'foo3' },
       // { id: 'foo4' },
@@ -37,6 +38,7 @@ function createTestPanel() {
   });
 
   panel.setAnimateStrategy(configureAnimate());
+  panel.setDraggableStrategy(configureDraggable());
 
   return panel;
 }
@@ -62,6 +64,8 @@ const app = createApp(defineComponent({
         item: (scope) => (
           <div class="panel-item w-100 h-100">
             {`${scope.panel.id}: ${scope.panel.sizeInfo.formatted}`}
+            <div class="drag-handle">handle</div>
+            <div>data: {scope.panel.data}</div>
           </div>
         ),
       }}

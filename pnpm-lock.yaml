@@ -11,6 +11,9 @@ dependencies:
   animejs:
     specifier: ^3.2.1
     version: 3.2.1
+  drag-drop-touch:
+    specifier: ^1.3.1
+    version: 1.3.1
   lodash:
     specifier: ^4.17.21
     version: 4.17.21
@@ -1385,6 +1388,10 @@ packages:
     dependencies:
       esutils: 2.0.3
     dev: true
+
+  /drag-drop-touch@1.3.1:
+    resolution: {integrity: sha512-Q0/ZgsnW7VUjn+YqSnp1rvxjjPnZX5YLyVaw28einood+eTMcLzgOgHk8nyqIF9O18J68l+2htlEnbw5GsyTvQ==}
+    dev: false
 
   /electron-to-chromium@1.4.549:
     resolution: {integrity: sha512-gpXfJslSi4hYDkA0mTLEpYKRv9siAgSUgZ+UWyk+J5Cttpd1ThCVwdclzIwQSclz3hYn049+M2fgrP1WpvF8xg==}

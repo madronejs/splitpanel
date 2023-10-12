@@ -14,6 +14,8 @@ import {
   type AnimateStrategy,
   type AnimateStrategyReturn,
   type FlattenStrategy,
+  type DraggableStrategy,
+  type DraggableStrategyReturn,
   getChildInfo,
   getCoordFromMouseEvent,
   getDistance,
@@ -79,6 +81,8 @@ class SplitPanel<DType = any> {
     this._debouncedSatisfyConstraints = debounce(this.satisfyConstraints.bind(this));
     this.parent = options?.parent;
     this._setupRootIfNeeded();
+    this.setFlattenStrategy(options?.flattenStrategy);
+    this.setResizeStrategy(options?.resizeStrategy);
     this.setDefinition(options);
     this.setPushPanels(options?.pushPanels);
     this.setResizeElSize(options?.resizeElSize);
@@ -86,8 +90,6 @@ class SplitPanel<DType = any> {
     this.setShowFirstResizeEl(options?.showFirstResizeEl);
     this.setExpandTolerance(options?.expandTolerance);
     this.setRect(options?.rect);
-    this.setFlattenStrategy(options?.flattenStrategy);
-    this.setResizeStrategy(options?.resizeStrategy);
   }
 
   /** This panel's unique id */
@@ -133,12 +135,18 @@ class SplitPanel<DType = any> {
     return !(this.isRoot || this.isFirstChild);
   }
 
+  /** The data associated with this panel */
+  @reactive data: DType;
+
   /** Array of data associated with the leaf indices (only used at root level) */
-  @reactive dataArray: DType[];
-  @reactive private _data: DType;
-  /** Data associated with this panel */
-  @computed get data() {
-    return this._data ?? this.root.dataArray?.[this.rootLeafIndex];
+  @computed get dataArray(): DType[] {
+    return this._allChildInfo.leafPanels.map((panel) => panel.data);
+  }
+
+  set dataArray(val) {
+    for (const [index, panel] of this._allChildInfo.leafPanels.entries()) {
+      panel.setData(val?.[index]);
+    }
   }
 
   @reactive private _direction: PANEL_DIRECTION;
@@ -174,6 +182,12 @@ class SplitPanel<DType = any> {
   /** How to animate the panel */
   @computed get animateStrategy() {
     return this._animateStrategy ?? this.parent?.animateStrategy;
+  }
+
+  @reactive protected _draggableStrategy: DraggableStrategy;
+  @reactive protected _draggableStrategyReturn: DraggableStrategyReturn;
+  @computed get draggableStrategy(): DraggableStrategy {
+    return this._draggableStrategy ?? this.parent?.draggableStrategy;
   }
 
   @reactive private _flattenStrategy: FlattenStrategy;
@@ -258,6 +272,7 @@ class SplitPanel<DType = any> {
   unbind() {
     this._unbindResizeEl?.();
     this._unbindContainerEl?.();
+    this._unbindDraggable();
 
     if (this.isRoot) {
       this._unbindRoot?.();
@@ -622,7 +637,7 @@ class SplitPanel<DType = any> {
 
   /** Set the data associated with this panel */
   setData(val: DType) {
-    this._data = val;
+    this.data = val;
   }
 
   /** Set the data associated with the root of the tree */
@@ -676,6 +691,11 @@ class SplitPanel<DType = any> {
     this._animateStrategy = strategy;
   }
 
+  /** Set the draggable strategy for this panel */
+  setDraggableStrategy(strategy: DraggableStrategy) {
+    this._draggableStrategy = strategy;
+  }
+
   /** Set the flatten strategy for this panel */
   setFlattenStrategy(strategy: FlattenStrategy) {
     this._flattenStrategy = strategy;
@@ -696,7 +716,13 @@ class SplitPanel<DType = any> {
     this.setId(val?.id);
     this.setChildren(val?.children);
     this.setConstraints(val?.constraints);
-    this.setData(val?.data);
+
+    if (Array.isArray(val?.dataArray)) {
+      this.setDataArray(val?.dataArray);
+    } else {
+      this.setData(val?.data);
+    }
+
     this.setDirection(val?.direction);
   }
 
@@ -974,7 +1000,10 @@ class SplitPanel<DType = any> {
 
   /** Attach a DOM element to act as the content for this panel */
   attachContentEl(el: HTMLElement) {
-    this.contentEl = el;
+    if (el !== this.contentEl) {
+      this.contentEl = el;
+      this._setupDraggable();
+    }
   }
 
   /** Attach a DOM element to act as the resize */
@@ -990,6 +1019,7 @@ class SplitPanel<DType = any> {
         this._addRootCb(this.resizeEl, 'resize', this._onResizeElResize);
         this.resizeObserver.observe(this.resizeEl);
         this.resizeEl.addEventListener('mousedown', this._onResizeElMouseDown);
+        this.resizeEl.addEventListener('touchstart', this._onResizeElMouseDown);
         this.resizeEl.addEventListener('dblclick', this._onDblClick);
         this.resizeEl.addEventListener('mouseover', this._onMouseover);
         this.resizeEl.addEventListener('mouseout', this._onMouseout);
@@ -999,6 +1029,7 @@ class SplitPanel<DType = any> {
             this.resizeObserver.unobserve(this.resizeEl);
             this._removeRootCb(this.resizeEl, 'resize');
             this.resizeEl.removeEventListener('mousedown', this._onResizeElMouseDown);
+            this.resizeEl.removeEventListener('touchstart', this._onResizeElMouseDown);
             this.resizeEl.removeEventListener('dblclick', this._onDblClick);
             this.resizeEl.removeEventListener('mouseover', this._onMouseover);
             this.resizeEl.removeEventListener('mouseout', this._onMouseout);
@@ -1114,6 +1145,16 @@ class SplitPanel<DType = any> {
     this._children = this._createChildren(items);
   }
 
+  private _unbindDraggable() {
+    this._draggableStrategyReturn?.unbind?.();
+    this._draggableStrategyReturn = null;
+  }
+
+  private _setupDraggable() {
+    this._unbindDraggable();
+    this._draggableStrategyReturn = this.draggableStrategy?.(this);
+  }
+
   // ///////////////////////////////////////
   // Events
   // ///////////////////////////////////////
@@ -1126,7 +1167,7 @@ class SplitPanel<DType = any> {
     this.setResizeRect(resizeEntryToBoxRect(data));
   }
 
-  private _onResizeElMouseDown(e: MouseEvent) {
+  private _onResizeElMouseDown(e: MouseEvent | TouchEvent) {
     this.parent?.snapshotChildSizeInfo();
     this.dragPosStart = getCoordFromMouseEvent(e);
     e.preventDefault();
@@ -1180,6 +1221,7 @@ class SplitPanel<DType = any> {
       };
 
       document.addEventListener('mouseup', onMouseUp);
+      document.addEventListener('touchend', onMouseUp);
 
       // MOUSE MOVE
 
@@ -1188,11 +1230,14 @@ class SplitPanel<DType = any> {
       };
 
       document.addEventListener('mousemove', onMouseMove);
+      document.addEventListener('touchmove', onMouseMove);
 
       this._unbindRoot = () => {
         this._resizeObserver.disconnect();
         document.removeEventListener('mouseup', onMouseUp);
+        document.removeEventListener('touchend', onMouseUp);
         document.removeEventListener('mousemove', onMouseMove);
+        document.removeEventListener('touchmove', onMouseMove);
       };
     }
   }
