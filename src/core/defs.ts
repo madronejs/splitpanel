@@ -69,6 +69,8 @@ export enum STYLE_PREFIX {
 export type SplitPanelDef<DType = any> = {
   /** Panel id. If not set, one will be automatically generated */
   id?: string;
+  /** (Root only) Set the data array for the panel tree */
+  dataArray?: DType[],
   /** Optional data to associate with the panel */
   data?: DType;
   /** Sizing constraints for the panel */
@@ -312,15 +314,15 @@ export function getChildInfo<T>(children: Array<SplitPanel<T>>) {
   const map: Record<string, SplitPanel<T>> = {};
   const indexMap: Record<string, number> = {};
   const leafIndexMap: Record<string, number> = {};
-  let leafIndex = 0;
+  const leafPanels: SplitPanel<T>[] = [];
 
   for (const [index, child] of (children || []).entries()) {
     map[child.id] = child;
     indexMap[child.id] = index;
 
     if (!child.numChildren) {
-      leafIndexMap[child.id] = leafIndex;
-      leafIndex += 1;
+      leafIndexMap[child.id] = leafPanels.length;
+      leafPanels.push(child);
     }
   }
 
@@ -332,7 +334,9 @@ export function getChildInfo<T>(children: Array<SplitPanel<T>>) {
     /** An id to index map only taking leaf panels into consideration */
     leafIndexMap,
     /** Total number of leaf panels */
-    totalLeafPanels: leafIndex,
+    totalLeafPanels: leafPanels.length,
+    /** All of the leaf panels */
+    leafPanels,
   };
 }
 
