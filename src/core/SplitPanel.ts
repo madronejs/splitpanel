@@ -642,7 +642,7 @@ class SplitPanel<DType = any> {
 
   /** Set the data associated with the root of the tree */
   setDataArray(val: DType[]) {
-    if (this.isRoot) {
+    if (this.numChildren) {
       this.dataArray = val;
     }
   }

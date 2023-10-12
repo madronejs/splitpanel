@@ -68,7 +68,7 @@ export enum STYLE_PREFIX {
 export type SplitPanelDef<DType = any> = {
   /** Panel id. If not set, one will be automatically generated */
   id?: string;
-  /** (Root only) Set the data array for the panel tree */
+  /** (Only applies to parent items) Set the data array for the subtree */
   dataArray?: DType[],
   /** Optional data to associate with the panel */
   data?: DType;

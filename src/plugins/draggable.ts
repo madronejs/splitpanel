@@ -20,11 +20,14 @@ function addClone(event: DragEvent, el: HTMLElement, anchor: BoxCoord) {
   cloned.style.left = '-100vw';
   cloned.style.display = 'block';
 
-  document.body.append(cloned);
+  if (cloned) {
+    document.body.append(cloned);
 
-  const { width, height } = cloned.getBoundingClientRect();
+    const { width, height } = cloned.getBoundingClientRect();
 
-  event.dataTransfer.setDragImage(cloned, width * anchor.x, height * anchor.y);
+    event.dataTransfer.setDragImage(cloned, width * anchor.x, height * anchor.y);
+  }
+
   return cloned;
 }
 
