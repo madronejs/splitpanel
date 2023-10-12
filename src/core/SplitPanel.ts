@@ -998,6 +998,7 @@ class SplitPanel<DType = any> {
         this._addRootCb(this.resizeEl, 'resize', this._onResizeElResize);
         this.resizeObserver.observe(this.resizeEl);
         this.resizeEl.addEventListener('mousedown', this._onResizeElMouseDown);
+        this.resizeEl.addEventListener('touchstart', this._onResizeElMouseDown);
         this.resizeEl.addEventListener('dblclick', this._onDblClick);
         this.resizeEl.addEventListener('mouseover', this._onMouseover);
         this.resizeEl.addEventListener('mouseout', this._onMouseout);
@@ -1007,6 +1008,7 @@ class SplitPanel<DType = any> {
             this.resizeObserver.unobserve(this.resizeEl);
             this._removeRootCb(this.resizeEl, 'resize');
             this.resizeEl.removeEventListener('mousedown', this._onResizeElMouseDown);
+            this.resizeEl.removeEventListener('touchstart', this._onResizeElMouseDown);
             this.resizeEl.removeEventListener('dblclick', this._onDblClick);
             this.resizeEl.removeEventListener('mouseover', this._onMouseover);
             this.resizeEl.removeEventListener('mouseout', this._onMouseout);
@@ -1188,6 +1190,7 @@ class SplitPanel<DType = any> {
       };
 
       document.addEventListener('mouseup', onMouseUp);
+      document.addEventListener('touchend', onMouseUp);
 
       // MOUSE MOVE
 
@@ -1196,11 +1199,14 @@ class SplitPanel<DType = any> {
       };
 
       document.addEventListener('mousemove', onMouseMove);
+      document.addEventListener('touchmove', onMouseMove);
 
       this._unbindRoot = () => {
         this._resizeObserver.disconnect();
         document.removeEventListener('mouseup', onMouseUp);
+        document.removeEventListener('touchend', onMouseUp);
         document.removeEventListener('mousemove', onMouseMove);
+        document.removeEventListener('touchmove', onMouseMove);
       };
     }
   }

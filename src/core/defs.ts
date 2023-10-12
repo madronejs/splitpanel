@@ -198,7 +198,14 @@ export function resizeEntryToBoxRect(data: ResizeObserverEntry) {
   return pick(rect, ['x', 'y', 'width', 'height']) as BoxRect;
 }
 
-export function getCoordFromMouseEvent(e: MouseEvent): BoxCoord {
+export function getCoordFromMouseEvent(e: MouseEvent | TouchEvent): BoxCoord {
+  if ('touches' in e) {
+    return {
+      x: e.touches[0].clientX,
+      y: e.touches[0].clientY,
+    };
+  }
+
   return { x: e.pageX, y: e.pageY };
 }
 
