@@ -15,6 +15,7 @@ export default defineConfig({
         // resolve(__dirname, 'src/render/webComponent.ts'),
         resolve(__dirname, 'src/style.ts'),
         resolve(__dirname, 'src/plugins/animate.ts'),
+        resolve(__dirname, 'src/plugins/draggable.ts'),
       ],
       // the proper extensions will be added
       name: 'SplitPanel',

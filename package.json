@@ -30,6 +30,9 @@
       ],
       "animate": [
         "./types/plugins/animate.d.ts"
+      ],
+      "draggable": [
+        "./types/plugins/draggable.d.ts"
       ]
     }
   },
@@ -49,6 +52,10 @@
     "./animate": {
       "import": "./dist/animate.mjs",
       "require": "./dist/animate.js"
+    },
+    "./draggable": {
+      "import": "./dist/draggable.mjs",
+      "require": "./dist/draggable.js"
     },
     "./style": "./dist/style.css"
   },
