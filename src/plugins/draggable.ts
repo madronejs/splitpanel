@@ -12,15 +12,14 @@ function addClone(event: DragEvent, el: HTMLElement, anchor: BoxCoord) {
   if (!event.dataTransfer) return undefined;
 
   // make a deep clone of the template/invisible ghost,
-  const cloned = el.cloneNode(true) as HTMLElement;
-
-  // temporarily put it way off screen so we can't see it
-  cloned.style.position = 'fixed';
-  cloned.style.top = '-100vh';
-  cloned.style.left = '-100vw';
-  cloned.style.display = 'block';
+  const cloned = el?.cloneNode(true) as HTMLElement;
 
   if (cloned) {
+    // temporarily put it way off screen so we can't see it
+    cloned.style.position = 'fixed';
+    cloned.style.top = '-100vh';
+    cloned.style.left = '-100vw';
+    cloned.style.display = 'block';
     document.body.append(cloned);
 
     const { width, height } = cloned.getBoundingClientRect();
