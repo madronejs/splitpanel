@@ -14,6 +14,8 @@ import {
   type AnimateStrategy,
   type AnimateStrategyReturn,
   type FlattenStrategy,
+  type DraggableStrategy,
+  type DraggableStrategyReturn,
   getChildInfo,
   getCoordFromMouseEvent,
   getDistance,
@@ -174,6 +176,12 @@ class SplitPanel<DType = any> {
   /** How to animate the panel */
   @computed get animateStrategy() {
     return this._animateStrategy ?? this.parent?.animateStrategy;
+  }
+
+  @reactive protected _draggableStrategy: DraggableStrategy;
+  @reactive protected _draggableStrategyReturn: DraggableStrategyReturn;
+  @computed get draggableStrategy() {
+    return this._draggableStrategy ?? this.parent?.draggableStrategy;
   }
 
   @reactive private _flattenStrategy: FlattenStrategy;

@@ -13,6 +13,10 @@ export type AnimateStrategyReturn = {
   cancel: () => void,
 };
 export type AnimateStrategy = (panel: SplitPanel, items: SplitPanel[], sizeInfo?: ReturnType<typeof getSizeInfo>) => AnimateStrategyReturn;
+export type DraggableStrategyReturn = {
+  unbind?: () => void,
+};
+export type DraggableStrategy = (panel: SplitPanel) => DraggableStrategyReturn;
 
 export type PanelConstraints = {
   /** Minimum size */
