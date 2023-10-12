@@ -38,7 +38,12 @@ function createTestPanel() {
   });
 
   panel.setAnimateStrategy(configureAnimate());
-  panel.setDraggableStrategy(configureDraggable());
+  panel.setDraggableStrategy(configureDraggable({
+    onDrop: (evt) => {
+      evt.target.swapData(evt.panel);
+    },
+    ghostAnchor: () => ({ x: 0.5, y: 0.5 }),
+  }));
 
   return panel;
 }
