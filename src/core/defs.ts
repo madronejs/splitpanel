@@ -1,7 +1,6 @@
 import differenceBy from 'lodash/differenceBy';
 import pick from 'lodash/pick';
 import round from 'lodash/round';
-import camelCase from 'lodash/camelCase';
 
 import type SplitPanel from './SplitPanel';
 
@@ -132,16 +131,6 @@ export const EXACT_SYMBOL = 'px';
 
 export function roundVal(val: number, precision?: number) {
   return round(val, precision ?? 10);
-}
-
-export function camelCaseObject(obj: Record<string, any>) {
-  const newStyle = {};
-
-  for (const key of Object.keys(obj || {})) {
-    newStyle[camelCase(key)] = obj[key];
-  }
-
-  return newStyle;
 }
 
 export function parseConstraint(val: string | number, comparativeSize: number): ParsedConstraint {
