@@ -499,7 +499,6 @@ class SplitPanel<DType = any> {
 
   /** This panel's index in the entire tree, only counting leaf panels */
   @computed get rootLeafIndex() {
-    console.log('allChildren:', this.root?.allChildren);
     return this.rootLeafIndexById(this.id);
   }
 
