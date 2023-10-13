@@ -24,7 +24,7 @@ function createTestPanel() {
       { id: 'foo1', data: 'data1' },
       {
         id: 'foo2',
-        direction: 'column',
+        // direction: 'column',
         children: [
           { id: 'foo5', data: 'data2' },
           { id: 'foo6', data: 'data3' },
@@ -38,7 +38,12 @@ function createTestPanel() {
   });
 
   panel.setAnimateStrategy(configureAnimate());
-  panel.setDraggableStrategy(configureDraggable());
+  panel.setDraggableStrategy(configureDraggable({
+    onDrop: (evt) => {
+      evt.target.swapData(evt.panel);
+    },
+    ghostAnchor: () => ({ x: 0.5, y: 0.5 }),
+  }));
 
   return panel;
 }
