@@ -188,7 +188,7 @@ class SplitPanel<DType = any> {
   @reactive private _animateStrategy: AnimateStrategy;
   @reactive private _animateStrategyData: AnimateStrategyReturn;
   /** How to animate the panel */
-  @computed get animateStrategy() {
+  @computed get animateStrategy(): AnimateStrategy {
     return this._animateStrategy ?? this.parent?.animateStrategy;
   }
 
