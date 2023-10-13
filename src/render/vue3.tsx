@@ -22,6 +22,9 @@ const SplitPanelView = defineComponent({
   },
   render() {
     const sPanel: SplitPanel = this.splitPanel;
+
+    if (!sPanel) return null;
+
     const panelSlots: SlotsType = this.slots;
     const scope = makeScope(sPanel);
 
