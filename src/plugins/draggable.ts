@@ -182,12 +182,12 @@ export default function configureDraggable(
     function setupListeners() {
       const { contentEl } = panel;
 
-      contentEl.addEventListener('mousedown', scan);
-      contentEl.addEventListener('touchstart', scan, { passive: true });
+      contentEl?.addEventListener('mousedown', scan);
+      contentEl?.addEventListener('touchstart', scan, { passive: true });
 
       unbindSetup = () => {
-        contentEl.removeEventListener('mousedown', scan);
-        contentEl.removeEventListener('touchstart', scan);
+        contentEl?.removeEventListener('mousedown', scan);
+        contentEl?.removeEventListener('touchstart', scan);
       };
     }
 
