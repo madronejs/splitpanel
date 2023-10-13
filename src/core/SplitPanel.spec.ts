@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
+import { PANEL_DIRECTION } from './defs';
 import { resizeAll } from './resize';
 import SplitPanel from './SplitPanel';
 
@@ -134,6 +135,16 @@ describe('SplitPanel', () => {
 
       splitPanel.byId(IDS.ID3).remove();
       expect(Object.keys(splitPanel.childMap)).toEqual([IDS.ID1, IDS.ID2, IDS.ID4]);
+    });
+  });
+
+  describe('add/remove nested child', () => {
+    it('automatically sets direction', () => {
+      const splitPanel = create4SplitPanel();
+      const sp1 = splitPanel.byId(IDS.ID1);
+
+      sp1.addChild({ id: 'foobar' });
+      expect(sp1.direction).toEqual(PANEL_DIRECTION.column);
     });
   });
 

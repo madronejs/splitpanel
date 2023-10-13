@@ -24,7 +24,7 @@ function createTestPanel() {
       { id: 'foo1', data: 'data1' },
       {
         id: 'foo2',
-        direction: 'column',
+        // direction: 'column',
         children: [
           { id: 'foo5', data: 'data2' },
           { id: 'foo6', data: 'data3' },

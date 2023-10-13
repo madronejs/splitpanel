@@ -150,8 +150,16 @@ class SplitPanel<DType = any> {
   }
 
   @reactive private _direction: PANEL_DIRECTION;
+
+  @computed get inverseDirection() {
+    return this._direction === PANEL_DIRECTION.column ? PANEL_DIRECTION.row : PANEL_DIRECTION.column;
+  }
+
   /** The direction the panel is split */
   @computed get direction(): PANEL_DIRECTION {
+    if (this.numChildren) {
+      return this._direction ?? this.parent?.inverseDirection ?? PANEL_DIRECTION.row;
+    }
     return this._direction ?? this.parent?.direction ?? PANEL_DIRECTION.row;
   }
 
@@ -793,7 +801,7 @@ class SplitPanel<DType = any> {
     }
   }
 
-  async animateChildren(val?: ConstraintType, items?: SplitPanel<DType>[],) {
+  async animateChildren(val?: ConstraintType, items?: SplitPanel<DType>[]) {
     this._animateStrategyData?.cancel?.();
     this.snapshotChildSizeInfo();
 
@@ -966,7 +974,7 @@ class SplitPanel<DType = any> {
   /** Attach a DOM element to this panel */
   attachEl(
     /** The element to attach */
-    el: HTMLElement,
+    el: HTMLElement
   ) {
     if (this.containerEl !== el) {
       this._unbindContainerEl?.();
@@ -1009,7 +1017,7 @@ class SplitPanel<DType = any> {
   /** Attach a DOM element to act as the resize */
   attachResizeEl(
     /** The element to use as the resize or a css selector */
-    el: HTMLElement,
+    el: HTMLElement
   ) {
     if (this.resizeEl !== el) {
       this._unbindResizeEl?.();
@@ -1119,7 +1127,7 @@ class SplitPanel<DType = any> {
   syncNumChildren(
     num: number,
     options?: {
-      childTemplate?: SplitPanelDef<DType>;
+      childTemplate?: SplitPanelDef<DType>,
     },
   ) {
     const diff = num - this.numChildren;
