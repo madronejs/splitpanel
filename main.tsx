@@ -19,21 +19,22 @@ function createTestPanel() {
   const panel = SplitPanel.create({
     id: 'foo',
     resizeElSize: 20,
-    // showFirstResizeEl: true,
+    showFirstResizeEl: true,
     children: [
       { id: 'foo1', data: 'data1' },
       {
         id: 'foo2',
         // direction: 'column',
-        children: [
-          { id: 'foo5', data: 'data2' },
-          { id: 'foo6', data: 'data3' },
-        ],
+        // children: [
+        //   { id: 'foo5', data: 'data2' },
+        //   { id: 'foo6', data: 'data3' },
+        // ],
       },
-      { id: 'foo7', constraints: { size: '10%' }, data: 'data4' },
+      // { id: 'foo7', constraints: { size: '10%' }, data: 'data4' },
       // { id: 'foo8', constraints: { size: '20%' } },
-      // { id: 'foo3' },
-      // { id: 'foo4' },
+      { id: 'foo3' },
+      { id: 'foo4' },
+      // { id: 'foo5' },
     ],
   });
 

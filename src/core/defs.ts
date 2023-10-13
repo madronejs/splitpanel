@@ -11,7 +11,7 @@ export type AnimateStrategyReturn = {
   promise: Promise<void>,
   cancel: () => void,
 };
-export type AnimateStrategy = (panel: SplitPanel, items: SplitPanel[], sizeInfo?: ReturnType<typeof getSizeInfo>) => AnimateStrategyReturn;
+export type AnimateStrategy = (panel: SplitPanel, items: SplitPanel[], size?: ConstraintType) => AnimateStrategyReturn;
 export type DraggableStrategyReturn = {
   unbind?: () => void,
 };
@@ -161,7 +161,7 @@ export function exactToPx(val: number) {
   return `${val}${EXACT_SYMBOL}`;
 }
 
-export function parsedToFormatted(parsed: ParsedConstraint | ReturnType<typeof getSizeInfo>): string {
+export function parsedToFormatted(parsed: ParsedConstraint | SizeInfoType): string {
   if (!parsed) return undefined;
   if ('relativeValue' in parsed) {
     return parsed.relative
@@ -329,6 +329,8 @@ export function getChildInfo<T>(children: Array<SplitPanel<T>>) {
   };
 }
 
+export type SizeInfoType = ReturnType<typeof getSizeInfo>;
+
 export function getSizeInfo(
   options: {
     parsedConstraints?: ParsedPanelConstraints;
@@ -404,7 +406,7 @@ type NumberKeys<T> = {
 export type SumOptions = {
   includeNegative?: boolean;
   sumSource?: 'sizeInfo' | 'sizeInfoSnapshot';
-  sumProperty?: NumberKeys<ReturnType<typeof getSizeInfo>>;
+  sumProperty?: NumberKeys<SizeInfoType>;
   getter?: (panel: SplitPanel) => number;
 };
 
