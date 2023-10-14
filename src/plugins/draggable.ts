@@ -161,10 +161,10 @@ export default function configureDraggable(
       dragHandle.addEventListener('dragstart', onDrag);
 
       unbindDrag = () => {
-        dragHandle.setAttribute('draggable', originalDraggable);
-        dragHandle.removeEventListener('touchstart', onDrag);
-        dragHandle.removeEventListener('dragstart', onDrag);
-        dragHandle.removeEventListener('dragend', unbindDrag);
+        dragHandle?.setAttribute('draggable', originalDraggable);
+        dragHandle?.removeEventListener('touchstart', onDrag);
+        dragHandle?.removeEventListener('dragstart', onDrag);
+        dragHandle?.removeEventListener('dragend', unbindDrag);
         ghostEl?.remove();
         dragHandle = undefined;
         removeDraggingClass();
