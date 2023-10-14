@@ -882,10 +882,14 @@ class SplitPanel<DType = any> {
     await target?.maximize();
   }
 
+  /** Calculate the new sizes for the panels without setting any new sizes */
   calculateSizes(
     options: {
+      /** The item (or items) that will have their sizes set */
       item?: SplitPanel<DType> | SplitPanel<DType>[],
+      /** The new size to apply to the item(s) passed */
       size?: ConstraintType,
+      /** The items that should change sizes in response to the items that had their sizes set */
       itemsToConstrain?: SplitPanel<DType> | SplitPanel<DType>[],
     }
   ): Record<string, SizeInfoType> {
