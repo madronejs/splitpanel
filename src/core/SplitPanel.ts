@@ -79,6 +79,9 @@ class SplitPanel<DType = any> {
     this._children = [];
     this._root = options?.root;
     this._observeElement = options?.observe ?? true;
+    this.resizeEl = null;
+    this.contentEl = null;
+    this.containerEl = null;
     this._debouncedSatisfyConstraints = debounce(this.satisfyConstraints.bind(this));
     this.parent = options?.parent;
     this._setupRootIfNeeded();
@@ -666,6 +669,20 @@ class SplitPanel<DType = any> {
     }
   }
 
+  /** Move data from panel to this index, and shift other data over */
+  moveData(panel: SplitPanel<DType>) {
+    if (panel) {
+      const cpy = [...panel.root.dataArray];
+      // take the element that was moved, and remove it from the array
+      const [toInsert] = cpy.splice(panel.rootLeafIndex, 1);
+
+      // insert the moved element into its new place
+      cpy.splice(this.rootLeafIndex, 0, toInsert);
+
+      panel.root.setDataArray(cpy);
+    }
+  }
+
   setShowFirstResizeEl(val: boolean) {
     this._showFirstResizeEl = val;
   }
@@ -1012,10 +1029,11 @@ class SplitPanel<DType = any> {
     /** The element to attach */
     el: HTMLElement
   ) {
-    if (this.containerEl !== el) {
-      this._unbindContainerEl?.();
-
+    if (el && this.containerEl !== el) {
       const toUnbind: Array<(() => void)> = [];
+
+      this._unbindContainerEl?.();
+      this.containerEl = el;
 
       if (this.containerEl && this._observeElement) {
         toUnbind.push(() => {
@@ -1025,8 +1043,6 @@ class SplitPanel<DType = any> {
           }
         });
       }
-
-      this.containerEl = el;
 
       if (el && this._observeElement) {
         this._addRootCb(el, 'resize', this._onElementResize);
@@ -1044,7 +1060,7 @@ class SplitPanel<DType = any> {
 
   /** Attach a DOM element to act as the content for this panel */
   attachContentEl(el: HTMLElement) {
-    if (el !== this.contentEl) {
+    if (el && this.contentEl !== el) {
       this.contentEl = el;
       this._setupDraggable();
     }
@@ -1055,7 +1071,7 @@ class SplitPanel<DType = any> {
     /** The element to use as the resize or a css selector */
     el: HTMLElement
   ) {
-    if (this.resizeEl !== el) {
+    if (el && this.resizeEl !== el) {
       this._unbindResizeEl?.();
       this.resizeEl = el;
 
