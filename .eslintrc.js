@@ -152,5 +152,6 @@ module.exports = {
     'unicorn/prevent-abbreviations': 'off',
     'unicorn/no-this-assignment': 'off',
     'unicorn/prefer-dom-node-remove': 'off',
+    'unicorn/prefer-default-parameters': 'off',
   },
 };
