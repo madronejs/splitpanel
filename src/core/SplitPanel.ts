@@ -37,6 +37,7 @@ import {
   SIBLING_RELATION,
   type SplitPanelArgs,
   type SplitPanelDef,
+  type SizeInfoType,
   sumMinSizes,
   sumSizes,
 } from './defs';
@@ -117,7 +118,7 @@ class SplitPanel<DType = any> {
   /** If we should add listeners to the elements */
   @reactive private _observeElement: boolean;
   /** Size info snapshot, taken before a resize event */
-  @reactive sizeInfoSnapshot: ReturnType<typeof getSizeInfo>;
+  @reactive sizeInfoSnapshot: SizeInfoType;
   /** If the mouse is hovering over the resizer */
   @reactive hovering: boolean;
 
@@ -188,7 +189,7 @@ class SplitPanel<DType = any> {
   @reactive private _animateStrategy: AnimateStrategy;
   @reactive private _animateStrategyData: AnimateStrategyReturn;
   /** How to animate the panel */
-  @computed get animateStrategy() {
+  @computed get animateStrategy(): AnimateStrategy {
     return this._animateStrategy ?? this.parent?.animateStrategy;
   }
 
@@ -586,7 +587,7 @@ class SplitPanel<DType = any> {
   }
 
   /** Calculate size information based on this panel's constraints */
-  getSizeInfo(size?: ConstraintType): ReturnType<typeof getSizeInfo> {
+  getSizeInfo(size?: ConstraintType): SizeInfoType {
     return getSizeInfo({
       size,
       parsedConstraints: this.parsedConstraints,
@@ -806,24 +807,22 @@ class SplitPanel<DType = any> {
     this.snapshotChildSizeInfo();
 
     const newItems = items ?? this.children;
-    const parsed = val == null ? undefined : getSizeInfo({
-      size: val,
-      rectSize: this.contentRectSize,
-      comparativeSize: this.contentRectSize,
-    });
 
-    this._animateStrategyData = this.animateStrategy?.(this, newItems, parsed);
+    this._animateStrategyData = this.animateStrategy?.(this, newItems, val);
     await this._animateStrategyData?.promise;
 
-    if (parsed) {
+    if (!this.animateStrategy) {
+      const others = negateChildren(this, newItems);
+      const parsed = val == null ? undefined : getSizeInfo({
+        size: val,
+        rectSize: this.contentRectSize,
+        comparativeSize: this.contentRectSize,
+      });
+
       for (const item of newItems) {
         item.setSize(parsed.formatted);
       }
-    }
 
-    const others = negateChildren(this, newItems);
-
-    if (!this.animateStrategy) {
       this.satisfyConstraints({ items: others });
     }
 
@@ -883,23 +882,53 @@ class SplitPanel<DType = any> {
     await target?.maximize();
   }
 
-  /** Satisfy the constraints for the given items, or all children if no items passed in */
-  satisfyConstraints(
-    options?: {
-      incremental?: boolean,
-      items?: SplitPanel<DType> | Array<SplitPanel<DType>>,
+  /** Calculate the new sizes for the panels without setting any new sizes */
+  calculateSizes(
+    options: {
+      /** The item (or items) that will have their sizes set */
+      item?: SplitPanel<DType> | SplitPanel<DType>[],
+      /** The new size to apply to the item(s) passed */
+      size?: ConstraintType,
+      /** The items that should change sizes in response to the items that had their sizes set */
+      itemsToConstrain?: SplitPanel<DType> | SplitPanel<DType>[],
     }
-  ) {
-    const items = options?.items;
-    const newItems = items ? [items].flat().filter(Boolean) : undefined;
+  ): Record<string, SizeInfoType> {
+    const newItems = options?.itemsToConstrain ? [options.itemsToConstrain].flat().filter(Boolean) : undefined;
     const itemsToConsider = newItems || this.children;
+    const sizeMap: Record<string, SizeInfoType> = {};
+
+    const addToSizeMap = (child: SplitPanel<DType>, sizeInfo?: SizeInfoType) => {
+      const newSizeInfo = sizeInfo?.parsedSize ? sizeInfo : child.sizeInfo;
+
+      if (newSizeInfo?.parsedSize) {
+        sizeMap[child.id] = newSizeInfo;
+      }
+    };
+
+    for (const child of this.children) {
+      addToSizeMap(child);
+    }
+
+    let leftToAllocate = this.rectSize;
+    let itemsToSum = this.children;
+    const itemsToSet = options.item ? [options.item].flat() : undefined;
+
+    if (itemsToSet) {
+      itemsToSum = negateChildren(this, itemsToSet);
+
+      for (const item of itemsToSet) {
+        const sizeInfo = item.getSizeInfo(options.size ?? item.originalSize);
+
+        leftToAllocate -= sizeInfo?.exactSize ?? 0;
+        addToSizeMap(item, sizeInfo);
+      }
+    }
 
     if (itemsToConsider.length === 0) {
-      return;
+      return sizeMap;
     }
 
-    const diff = this.rectSize - sumSizes(this.children);
-    let leftToAllocate = this.rectSize;
+    const diff = leftToAllocate - sumSizes(itemsToSum);
 
     if (newItems) {
       leftToAllocate -= sumSizes(negateChildren(this, newItems));
@@ -908,48 +937,55 @@ class SplitPanel<DType = any> {
     const getRemaining = (divideBy = 1) => {
       const fractionRemaining = leftToAllocate / this.rectSize;
       const relativeSize = fractionRemaining / divideBy;
-      return (Number.isNaN(relativeSize) || !Number.isFinite(relativeSize)) ? undefined : {
-        addAmt: diff / divideBy,
-        relativeSize,
-      };
+      return (Number.isNaN(relativeSize) || !Number.isFinite(relativeSize)) ? undefined : relativeSize;
     };
 
     if (this.rectSize && Number.isFinite(this.rectSize)) {
       const remainingToObserve = new Set<SplitPanel<DType>>(itemsToConsider);
-      const shrinkableToObserve = new Set<SplitPanel<DType>>(itemsToConsider.filter((item) => item.canShrink));
-      const growableToObserve = new Set<SplitPanel<DType>>(itemsToConsider.filter((item) => item.canGrow));
       // find the items with the smallest set size and address those first so the remaining items can be given more space
-      const sortedItems = sortBy(itemsToConsider, (item: SplitPanel<DType>) => item.parsedConstraints?.size);
+      const sortedItems: SplitPanel<DType>[] = sortBy(itemsToConsider, (item: SplitPanel<DType>) => item.parsedConstraints?.size);
 
       for (const item of sortedItems) {
-        const remainingGrowable = getRemaining(growableToObserve.size);
-        const remainingShrinkable = getRemaining(shrinkableToObserve.size);
+        const remaining = relativeToPercent(getRemaining(remainingToObserve.size));
+        const canGrow = item.canGrow && diff >= 0;
+        const canShrink = item.canShrink && diff < 0;
+        let newSize: SizeInfoType;
 
         if (!item.hasSize) {
-          const remaining = getRemaining(remainingToObserve.size);
+          newSize = item.getSizeInfo(
+            parsedToFormatted(item.parsedConstraints?.size)
+            ?? remaining
+          );
+        } else if (canGrow || canShrink) {
+          newSize = item.getSizeInfo(remaining);
+        } else {
+          newSize = item.sizeInfo;
+        }
 
-          item.setSize(parsedToFormatted(item.parsedConstraints?.size) ?? relativeToPercent(remaining.relativeSize));
-          leftToAllocate -= item.sizeInfo.exactSize;
-        } else if (item.canGrow && remainingGrowable.addAmt >= 0) {
-          if (options?.incremental) {
-            item.addSize(remainingGrowable.addAmt);
-          } else {
-            item.setSize(relativeToPercent(remainingGrowable.relativeSize));
-          }
-          leftToAllocate -= item.sizeInfo.exactSize;
-        } else if (item.canShrink && remainingShrinkable.addAmt < 0) {
-          if (options?.incremental) {
-            item.addSize(remainingShrinkable.addAmt);
-          } else {
-            item.setSize(relativeToPercent(remainingShrinkable.relativeSize));
-          }
-          leftToAllocate -= item.sizeInfo.exactSize;
+        if (newSize) {
+          leftToAllocate -= newSize.exactSize;
+          addToSizeMap(item, newSize);
         }
 
         remainingToObserve.delete(item);
-        shrinkableToObserve.delete(item);
-        growableToObserve.delete(item);
       }
+    }
+
+    return sizeMap;
+  }
+
+  /** Satisfy the constraints for the given items, or all children if no items passed in */
+  satisfyConstraints(
+    options?: {
+      items?: SplitPanel<DType> | Array<SplitPanel<DType>>,
+    }
+  ) {
+    const sizeMap = this.calculateSizes({
+      itemsToConstrain: options?.items,
+    });
+
+    for (const id of Object.keys(sizeMap)) {
+      this.byId(id)?.setSize(sizeMap[id].formatted);
     }
   }
 

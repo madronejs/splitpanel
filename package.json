@@ -63,8 +63,8 @@
     "dev": "vite",
     "test": "vitest",
     "lint": "eslint src/ --ext .js,.jsx,.ts,.tsx",
-    "build-types": "rm -rf types && tsc -p ./tsconfig.json && tsc-alias -p tsconfig.json",
-    "build": "rm -rf dist && pnpm build-types && vite build",
+    "build-types": "rm -rf types/* && tsc -p ./tsconfig.json && tsc-alias -p tsconfig.json",
+    "build": "rm -rf dist/* && pnpm build-types && vite build",
     "preview": "vite preview"
   },
   "devDependencies": {
