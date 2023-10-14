@@ -669,6 +669,20 @@ class SplitPanel<DType = any> {
     }
   }
 
+  /** Move data from panel to this index, and shift other data over */
+  moveData(panel: SplitPanel<DType>) {
+    if (panel) {
+      const cpy = [...panel.root.dataArray];
+      // take the element that was moved, and remove it from the array
+      const [toInsert] = cpy.splice(panel.rootLeafIndex, 1);
+
+      // insert the moved element into its new place
+      cpy.splice(this.rootLeafIndex, 0, toInsert);
+
+      panel.root.setDataArray(cpy);
+    }
+  }
+
   setShowFirstResizeEl(val: boolean) {
     this._showFirstResizeEl = val;
   }
