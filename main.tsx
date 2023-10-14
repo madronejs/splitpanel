@@ -30,7 +30,7 @@ function createTestPanel() {
         //   { id: 'foo6', data: 'data3' },
         // ],
       },
-      // { id: 'foo7', constraints: { size: '10%' }, data: 'data4' },
+      { id: 'foo7', constraints: { size: '10%' }, data: 'data4' },
       // { id: 'foo8', constraints: { size: '20%' } },
       { id: 'foo3' },
       { id: 'foo4' },

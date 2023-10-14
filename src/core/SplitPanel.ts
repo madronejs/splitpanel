@@ -905,23 +905,23 @@ class SplitPanel<DType = any> {
       addToSizeMap(child);
     }
 
-    if (itemsToConsider.length === 0) {
-      return sizeMap;
-    }
-
     let leftToAllocate = this.rectSize;
     let itemsToSum = this.children;
     const itemsToSet = options.item ? [options.item].flat() : undefined;
 
-    if (itemsToSet && options.size != null) {
+    if (itemsToSet) {
       itemsToSum = negateChildren(this, itemsToSet);
 
       for (const item of itemsToSet) {
-        const sizeInfo = item.getSizeInfo(options.size);
+        const sizeInfo = item.getSizeInfo(options.size ?? item.originalSize);
 
         leftToAllocate -= sizeInfo?.exactSize ?? 0;
         addToSizeMap(item, sizeInfo);
       }
+    }
+
+    if (itemsToConsider.length === 0) {
+      return sizeMap;
     }
 
     const diff = leftToAllocate - sumSizes(itemsToSum);
