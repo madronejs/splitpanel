@@ -13,6 +13,7 @@ export type AnimateStrategyReturn = {
 };
 export type AnimateStrategy = (panel: SplitPanel, items: SplitPanel[], size?: ConstraintType) => AnimateStrategyReturn;
 export type DraggableStrategyReturn = {
+  dragging: boolean,
   unbind?: () => void,
 };
 export type DraggableStrategy = (panel: SplitPanel) => DraggableStrategyReturn;

@@ -16,6 +16,12 @@ split-panel, .split-panel {
   }
 }
 
+.split-panel-dropzone {
+  * {
+    pointer-events: none !important;
+  }
+}
+
 .split-panel {
   width: var(--sp-width);
   height: var(--sp-height);

@@ -1035,16 +1035,13 @@ class SplitPanel<DType = any> {
       this._unbindContainerEl?.();
       this.containerEl = el;
 
-      if (this.containerEl && this._observeElement) {
+      if (this._observeElement) {
         toUnbind.push(() => {
           if (this.containerEl) {
             this.resizeObserver.unobserve(this.containerEl);
             this._removeRootCb(this.containerEl, 'resize');
           }
         });
-      }
-
-      if (el && this._observeElement) {
         this._addRootCb(el, 'resize', this._onElementResize);
         this._addRootCb(el, 'mousemove', this._onMouseMove);
         this._addRootCb(el, 'mouseup', this._onMouseUp);
@@ -1052,6 +1049,7 @@ class SplitPanel<DType = any> {
         this._debouncedSatisfyConstraints();
       }
 
+      this._setupDraggable();
       this._unbindContainerEl = () => {
         for (const cb of toUnbind) cb();
       };
@@ -1062,7 +1060,6 @@ class SplitPanel<DType = any> {
   attachContentEl(el: HTMLElement) {
     if (el && this.contentEl !== el) {
       this.contentEl = el;
-      this._setupDraggable();
     }
   }
 
