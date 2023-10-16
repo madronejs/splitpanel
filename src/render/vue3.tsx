@@ -69,18 +69,14 @@ const SplitPanelView = defineComponent({
             )
           }
         </div>
-        {/* {
+        {
           sPanel.isDropZone ? (
             <div
               ref={sPanel.attachDropZoneEl}
               class="split-panel-dropzone">{this.slots.dropZone?.(scope)}
             </div>
           ) : null
-        } */}
-        {/* <div
-          ref={sPanel.attachDropZoneEl}
-          class="split-panel-dropzone">{this.slots.dropZone?.(scope)}
-        </div> */}
+        }
       </div>
     );
   },

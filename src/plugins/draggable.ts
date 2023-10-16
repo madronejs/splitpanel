@@ -55,49 +55,19 @@ export default function configureDraggable(
 ): DraggableStrategy {
   const dragSelector = options?.dragSelector ?? '.drag-handle';
   const dropSelector = options?.dropSelector;
-  const draggingClass = options?.draggingClass ?? 'split-panel-dragging';
-  const dropzoneClass = options?.dropzoneClass ?? 'split-panel-dropzone';
   const dragoverClass = options?.dragoverClass ?? 'split-panel-dragover';
 
-  let dropzoneClassCleanup: HTMLElement[];
-
-  function removeDropzoneClass() {
-    for (const el of dropzoneClassCleanup || []) {
-      el?.classList.remove(dropzoneClass);
-    }
-
-    dropzoneClassCleanup = undefined;
-  }
-
-  let dragClassCleanup: HTMLElement[];
-
-  function removeDraggingClass() {
-    for (const el of dragClassCleanup || []) {
-      el?.classList.remove(draggingClass);
-    }
-  }
-
   const dragState = auto<{
-    panel: SplitPanel,
+    dragTarget: SplitPanel,
+    dropTarget: SplitPanel,
   }>({
-    panel: undefined,
+    dragTarget: undefined,
+    dropTarget: undefined,
   });
 
   function setDragoverPanel(panel: SplitPanel) {
-    dragState.panel = panel;
+    dragState.dropTarget = panel;
   }
-  // let dragoverEl: HTMLElement;
-
-  // function unsetDragoverEl() {
-  //   dragoverEl?.classList.remove(dragoverClass);
-  //   dragoverEl = undefined;
-  // }
-
-  // function setDragoverEl(el: HTMLElement) {
-  //   unsetDragoverEl();
-  //   dragoverEl = el;
-  //   dragoverEl?.classList.add(dragoverClass);
-  // }
 
   return (panel: SplitPanel) => {
     let unbindSetup: () => void;
@@ -107,8 +77,19 @@ export default function configureDraggable(
     let dropZone: HTMLElement;
     let ghostEl: HTMLElement;
     const returnVal: DraggableStrategyReturn = auto({
-      dragging: false,
       unbind: undefined,
+      get isDragging() {
+        return dragState.dragTarget?.id === panel.id;
+      },
+      get isDropZone() {
+        return dragState.dragTarget && dragState.dragTarget.id !== panel.id;
+      },
+      get dropTarget() {
+        return dragState.dropTarget;
+      },
+      get dragTarget() {
+        return dragState.dragTarget;
+      },
     });
 
     function getPanelFromEvent(e: DragEvent) {
@@ -121,7 +102,7 @@ export default function configureDraggable(
     }
 
     function onDragEnter() {
-      if (returnVal.dragging) {
+      if (returnVal.isDragging) {
         setDragoverPanel(null);
       } else {
         setDragoverPanel(panel);
@@ -130,7 +111,7 @@ export default function configureDraggable(
     }
 
     function onDragLeave() {
-      if (!returnVal.dragging) {
+      if (!returnVal.isDragging) {
         options?.onDragOver?.({ target: panel, enter: false });
       }
     }
@@ -155,27 +136,6 @@ export default function configureDraggable(
       };
     }
 
-    function addDropzoneClass() {
-      removeDropzoneClass();
-      dropzoneClassCleanup = [];
-
-      for (const child of panel.root.allChildren) {
-        if (child.id !== panel.id && checkDrop(child, options?.canDrop) && child.containerEl) {
-          child.containerEl.classList.add(dropzoneClass);
-          dropzoneClassCleanup.push(child.containerEl);
-        }
-      }
-    }
-
-    function addDraggingClass() {
-      removeDraggingClass();
-
-      if (checkDrag(panel, options?.canDrag) && panel.containerEl) {
-        dragClassCleanup = [panel.containerEl];
-        panel.containerEl.classList.add(draggingClass);
-      }
-    }
-
     function onDrag(e: DragEvent) {
       const anchor = options?.ghostAnchor?.(panel);
       const newAnchor = {
@@ -192,8 +152,6 @@ export default function configureDraggable(
       e.dataTransfer.dropEffect = 'move';
       e.dataTransfer.effectAllowed = 'move';
       e.dataTransfer.setData('text/plain', panel.id);
-      addDraggingClass();
-      addDropzoneClass();
     }
 
     function setupDragIfNeeded() {
@@ -208,22 +166,25 @@ export default function configureDraggable(
       dragHandle.setAttribute('draggable', 'true');
       dragHandle.addEventListener('touchstart', onDrag);
       dragHandle.addEventListener('dragstart', onDrag);
-      returnVal.dragging = true;
+      dragState.dragTarget = panel;
 
       unbindDrag = () => {
-        returnVal.dragging = false;
         dragHandle?.setAttribute('draggable', originalDraggable);
         dragHandle?.removeEventListener('touchstart', onDrag);
         dragHandle?.removeEventListener('dragstart', onDrag);
         dragHandle?.removeEventListener('dragend', unbindDrag);
+        dragHandle?.removeEventListener('mouseup', unbindDrag);
+        dragHandle?.removeEventListener('touchend', unbindDrag);
         ghostEl?.remove();
         dragHandle = undefined;
-        removeDraggingClass();
-        removeDropzoneClass();
+        dragState.dragTarget = undefined;
         setDragoverPanel(null);
+        unbindDrag = undefined;
       };
 
       dragHandle.addEventListener('dragend', unbindDrag);
+      dragHandle.addEventListener('mouseup', unbindDrag);
+      dragHandle.addEventListener('touchend', unbindDrag);
     }
 
     function scan() {
@@ -243,7 +204,7 @@ export default function configureDraggable(
       };
     }
 
-    const disposeDragoverPanelWatcher = watch(() => dragState.panel, (val, old) => {
+    const disposeDropTargetWatcher = watch(() => dragState.dropTarget, (val, old) => {
       old?.containerEl?.classList.remove(dragoverClass);
       val?.containerEl?.classList.add(dragoverClass);
     });
@@ -259,7 +220,7 @@ export default function configureDraggable(
     }, { immediate: true });
 
     returnVal.unbind = () => {
-      disposeDragoverPanelWatcher();
+      disposeDropTargetWatcher();
       disposeChildWatcher();
       unbindSetup?.();
       unbindDrag?.();

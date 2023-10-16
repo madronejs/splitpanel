@@ -74,6 +74,7 @@ class SplitPanel<DType = any> {
     this.attachEl = this.attachEl.bind(this);
     this.attachContentEl = this.attachContentEl.bind(this);
     this.attachResizeEl = this.attachResizeEl.bind(this);
+    this.attachDropZoneEl = this.attachDropZoneEl.bind(this);
     // This._onElementClick = this._onElementClick.bind(this);
     // setup
     this._children = [];
@@ -114,6 +115,10 @@ class SplitPanel<DType = any> {
   @reactive contentEl: HTMLElement;
   /** Unbind all events for resize el */
   @reactive private _unbindResizeEl: () => void;
+  /** The html element for containing the dropzone content of the panel */
+  @reactive dropZoneEl: HTMLElement;
+  /** Unbind the dropzone element */
+  @reactive private _unbindDropZoneEl: () => void;
   /** The html element to act as the resize for this */
   @reactive resizeEl: HTMLElement;
   /** Size of the resize bar */
@@ -196,10 +201,35 @@ class SplitPanel<DType = any> {
     return this._animateStrategy ?? this.parent?.animateStrategy;
   }
 
-  @reactive protected _draggableStrategy: DraggableStrategy;
-  @reactive protected _draggableStrategyReturn: DraggableStrategyReturn;
-  @computed get draggableStrategy(): DraggableStrategy {
+  @reactive protected _draggableStrategy: DraggableStrategy<DType>;
+  @reactive protected _draggableStrategyReturn: DraggableStrategyReturn<DType>;
+  @computed get draggableStrategy(): DraggableStrategy<DType> {
     return this._draggableStrategy ?? this.parent?.draggableStrategy;
+  }
+
+  /** If the current panel is being dragged */
+  @computed get isDragging() {
+    return !!this._draggableStrategyReturn?.isDragging;
+  }
+
+  /** If this panel can have another panel dropped on it */
+  @computed get isDropZone() {
+    return !this.isRoot && !!this._draggableStrategyReturn?.isDropZone;
+  }
+
+  /** The panel being dropped */
+  @computed get dropTarget() {
+    return this._draggableStrategyReturn?.dropTarget;
+  }
+
+  /** The panel being dragged */
+  @computed get dragTarget() {
+    return this._draggableStrategyReturn?.dragTarget;
+  }
+
+  /** If the current panel being dragged is being dropped onto this panel */
+  @computed get isDropping() {
+    return this.isDropZone && this.dropTarget?.id === this.id;
   }
 
   @reactive private _flattenStrategy: FlattenStrategy;
@@ -284,6 +314,7 @@ class SplitPanel<DType = any> {
   unbind() {
     this._unbindResizeEl?.();
     this._unbindContainerEl?.();
+    this._unbindDropZoneEl?.();
     this._unbindDraggable();
 
     if (this.isRoot) {
@@ -1053,6 +1084,12 @@ class SplitPanel<DType = any> {
       this._unbindContainerEl = () => {
         for (const cb of toUnbind) cb();
       };
+    }
+  }
+
+  attachDropZoneEl(el: HTMLElement) {
+    if (el && this.dropZoneEl !== el) {
+      this.dropZoneEl = el;
     }
   }
 

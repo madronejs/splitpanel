@@ -26,7 +26,7 @@ split-panel, .split-panel {
   width: var(--sp-width);
   height: var(--sp-height);
   cursor: var(--sp-cursor);
-  // position: relative;
+  position: relative;
 
   &.direction-column {
     flex-direction: column;
@@ -111,14 +111,14 @@ split-panel, .split-panel {
     }
   }
 
-  // &-dropzone {
-  //   position: absolute;
-  //   top: 0;
-  //   bottom: 0;
-  //   left: 0;
-  //   right: 0;
-  //   pointer-events: none;
-  // }
+  &-dropzone {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    pointer-events: none;
+  }
 
   &-content {
     display: flex;
