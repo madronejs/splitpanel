@@ -237,13 +237,13 @@ class SplitPanel<DType = any> {
   }
 
   /** If the panel is currently being resized via drag events */
-  @computed get dragging() {
+  @computed get resizing() {
     return Boolean(this.dragPosStart);
   }
 
   /** If any child panel is being dragged */
-  @computed get childDragging() {
-    return this.children.some((item) => item.dragging);
+  @computed get childResizing() {
+    return this.children.some((item) => item.resizing);
   }
 
   /** Distance between the start drag position and the current drag position */
@@ -477,7 +477,7 @@ class SplitPanel<DType = any> {
     if (!this.isRoot) {
       style[`--${STYLE_PREFIX.panel}size`] = formatted;
 
-      if (this.canResize && (this.dragging || this.hovering)) {
+      if (this.canResize && (this.resizing || this.hovering)) {
         style[`--${STYLE_PREFIX.panel}cursor`] = this.contentDirection === PANEL_DIRECTION.column ? 'row-resize' : 'col-resize';
       } else {
         style[`--${STYLE_PREFIX.panel}cursor`] = null;
@@ -1283,7 +1283,7 @@ class SplitPanel<DType = any> {
       // MOUSE MOVE
 
       const onMouseMove = (e) => {
-        this._cbAllChildren('mousemove', e, (child) => child.dragging);
+        this._cbAllChildren('mousemove', e, (child) => child.resizing);
       };
 
       document.addEventListener('mousemove', onMouseMove);

@@ -93,9 +93,9 @@ export function resizeNeighbors(panel: SplitPanel, val: ConstraintType) {
 
     let siblingAfter: SplitPanel;
 
-    // If we're dragging in the "before" direction (ie. left or up), find the furthest sibling in the
+    // If we're resizing in the "before" direction (ie. left or up), find the furthest sibling in the
     // "after" direction (ie. right or down) that can be increased in size.
-    // If we're dragging in the "after" direction, find the nearest sibling that can shrink.
+    // If we're resizing in the "after" direction, find the nearest sibling that can shrink.
     if ((panel.dragRelation === SIBLING_RELATION.before || panelGrowing) && afterSumLess) {
       siblingAfter = findFurthestSibling(
         panel,
@@ -180,9 +180,9 @@ export function resizeNeighbors(panel: SplitPanel, val: ConstraintType) {
     panel.parent.satisfyConstraints({ items: toSatisfy });
   }
 
-  // In the event that we're not dragging, and the relative size of all children exceeds 100%,
+  // In the event that we're not resizing, and the relative size of all children exceeds 100%,
   // we need to rebalance all siblings to match the constraints.
-  if (!panel.dragging && panel.parent?.totalChildRelativeSizes > 1) {
+  if (!panel.resizing && panel.parent?.totalChildRelativeSizes > 1) {
     panel.parent.satisfyConstraints({ items: panel.siblings });
   }
 
