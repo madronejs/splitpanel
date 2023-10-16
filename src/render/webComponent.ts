@@ -154,7 +154,7 @@ export default class SplitPanelView<DType = any> extends HTMLElement {
         }
       }, { immediate: true }),
       // DRAGGING
-      watch(() => splitPanel.dragging, (val) => {
+      watch(() => splitPanel.isDragging, (val) => {
         if (val) {
           this.classList.add(SplitPanelView.classNames.dragging);
         } else {
