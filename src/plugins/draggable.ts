@@ -137,6 +137,8 @@ export default function configureDraggable(
     }
 
     function onDrag(e: DragEvent) {
+      dragState.dragTarget = panel;
+
       const anchor = options?.ghostAnchor?.(panel);
       const newAnchor = {
         x: 0.5,
@@ -155,8 +157,9 @@ export default function configureDraggable(
     }
 
     function setupDragIfNeeded() {
-      if (dragHandle || !checkDrag(panel, options?.canDrag)) return;
+      if (!checkDrag(panel, options?.canDrag)) return;
 
+      unbindDrag?.();
       dragHandle = panel.contentEl?.querySelector(dragSelector);
 
       if (!dragHandle || !panel.contentEl) return;
@@ -166,7 +169,6 @@ export default function configureDraggable(
       dragHandle.setAttribute('draggable', 'true');
       dragHandle.addEventListener('touchstart', onDrag);
       dragHandle.addEventListener('dragstart', onDrag);
-      dragState.dragTarget = panel;
 
       unbindDrag = () => {
         dragHandle?.setAttribute('draggable', originalDraggable);
@@ -178,8 +180,8 @@ export default function configureDraggable(
         ghostEl?.remove();
         dragHandle = undefined;
         dragState.dragTarget = undefined;
-        setDragoverPanel(null);
         unbindDrag = undefined;
+        setDragoverPanel(null);
       };
 
       dragHandle.addEventListener('dragend', unbindDrag);
