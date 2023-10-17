@@ -416,6 +416,31 @@ class SplitPanel<DType = any> {
     return this.sizeInfo.exactSize + this.expandTolerance >= this.absoluteMax;
   }
 
+  /** If the current panel is collapsed */
+  @computed get fullyCollapsed() {
+    return this.sizeInfo.exactSize <= this.absoluteMin;
+  }
+
+  /** The current child panel that is fully expanded */
+  @computed get expandedChild() {
+    return this.children.find((child) => child.fullyExpanded);
+  }
+
+  /** The next child panel that can be fully expanded */
+  @computed get nextExpandibleChild() {
+    return this.expandedChild ? this.expandedChild.siblingAfter : this.children[0];
+  }
+
+  /** The previous child panel that can be fully expanded */
+  @computed get prevExpandibleChild() {
+    return this.expandedChild?.siblingBefore;
+  }
+
+  /** If all children are equal sizes */
+  @computed get allChildrenEqual() {
+    return this.children.every((child) => child.sizeInfo.exactSize === this.children[0].sizeInfo.exactSize);
+  }
+
   /** Constraints that must be satisfied regardless of user config or strategy */
   @computed get absoluteConstraints() {
     return parsePanelConstraints({
@@ -934,6 +959,16 @@ class SplitPanel<DType = any> {
     }
 
     await target?.maximize();
+  }
+
+  /** Expand the next possible child panel */
+  async maximizeNext() {
+    await this.nextExpandibleChild?.maximize();
+  }
+
+  /** Expand the previous possible child panel */
+  async maximizePrev() {
+    await this.prevExpandibleChild?.maximize();
   }
 
   /** Calculate the new sizes for the panels without setting any new sizes */
