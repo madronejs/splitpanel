@@ -27,7 +27,7 @@ export default function configureAnimate(config?: Omit<anime.AnimeAnimParams, 'u
       if (startSize !== finalSize) {
         timeline
           .add({
-            duration: config?.duration ?? 1000,
+            duration: config?.duration ?? 750,
             easing: 'easeInOutQuart',
             size: finalSize,
             ...config,
