@@ -49,7 +49,6 @@ export default function configureDraggable(
     canDrop?: (panel: SplitPanel) => boolean,
     onDragOver?: (opts: { target: SplitPanel, enter: boolean }) => void,
     onDrop?: (opts: { target: SplitPanel, panel: SplitPanel }) => void,
-    ghost?: (panel: SplitPanel) => HTMLElement,
     ghostAnchor?: (panel: SplitPanel) => BoxCoord,
   }
 ): DraggableStrategy {
@@ -148,7 +147,7 @@ export default function configureDraggable(
 
       ghostEl = addClone(
         e,
-        options?.ghost?.(panel) ?? panel.contentEl,
+        panel.ghostEl ?? panel.contentEl,
         newAnchor
       );
       e.dataTransfer.dropEffect = 'move';

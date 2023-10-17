@@ -75,6 +75,7 @@ class SplitPanel<DType = any> {
     this.attachContentEl = this.attachContentEl.bind(this);
     this.attachResizeEl = this.attachResizeEl.bind(this);
     this.attachDropZoneEl = this.attachDropZoneEl.bind(this);
+    this.attachGhostEl = this.attachGhostEl.bind(this);
     // This._onElementClick = this._onElementClick.bind(this);
     // setup
     this._children = [];
@@ -119,6 +120,10 @@ class SplitPanel<DType = any> {
   @reactive dropZoneEl: HTMLElement;
   /** Unbind the dropzone element */
   @reactive private _unbindDropZoneEl: () => void;
+  /** The html element for handling the drag ghost for this panel */
+  @reactive ghostEl: HTMLElement;
+  /** Unbind the ghost element */
+  @reactive private _unbindGhostEl: () => void;
   /** The html element to act as the resize for this */
   @reactive resizeEl: HTMLElement;
   /** Size of the resize bar */
@@ -315,6 +320,7 @@ class SplitPanel<DType = any> {
     this._unbindResizeEl?.();
     this._unbindContainerEl?.();
     this._unbindDropZoneEl?.();
+    this._unbindGhostEl?.();
     this._unbindDraggable();
 
     if (this.isRoot) {
@@ -1090,6 +1096,12 @@ class SplitPanel<DType = any> {
   attachDropZoneEl(el: HTMLElement) {
     if (el && this.dropZoneEl !== el) {
       this.dropZoneEl = el;
+    }
+  }
+
+  attachGhostEl(el: HTMLElement) {
+    if (el && this.ghostEl !== el) {
+      this.ghostEl = el;
     }
   }
 

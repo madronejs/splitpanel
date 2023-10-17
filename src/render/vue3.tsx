@@ -69,6 +69,14 @@ const SplitPanelView = defineComponent({
             )
           }
         </div>
+        {
+          this.slots.ghost ? (
+            <div
+              ref={sPanel.attachGhostEl}
+              class="split-panel-ghost">{this.slots.ghost?.(scope)}
+            </div>
+          ) : null
+        }
         <div
           ref={sPanel.attachDropZoneEl}
           class="split-panel-dropzone">{this.slots.dropZone?.(scope)}

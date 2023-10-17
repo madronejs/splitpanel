@@ -111,6 +111,13 @@ split-panel, .split-panel {
     }
   }
 
+  &-ghost {
+    position: fixed;
+    top: -100vh;
+    left: -100vw;
+    display: block;
+  }
+
   &-dropzone {
     position: absolute;
     top: 0;
