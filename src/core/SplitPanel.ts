@@ -74,6 +74,8 @@ class SplitPanel<DType = any> {
     this.attachEl = this.attachEl.bind(this);
     this.attachContentEl = this.attachContentEl.bind(this);
     this.attachResizeEl = this.attachResizeEl.bind(this);
+    this.attachDropZoneEl = this.attachDropZoneEl.bind(this);
+    this.attachGhostEl = this.attachGhostEl.bind(this);
     // This._onElementClick = this._onElementClick.bind(this);
     // setup
     this._children = [];
@@ -114,6 +116,14 @@ class SplitPanel<DType = any> {
   @reactive contentEl: HTMLElement;
   /** Unbind all events for resize el */
   @reactive private _unbindResizeEl: () => void;
+  /** The html element for containing the dropzone content of the panel */
+  @reactive dropZoneEl: HTMLElement;
+  /** Unbind the dropzone element */
+  @reactive private _unbindDropZoneEl: () => void;
+  /** The html element for handling the drag ghost for this panel */
+  @reactive ghostEl: HTMLElement;
+  /** Unbind the ghost element */
+  @reactive private _unbindGhostEl: () => void;
   /** The html element to act as the resize for this */
   @reactive resizeEl: HTMLElement;
   /** Size of the resize bar */
@@ -196,10 +206,35 @@ class SplitPanel<DType = any> {
     return this._animateStrategy ?? this.parent?.animateStrategy;
   }
 
-  @reactive protected _draggableStrategy: DraggableStrategy;
-  @reactive protected _draggableStrategyReturn: DraggableStrategyReturn;
-  @computed get draggableStrategy(): DraggableStrategy {
+  @reactive protected _draggableStrategy: DraggableStrategy<DType>;
+  @reactive protected _draggableStrategyReturn: DraggableStrategyReturn<DType>;
+  @computed get draggableStrategy(): DraggableStrategy<DType> {
     return this._draggableStrategy ?? this.parent?.draggableStrategy;
+  }
+
+  /** If the current panel is being dragged */
+  @computed get isDragging() {
+    return !!this._draggableStrategyReturn?.isDragging;
+  }
+
+  /** If this panel can have another panel dropped on it */
+  @computed get isDropZone() {
+    return !this.isRoot && !!this._draggableStrategyReturn?.isDropZone;
+  }
+
+  /** The panel being dropped */
+  @computed get dropTarget() {
+    return this._draggableStrategyReturn?.dropTarget;
+  }
+
+  /** The panel being dragged */
+  @computed get dragTarget() {
+    return this._draggableStrategyReturn?.dragTarget;
+  }
+
+  /** If the current panel being dragged is being dropped onto this panel */
+  @computed get isDropping() {
+    return this.isDropZone && this.dropTarget?.id === this.id;
   }
 
   @reactive private _flattenStrategy: FlattenStrategy;
@@ -237,13 +272,13 @@ class SplitPanel<DType = any> {
   }
 
   /** If the panel is currently being resized via drag events */
-  @computed get dragging() {
+  @computed get resizing() {
     return Boolean(this.dragPosStart);
   }
 
   /** If any child panel is being dragged */
-  @computed get childDragging() {
-    return this.children.some((item) => item.dragging);
+  @computed get childResizing() {
+    return this.children.some((item) => item.resizing);
   }
 
   /** Distance between the start drag position and the current drag position */
@@ -284,6 +319,8 @@ class SplitPanel<DType = any> {
   unbind() {
     this._unbindResizeEl?.();
     this._unbindContainerEl?.();
+    this._unbindDropZoneEl?.();
+    this._unbindGhostEl?.();
     this._unbindDraggable();
 
     if (this.isRoot) {
@@ -377,6 +414,31 @@ class SplitPanel<DType = any> {
   /** If the current panel is expanded */
   @computed get fullyExpanded() {
     return this.sizeInfo.exactSize + this.expandTolerance >= this.absoluteMax;
+  }
+
+  /** If the current panel is collapsed */
+  @computed get fullyCollapsed() {
+    return this.sizeInfo.exactSize <= this.absoluteMin;
+  }
+
+  /** The current child panel that is fully expanded */
+  @computed get expandedChild() {
+    return this.children.find((child) => child.fullyExpanded);
+  }
+
+  /** The next child panel that can be fully expanded */
+  @computed get nextExpandibleChild() {
+    return this.expandedChild ? this.expandedChild.siblingAfter : this.children[0];
+  }
+
+  /** The previous child panel that can be fully expanded */
+  @computed get prevExpandibleChild() {
+    return this.expandedChild?.siblingBefore;
+  }
+
+  /** If all children are equal sizes */
+  @computed get allChildrenEqual() {
+    return this.children.every((child) => child.sizeInfo.exactSize === this.children[0].sizeInfo.exactSize);
   }
 
   /** Constraints that must be satisfied regardless of user config or strategy */
@@ -477,7 +539,7 @@ class SplitPanel<DType = any> {
     if (!this.isRoot) {
       style[`--${STYLE_PREFIX.panel}size`] = formatted;
 
-      if (this.canResize && (this.dragging || this.hovering)) {
+      if (this.canResize && (this.resizing || this.hovering)) {
         style[`--${STYLE_PREFIX.panel}cursor`] = this.contentDirection === PANEL_DIRECTION.column ? 'row-resize' : 'col-resize';
       } else {
         style[`--${STYLE_PREFIX.panel}cursor`] = null;
@@ -899,6 +961,16 @@ class SplitPanel<DType = any> {
     await target?.maximize();
   }
 
+  /** Expand the next possible child panel */
+  async maximizeNext() {
+    await this.nextExpandibleChild?.maximize();
+  }
+
+  /** Expand the previous possible child panel */
+  async maximizePrev() {
+    await this.prevExpandibleChild?.maximize();
+  }
+
   /** Calculate the new sizes for the panels without setting any new sizes */
   calculateSizes(
     options: {
@@ -1035,16 +1107,13 @@ class SplitPanel<DType = any> {
       this._unbindContainerEl?.();
       this.containerEl = el;
 
-      if (this.containerEl && this._observeElement) {
+      if (this._observeElement) {
         toUnbind.push(() => {
           if (this.containerEl) {
             this.resizeObserver.unobserve(this.containerEl);
             this._removeRootCb(this.containerEl, 'resize');
           }
         });
-      }
-
-      if (el && this._observeElement) {
         this._addRootCb(el, 'resize', this._onElementResize);
         this._addRootCb(el, 'mousemove', this._onMouseMove);
         this._addRootCb(el, 'mouseup', this._onMouseUp);
@@ -1052,9 +1121,22 @@ class SplitPanel<DType = any> {
         this._debouncedSatisfyConstraints();
       }
 
+      this._setupDraggable();
       this._unbindContainerEl = () => {
         for (const cb of toUnbind) cb();
       };
+    }
+  }
+
+  attachDropZoneEl(el: HTMLElement) {
+    if (el && this.dropZoneEl !== el) {
+      this.dropZoneEl = el;
+    }
+  }
+
+  attachGhostEl(el: HTMLElement) {
+    if (el && this.ghostEl !== el) {
+      this.ghostEl = el;
     }
   }
 
@@ -1062,7 +1144,6 @@ class SplitPanel<DType = any> {
   attachContentEl(el: HTMLElement) {
     if (el && this.contentEl !== el) {
       this.contentEl = el;
-      this._setupDraggable();
     }
   }
 
@@ -1286,7 +1367,7 @@ class SplitPanel<DType = any> {
       // MOUSE MOVE
 
       const onMouseMove = (e) => {
-        this._cbAllChildren('mousemove', e, (child) => child.dragging);
+        this._cbAllChildren('mousemove', e, (child) => child.resizing);
       };
 
       document.addEventListener('mousemove', onMouseMove);

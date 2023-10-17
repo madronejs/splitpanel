@@ -12,10 +12,19 @@ export type AnimateStrategyReturn = {
   cancel: () => void,
 };
 export type AnimateStrategy = (panel: SplitPanel, items: SplitPanel[], size?: ConstraintType) => AnimateStrategyReturn;
-export type DraggableStrategyReturn = {
+export type DraggableStrategyReturn<DType = any> = {
+  /** The split panel currently being dragged */
+  dragTarget: SplitPanel<DType>,
+  /** The split panel that the current panel being dragged will be dropped on */
+  dropTarget: SplitPanel<DType>,
+  /** If the current panel is being dragged */
+  isDragging: boolean,
+  /** If the current panel can be a drop zone */
+  isDropZone: boolean,
+  /** Cleanup */
   unbind?: () => void,
 };
-export type DraggableStrategy = (panel: SplitPanel) => DraggableStrategyReturn;
+export type DraggableStrategy<DType = any> = (panel: SplitPanel<DType>) => DraggableStrategyReturn<DType>;
 
 export type PanelConstraints = {
   /** Minimum size */

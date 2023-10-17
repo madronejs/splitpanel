@@ -47,7 +47,7 @@ const SplitPanelView = defineComponent({
                 ref={sPanel.attachResizeEl}
                 class={{
                   'split-panel-resize': true,
-                  dragging: sPanel.dragging,
+                  resizing: sPanel.resizing,
                 }}
               >
                 <div class="split-panel-resize-inner">
@@ -57,7 +57,7 @@ const SplitPanelView = defineComponent({
             )
         }
         <div
-          class='split-panel-content'
+          class="split-panel-content"
           ref={sPanel.attachContentEl}
         >
           {sPanel.numChildren
@@ -65,11 +65,21 @@ const SplitPanelView = defineComponent({
               <SplitPanelView splitPanel={child}>{panelSlots}</SplitPanelView>
             ))
             : (
-              <div class='split-panel-content-inner'>
-                {this.slots.item?.(scope)}
-              </div>
+              <div class="split-panel-content-inner">{this.slots.item?.(scope)}</div>
             )
           }
+        </div>
+        {
+          this.slots.ghost ? (
+            <div
+              ref={sPanel.attachGhostEl}
+              class="split-panel-ghost">{this.slots.ghost?.(scope)}
+            </div>
+          ) : null
+        }
+        <div
+          ref={sPanel.attachDropZoneEl}
+          class="split-panel-dropzone">{this.slots.dropZone?.(scope)}
         </div>
       </div>
     );
