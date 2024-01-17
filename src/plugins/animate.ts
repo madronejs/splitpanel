@@ -8,7 +8,7 @@ import {
 import type SplitPanel from '@/core/SplitPanel';
 
 export default function configureAnimate(config?: Omit<anime.AnimeAnimParams, 'update'>): AnimateStrategy {
-  return (panel: SplitPanel, items: SplitPanel[], size?: ConstraintType) => {
+  return (panel: SplitPanel, items: SplitPanel[], size?: ConstraintType | ConstraintType[]) => {
     const others = negateChildren(panel, items);
     const timeline = anime.timeline({ autoplay: false });
     const newSizes = panel.calculateSizes({
