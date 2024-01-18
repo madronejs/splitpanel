@@ -881,7 +881,7 @@ class SplitPanel<DType = any> {
     }
   }
 
-  async animateChildren(val?: ConstraintType, items?: SplitPanel<DType>[]) {
+  async animateChildren(val?: ConstraintType | ConstraintType[], items?: SplitPanel<DType>[]) {
     this._animateStrategyData?.cancel?.();
     this.snapshotChildSizeInfo();
 
@@ -892,14 +892,23 @@ class SplitPanel<DType = any> {
 
     if (!this.animateStrategy) {
       const others = negateChildren(this, newItems);
-      const parsed = val == null ? undefined : getSizeInfo({
+      const parsed = (val == null || Array.isArray(val)) ? undefined : getSizeInfo({
         size: val,
         rectSize: this.contentRectSize,
         comparativeSize: this.contentRectSize,
       });
 
+      let index = 0;
+
       for (const item of newItems) {
-        item.setSize(parsed.formatted);
+        const newSize = Array.isArray(val) ? getSizeInfo({
+          size: val[index],
+          rectSize: this.contentRectSize,
+          comparativeSize: this.contentRectSize,
+        }) : parsed;
+
+        item.setSize(newSize.formatted);
+        index += 1;
       }
 
       this.satisfyConstraints({ items: others });
@@ -916,7 +925,13 @@ class SplitPanel<DType = any> {
   /** Set all children to equal sizes */
   async equalizeChildrenSizes(options?: { recursive?: boolean }) {
     if (this.numChildren) {
-      const promises = [this.animateChildren(relativeToPercent(1 / this.numChildren))];
+      const sizeMap = this.calculateSizes({
+        itemsToConstrain: this.children,
+        size: relativeToPercent(1 / this.numChildren),
+      });
+
+      const sizeArray = this.children.map((item) => sizeMap[item.id].formatted);
+      const promises = [this.animateChildren(sizeArray, this.children)];
 
       if (options?.recursive) {
         promises.push(...this.children.map((child) => child.equalizeChildrenSizes(options)));
@@ -973,11 +988,11 @@ class SplitPanel<DType = any> {
 
   /** Calculate the new sizes for the panels without setting any new sizes */
   calculateSizes(
-    options: {
+    options?: {
       /** The item (or items) that will have their sizes set */
       item?: SplitPanel<DType> | SplitPanel<DType>[],
       /** The new size to apply to the item(s) passed */
-      size?: ConstraintType,
+      size?: ConstraintType | ConstraintType[],
       /** The items that should change sizes in response to the items that had their sizes set */
       itemsToConstrain?: SplitPanel<DType> | SplitPanel<DType>[],
     }
@@ -1005,11 +1020,15 @@ class SplitPanel<DType = any> {
     if (itemsToSet) {
       itemsToSum = negateChildren(this, itemsToSet);
 
+      let index = 0;
+
       for (const item of itemsToSet) {
-        const sizeInfo = item.getSizeInfo(options.size ?? item.originalSize);
+        const optSize = Array.isArray(options.size) ? options.size[index] : options.size;
+        const sizeInfo = item.getSizeInfo(optSize ?? item.originalSize);
 
         leftToAllocate -= sizeInfo?.exactSize ?? 0;
         addToSizeMap(item, sizeInfo);
+        index += 1;
       }
     }
 

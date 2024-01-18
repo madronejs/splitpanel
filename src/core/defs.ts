@@ -11,7 +11,7 @@ export type AnimateStrategyReturn = {
   promise: Promise<void>,
   cancel: () => void,
 };
-export type AnimateStrategy = (panel: SplitPanel, items: SplitPanel[], size?: ConstraintType) => AnimateStrategyReturn;
+export type AnimateStrategy = (panel: SplitPanel, items: SplitPanel[], size?: ConstraintType | ConstraintType[]) => AnimateStrategyReturn;
 export type DraggableStrategyReturn<DType = any> = {
   /** The split panel currently being dragged */
   dragTarget: SplitPanel<DType>,
@@ -297,6 +297,7 @@ export function mergePanelConstraints(...constraints: ParsedPanelConstraints[]) 
     // Get the smaller of the two constraints
     maxSize: mergeConstraint(maxSize, (c1, c2) => (c1.exactValue > c2.exactValue ? 1 : -1)),
   };
+
   const normalized: ParsedPanelConstraints = {};
 
   for (const key of Object.keys(merged)) {
