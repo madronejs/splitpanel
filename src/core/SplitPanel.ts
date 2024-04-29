@@ -716,6 +716,10 @@ class SplitPanel<DType = any> {
 
   /** Set the data associated with the root of the tree */
   setDataArray(val: DType[]) {
+    if (Array.isArray(val)) {
+      this.syncNumChildren(val.length);
+    }
+
     if (this.numChildren) {
       this.dataArray = val;
     }
