@@ -1413,7 +1413,6 @@ class SplitPanel<DType = any> {
       // VISIBILITY CHANGE
       const onVisibilityChange = (e) => {
         this._cbAllChildren('visibilitychange', e);
-        this._debouncedSatisfyConstraints();
       };
 
       document.addEventListener('visibilitychange', onVisibilityChange);
