@@ -21,6 +21,7 @@ import {
   getDistance,
   getSizeInfo,
   getDirectionInfo,
+  htmlElementToBoxRect,
   mergePanelConstraints,
   type MouseEventCallback,
   negateChildren,
@@ -48,6 +49,7 @@ type CbMap = {
   resize?: ResizeObserverCallback;
   mousemove?: MouseEventCallback;
   mouseup?: MouseEventCallback;
+  visibilitychange?: EventListener;
 };
 
 function makeUniqueId() {
@@ -70,6 +72,7 @@ class SplitPanel<DType = any> {
     this._onMouseMove = this._onMouseMove.bind(this);
     this._onMouseover = this._onMouseover.bind(this);
     this._onMouseout = this._onMouseout.bind(this);
+    this._onVisibilityChange = this._onVisibilityChange.bind(this);
     this.unbind = this.unbind.bind(this);
     this.attachEl = this.attachEl.bind(this);
     this.attachContentEl = this.attachContentEl.bind(this);
@@ -134,6 +137,7 @@ class SplitPanel<DType = any> {
   @reactive sizeInfoSnapshot: SizeInfoType;
   /** If the mouse is hovering over the resizer */
   @reactive hovering: boolean;
+  @reactive private _initialContstraintsResolved: boolean = false;
 
   @reactive private _showFirstResizeEl: boolean;
   /** Show the first resize element */
@@ -147,6 +151,16 @@ class SplitPanel<DType = any> {
 
   @computed get canResize() {
     return !(this.isRoot || this.isFirstChild);
+  }
+
+  /** If the panel's container element has a nonzero width and height */
+  @computed get hasRect() {
+    return Boolean(this.rect?.width && this.rect?.height);
+  }
+
+  /** If the panel has a width and height, and the initial constraints are satisfied */
+  @computed get isReady() {
+    return this._initialContstraintsResolved && this.hasRect;
   }
 
   /** The data associated with this panel */
@@ -546,6 +560,7 @@ class SplitPanel<DType = any> {
       }
     }
 
+    style[`--${STYLE_PREFIX.panel}opacity`] = this.isReady ? 1 : 0;
     style[`--${STYLE_PREFIX.panel}min-size`] = (exactMin !== this.parent?.absoluteMin && Number.isFinite(exactMin)) ? exactToPx(exactMin) : null;
     style[`--${STYLE_PREFIX.panel}max-size`] = (exactMax !== this.parent?.absoluteMax && Number.isFinite(exactMax)) ? exactToPx(exactMax) : null;
 
@@ -693,7 +708,13 @@ class SplitPanel<DType = any> {
   /** Set the current bounding box of this item */
   setRect(val: BoxRect) {
     if (val) {
+      const hadRect = this.hasRect;
+
       this.rect = val;
+
+      if (!hadRect && this.hasRect) {
+        this._debouncedSatisfyConstraints();
+      }
     }
   }
 
@@ -761,7 +782,7 @@ class SplitPanel<DType = any> {
   /** Set the direction of this panel */
   setDirection(direction: PANEL_DIRECTION) {
     this._direction = direction;
-    this.satisfyConstraints();
+    this._debouncedSatisfyConstraints();
   }
 
   /** Set this panel's size constraints */
@@ -1088,6 +1109,9 @@ class SplitPanel<DType = any> {
       items?: SplitPanel<DType> | Array<SplitPanel<DType>>,
     }
   ) {
+    // If the panel has no rect, we can't satisfy constraints
+    if (!this.hasRect) return;
+
     const sizeMap = this.calculateSizes({
       itemsToConstrain: options?.items,
     });
@@ -1095,6 +1119,8 @@ class SplitPanel<DType = any> {
     for (const id of Object.keys(sizeMap)) {
       this.byId(id)?.setSize(sizeMap[id].formatted);
     }
+
+    this._initialContstraintsResolved = true;
   }
 
   private _addRootCb<T extends keyof CbMap>(el: HTMLElement, type: T, val: CbMap[T]) {
@@ -1121,6 +1147,8 @@ class SplitPanel<DType = any> {
     el: HTMLElement
   ) {
     if (el && this.containerEl !== el) {
+      this._initialContstraintsResolved = false;
+
       const toUnbind: Array<(() => void)> = [];
 
       this._unbindContainerEl?.();
@@ -1136,6 +1164,7 @@ class SplitPanel<DType = any> {
         this._addRootCb(el, 'resize', this._onElementResize);
         this._addRootCb(el, 'mousemove', this._onMouseMove);
         this._addRootCb(el, 'mouseup', this._onMouseUp);
+        this.setRect(htmlElementToBoxRect(el));
         this.resizeObserver.observe(el);
         this._debouncedSatisfyConstraints();
       }
@@ -1319,6 +1348,12 @@ class SplitPanel<DType = any> {
   // Events
   // ///////////////////////////////////////
 
+  private _onVisibilityChange() {
+    if (typeof document !== 'undefined' && document.visibilityState !== 'hidden') {
+      this._debouncedSatisfyConstraints();
+    }
+  }
+
   private _onElementResize(data: ResizeObserverEntry) {
     this.setRect(resizeEntryToBoxRect(data));
   }
@@ -1375,6 +1410,14 @@ class SplitPanel<DType = any> {
         }
       });
 
+      // VISIBILITY CHANGE
+      const onVisibilityChange = (e) => {
+        this._cbAllChildren('visibilitychange', e);
+        this._debouncedSatisfyConstraints();
+      };
+
+      document.addEventListener('visibilitychange', onVisibilityChange);
+
       // MOUSE UP
       const onMouseUp = (e) => {
         this._cbAllChildren('mouseup', e);
@@ -1398,6 +1441,7 @@ class SplitPanel<DType = any> {
         document.removeEventListener('touchend', onMouseUp);
         document.removeEventListener('mousemove', onMouseMove);
         document.removeEventListener('touchmove', onMouseMove);
+        document.removeEventListener('visibilitychange', onVisibilityChange);
       };
     }
   }

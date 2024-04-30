@@ -56,19 +56,23 @@ const SplitPanelView = defineComponent({
               </div>
             )
         }
-        <div
-          class="split-panel-content"
-          ref={sPanel.attachContentEl}
-        >
-          {sPanel.numChildren
-            ? sPanel.children.map((child) => (
-              <SplitPanelView splitPanel={child}>{panelSlots}</SplitPanelView>
-            ))
-            : (
-              <div class="split-panel-content-inner">{this.slots.item?.(scope)}</div>
-            )
-          }
-        </div>
+        {
+          sPanel.isReady ? (
+            <div
+              class="split-panel-content"
+              ref={sPanel.attachContentEl}
+            >
+              {sPanel.numChildren
+                ? sPanel.children.map((child) => (
+                  <SplitPanelView splitPanel={child}>{ panelSlots }</SplitPanelView>
+                ))
+                : (
+                  <div class="split-panel-content-inner">{this.slots.item?.(scope)}</div>
+                )
+              }
+            </div>
+          ) : null
+        }
         {
           this.slots.ghost ? (
             <div
