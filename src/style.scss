@@ -26,6 +26,7 @@ split-panel, .split-panel {
   width: var(--sp-width);
   height: var(--sp-height);
   cursor: var(--sp-cursor);
+  opacity: var(--sp-opacity);
   position: relative;
 
   &.direction-column {
