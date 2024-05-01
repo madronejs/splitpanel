@@ -1,9 +1,10 @@
 import cloneDeep from 'lodash/cloneDeep';
 import debounce from 'lodash/debounce';
+import differenceBy from 'lodash/differenceBy';
 import uniqBy from 'lodash/uniqBy';
 import uniqueId from 'lodash/uniqueId';
 import sortBy from 'lodash/sortBy';
-import { computed, reactive } from '@madronejs/core';
+import { computed, reactive, watch } from '@madronejs/core';
 import { v4 as uuid } from 'uuid';
 
 import {
@@ -82,6 +83,7 @@ class SplitPanel<DType = any> {
     // This._onElementClick = this._onElementClick.bind(this);
     // setup
     this._children = [];
+    this._readyCallbacks = new Set();
     this._root = options?.root;
     this._observeElement = options?.observe ?? true;
     this.resizeEl = null;
@@ -137,7 +139,10 @@ class SplitPanel<DType = any> {
   @reactive sizeInfoSnapshot: SizeInfoType;
   /** If the mouse is hovering over the resizer */
   @reactive hovering: boolean;
-  @reactive private _initialContstraintsResolved: boolean = false;
+  @reactive private _readyPromise: Promise<void>;
+  @reactive private _syncReady: boolean = true;
+  @reactive private _constraintsReady: boolean = false;
+  @reactive private _readyCallbacks: Set<() => void>;
 
   @reactive private _showFirstResizeEl: boolean;
   /** Show the first resize element */
@@ -160,7 +165,12 @@ class SplitPanel<DType = any> {
 
   /** If the panel has a width and height, and the initial constraints are satisfied */
   @computed get isReady() {
-    return this._initialContstraintsResolved && this.hasRect;
+    return this._constraintsReady && this._syncReady && this.hasRect;
+  }
+
+  /** If the panel is ready and all children are ready */
+  @computed get isDeeplyReady() {
+    return this.isReady && this.children.every((child) => child.isDeeplyReady);
   }
 
   /** The data associated with this panel */
@@ -950,15 +960,18 @@ class SplitPanel<DType = any> {
         itemsToConstrain: this.children,
         size: relativeToPercent(1 / this.numChildren),
       });
+      const needsResize = this.children.some((item) => item.sizeInfo.relativeSize !== sizeMap[item.id]?.relativeSize);
 
-      const sizeArray = this.children.map((item) => sizeMap[item.id].formatted);
-      const promises = [this.animateChildren(sizeArray, this.children)];
+      if (needsResize || options?.recursive) {
+        const sizeArray = this.children.map((item) => sizeMap[item.id]?.formatted).filter(Boolean);
+        const promises = [this.animateChildren(sizeArray, this.children)];
 
-      if (options?.recursive) {
-        promises.push(...this.children.map((child) => child.equalizeChildrenSizes(options)));
+        if (options?.recursive) {
+          promises.push(...this.children.map((child) => child.equalizeChildrenSizes(options)));
+        }
+
+        await Promise.all(promises);
       }
-
-      await Promise.all(promises);
     }
   }
 
@@ -1120,7 +1133,7 @@ class SplitPanel<DType = any> {
       this.byId(id)?.setSize(sizeMap[id].formatted);
     }
 
-    this._initialContstraintsResolved = true;
+    this._constraintsReady = true;
   }
 
   private _addRootCb<T extends keyof CbMap>(el: HTMLElement, type: T, val: CbMap[T]) {
@@ -1147,7 +1160,7 @@ class SplitPanel<DType = any> {
     el: HTMLElement
   ) {
     if (el && this.containerEl !== el) {
-      this._initialContstraintsResolved = false;
+      this._constraintsReady = false;
 
       const toUnbind: Array<(() => void)> = [];
 
@@ -1334,6 +1347,36 @@ class SplitPanel<DType = any> {
     this._children = this._createChildren(items);
   }
 
+  /** Add, update, or remove children based on the new configuration */
+  syncChildren(items: Array<SplitPanelDef<DType>>, options?: { satisfyConstraints?: boolean }) {
+    this._syncReady = false;
+
+    const satisfyConstraints = options?.satisfyConstraints ?? true;
+    const newItems: Array<SplitPanel<DType>> = [];
+    const toRemove = differenceBy(this.children, items, 'id');
+
+    for (const item of items) {
+      const existing = this.childMap[item.id];
+
+      if (existing) {
+        existing.setDefinition(item);
+        newItems.push(existing);
+      } else {
+        newItems.push(this._createChild(item));
+      }
+    }
+
+    this._children = newItems;
+    this.removeChild(...toRemove.map((item) => item.id));
+    this._syncReady = true;
+
+    if (satisfyConstraints) {
+      this.satisfyConstraints();
+    }
+
+    return this._readyPromise;
+  }
+
   private _unbindDraggable() {
     this._draggableStrategyReturn?.unbind?.();
     this._draggableStrategyReturn = null;
@@ -1342,6 +1385,25 @@ class SplitPanel<DType = any> {
   private _setupDraggable() {
     this._unbindDraggable();
     this._draggableStrategyReturn = this.draggableStrategy?.(this);
+  }
+
+  private _setupReadyPromise() {
+    this._readyPromise = new Promise<void>((resolve) => {
+      const dispose = this.onReady(() => {
+        dispose();
+        resolve();
+      });
+    });
+  }
+
+  /**
+   * Listen for when the panel and all its children are ready
+   * @param cb Callback to run when the panel is ready
+   * @returns disposer
+   */
+  onReady(cb: () => void) {
+    this._readyCallbacks.add(cb);
+    return () => this._readyCallbacks.delete(cb);
   }
 
   // ///////////////////////////////////////
@@ -1410,6 +1472,19 @@ class SplitPanel<DType = any> {
         }
       });
 
+      // WATCH DEEP READY
+      const readyDisposer = watch(() => this.isDeeplyReady, (val, old) => {
+        if (val && !old) {
+          // READY
+          for (const cb of this._readyCallbacks) {
+            cb();
+          }
+        } else if (!val && old) {
+          // NOT READY
+          this._setupReadyPromise();
+        }
+      }, { immediate: true });
+
       // VISIBILITY CHANGE
       const onVisibilityChange = (e) => {
         this._cbAllChildren('visibilitychange', e);
@@ -1441,6 +1516,7 @@ class SplitPanel<DType = any> {
         document.removeEventListener('mousemove', onMouseMove);
         document.removeEventListener('touchmove', onMouseMove);
         document.removeEventListener('visibilitychange', onVisibilityChange);
+        readyDisposer();
       };
     }
   }
