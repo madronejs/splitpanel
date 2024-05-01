@@ -2,6 +2,7 @@ import {
   defineComponent,
   useSlots,
   SlotsType,
+  onBeforeUnmount,
   type PropType,
 } from 'vue';
 import SplitPanel from '@/core/SplitPanel';
@@ -14,8 +15,14 @@ const SplitPanelView = defineComponent({
   name: 'SplitPanelView',
   props: {
     splitPanel: Object as PropType<SplitPanel>,
+    manualUnbind: Boolean,
   },
-  setup() {
+  setup(props) {
+    onBeforeUnmount(() => {
+      if (!props.manualUnbind && props.splitPanel?.isRoot) {
+        props.splitPanel?.unbind();
+      }
+    });
     return {
       slots: useSlots(),
     };
@@ -57,21 +64,21 @@ const SplitPanelView = defineComponent({
             )
         }
         {
-          sPanel.isReady ? (
+          (
             <div
               class="split-panel-content"
               ref={sPanel.attachContentEl}
             >
               {sPanel.numChildren
                 ? sPanel.children.map((child) => (
-                  <SplitPanelView splitPanel={child}>{ panelSlots }</SplitPanelView>
+                  <SplitPanelView key={child.id} splitPanel={child}>{ panelSlots }</SplitPanelView>
                 ))
                 : (
-                  <div class="split-panel-content-inner">{this.slots.item?.(scope)}</div>
+                  <div key={`${sPanel.id}_container`} class="split-panel-content-inner">{this.slots.item?.(scope)}</div>
                 )
               }
             </div>
-          ) : null
+          )
         }
         {
           this.slots.ghost ? (
