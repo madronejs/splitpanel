@@ -643,7 +643,7 @@ class SplitPanel<DType = any> {
 
   /** The siblings directly after this panel, if any */
   @computed get siblingsAfter() {
-    return this.parent?.children.slice(this.index + 1, this.parent.children.length);
+    return this.parent?.children.slice(this.index + 1);
   }
 
   /** This panel's siblings */
