@@ -1029,6 +1029,8 @@ class SplitPanel<DType = any> {
       size?: ConstraintType | ConstraintType[],
       /** The items that should change sizes in response to the items that had their sizes set */
       itemsToConstrain?: SplitPanel<DType> | SplitPanel<DType>[],
+      /** Ignore the current size of the panels and calculate what the panel should be */
+      initialize?: boolean,
     }
   ): Record<string, SizeInfoType> {
     const newItems = options?.itemsToConstrain ? [options.itemsToConstrain].flat().filter(Boolean) : undefined;
@@ -1093,7 +1095,7 @@ class SplitPanel<DType = any> {
         const canShrink = item.canShrink && diff < 0;
         let newSize: SizeInfoType;
 
-        if (!item.hasSize) {
+        if (!item.hasSize || options?.initialize) {
           newSize = item.getSizeInfo(
             parsedToFormatted(item.parsedConstraints?.size)
             ?? remaining
@@ -1120,13 +1122,19 @@ class SplitPanel<DType = any> {
   satisfyConstraints(
     options?: {
       items?: SplitPanel<DType> | Array<SplitPanel<DType>>,
+      /** The new size to apply to the item(s) passed */
+      size?: ConstraintType | ConstraintType[],
+      /** Ignore the current size of the panels and calculate what the panel should be */
+      initialize?: boolean,
     }
   ) {
     // If the panel has no rect, we can't satisfy constraints
     if (!this.hasRect) return;
 
     const sizeMap = this.calculateSizes({
+      size: options?.size,
       itemsToConstrain: options?.items,
+      initialize: options?.initialize,
     });
 
     for (const id of Object.keys(sizeMap)) {
@@ -1134,6 +1142,11 @@ class SplitPanel<DType = any> {
     }
 
     this._constraintsReady = true;
+  }
+
+  /** Recalculate the sizes of all children based on the current constraints */
+  recalculate() {
+    this.satisfyConstraints({ initialize: true });
   }
 
   private _addRootCb<T extends keyof CbMap>(el: HTMLElement, type: T, val: CbMap[T]) {
