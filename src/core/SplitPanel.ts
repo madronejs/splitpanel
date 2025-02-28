@@ -682,7 +682,6 @@ class SplitPanel<DType = any> {
       size,
       parsedConstraints: this.parsedConstraints,
       rectSize: this.rectSize,
-      relativeSize: this.relativeSize,
       comparativeSize: this.comparativeSize,
     });
   }

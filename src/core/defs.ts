@@ -345,19 +345,17 @@ export function getChildInfo<T>(children: Array<SplitPanel<T>>) {
 }
 
 export type SizeInfoType = ReturnType<typeof getSizeInfo>;
+export type SizeInfoOptions = {
+  parsedConstraints?: ParsedPanelConstraints;
+  size: ConstraintType;
+  rectSize: number;
+  comparativeSize: number;
+};
 
-export function getSizeInfo(
-  options: {
-    parsedConstraints?: ParsedPanelConstraints;
-    size?: ConstraintType;
-    rectSize?: number;
-    relativeSize?: number;
-    comparativeSize?: number;
-  },
-) {
+export function getSizeInfo(options: SizeInfoOptions) {
   const { minSize, maxSize, size } = options.parsedConstraints || {};
   const parsedSize = options.size === undefined ? size : parseConstraint(options.size, options.comparativeSize);
-  let newRelativeSize = parsedSize?.relativeValue ?? options.relativeSize;
+  let newRelativeSize = parsedSize?.relativeValue ?? (options.rectSize / options.comparativeSize);
   let newSize = parsedSize?.exactValue ?? options.rectSize ?? 0;
   let useRelative = true;
   let appliedMin = false;
