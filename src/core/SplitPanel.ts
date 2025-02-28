@@ -8,45 +8,35 @@ import { computed, reactive, watch } from '@madronejs/core';
 import { v4 as uuid } from 'uuid';
 
 import {
-  type BoxCoord,
-  type BoxRect,
-  type ConstraintType,
-  exactToPx,
-  type AnimateStrategy,
-  type AnimateStrategyReturn,
-  type FlattenStrategy,
-  type DraggableStrategy,
-  type DraggableStrategyReturn,
-  getChildInfo,
-  getCoordFromMouseEvent,
-  getDistance,
-  getSizeInfo,
-  getBalancedPanelSizeArray,
-  getDirectionInfo,
-  htmlElementToBoxRect,
-  mergePanelConstraints,
-  type MouseEventCallback,
-  negateChildren,
+  MouseEventCallback,
+  SplitPanelArgs,
+  PanelConstraints,
+  BoxCoord,
+  BoxRect,
   PANEL_DIRECTION,
-  STYLE_PREFIX,
-  type PanelConstraints,
-  parseConstraint,
-  parsedToFormatted,
-  parsePanelConstraints,
-  relativeToPercent,
-  resizeEntryToBoxRect,
-  type ResizeObserverCallback,
-  type ResizeStrategy,
+  ResizeStrategy,
+  SplitPanelDef,
+  SizeInfoType,
+  FlattenStrategy,
+  ResizeObserverCallback,
+  AnimateStrategy,
+  DraggableStrategy,
+  DraggableStrategyReturn,
+  ConstraintType,
+  AnimateStrategyReturn,
+  SizeInfoOptions,
   SIBLING_RELATION,
-  type SplitPanelArgs,
-  type SplitPanelDef,
-  type SizeInfoType,
-  sumMinSizes,
-  type SizeInfoOptions,
-  sumSizes,
-} from './defs';
+  STYLE_PREFIX,
+  SizedItem,
+} from './interfaces';
+import { getDistance, getDirectionInfo, htmlElementToBoxRect, getCoordFromMouseEvent, resizeEntryToBoxRect } from './utilRect';
+import { getChildInfo, negateChildren } from './utilChild';
 import { flattenDepthFirst } from './flatten';
 import { resizeNeighbors } from './resize';
+import { relativeToPercent, parsedToFormatted, parseConstraint, parsePanelConstraints, exactToPx } from './utilParse';
+import { mergePanelConstraints } from './utilConstraint';
+import { sumSizes, sumMinSizes } from './utilCalc';
+import { getSizeInfo, getBalancedPanelSizeArray } from './utilBalance';
 
 type CbMap = {
   resize?: ResizeObserverCallback;
@@ -914,6 +904,22 @@ class SplitPanel<DType = any> {
     }
   }
 
+  async setChildrenSizes(items: SizedItem<DType>[], options?: { animate?: boolean }) {
+    const sizes: ConstraintType[] = [];
+    const panels: SplitPanel<DType>[] = [];
+
+    for (const { size, item } of items) {
+      sizes.push(size);
+      panels.push(item);
+    }
+
+    if (options?.animate === false) {
+      this.satisfyConstraints({ items: panels, size: sizes });
+    } else {
+      await this.animateChildren(sizes, panels);
+    }
+  }
+
   async animateChildren(val?: ConstraintType | ConstraintType[], items?: SplitPanel<DType>[]) {
     this._animateStrategyData?.cancel?.();
     this.snapshotChildSizeInfo();
@@ -1062,20 +1068,37 @@ class SplitPanel<DType = any> {
       // the other panels will have min sizes, so we need to calculate how much space is left to allocate
       const minSizeSum = sumMinSizes(itemsToSum);
       const remainingSpace = this.rectSize - minSizeSum;
+
+      const sizedItems = itemsToSet.map((item, index) => ({
+        item,
+        size: Array.isArray(options.size) ? options.size[index] : options.size
+      }))
+
+      sizedItems.push(...itemsToSum.map((item) => ({ item, size: null })));
+
       // make sure that the sizes we're setting the panels to don't exceed the remaining space
-      const balancedSizes = getBalancedPanelSizeArray(options.size, itemsToSet, remainingSpace);
+      const { balancedSizes } = getBalancedPanelSizeArray(
+        sizedItems,
+        remainingSpace
+      );
       let index = 0;
 
       for (const item of itemsToSet) {
-        const optSize = balancedSizes[index].exactValue;
-        const sizeInfo = item.getSizeInfo(optSize ?? item.originalSize, {
-          comparativeSize: remainingSpace,
+        const optSize = balancedSizes[index].relativeValue * this.rectSize;
+        const sizeInfo = item.getSizeInfo(optSize, {
+          // comparativeSize: remainingSpace,
         });
 
         leftToAllocate -= sizeInfo?.exactSize ?? 0;
         addToSizeMap(item, sizeInfo);
         index += 1;
       }
+
+      // const balancedSum = balancedSizes.reduce((acc, item) => acc + item.exactValue, 0);
+
+      // console.log('balancedSum', balancedSum, 'remainingSpace', remainingSpace);
+
+      // leftToAllocate -= balancedSum;
     }
 
     if (itemsToConsider.length === 0) {

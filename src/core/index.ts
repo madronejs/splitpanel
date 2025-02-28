@@ -1,4 +1,11 @@
 export { default as SplitPanel } from './SplitPanel';
-export * from './defs';
-export * from './resize';
 export * from './flatten';
+export * from './interfaces';
+export * from './resize';
+export * from './utilBalance';
+export * from './utilCalc';
+export * from './utilChild';
+export * from './utilConstraint';
+export * from './utilParse';
+export * from './utilRect';
+export * from './utilSibling';

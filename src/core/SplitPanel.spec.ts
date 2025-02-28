@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { PANEL_DIRECTION } from './defs';
+import { PANEL_DIRECTION } from './interfaces';
 import { resizeAll } from './resize';
 import SplitPanel from './SplitPanel';
 

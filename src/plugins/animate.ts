@@ -1,10 +1,8 @@
 import anime from 'animejs';
-import {
-  relativeToPercent,
-  AnimateStrategy,
-  negateChildren,
-  ConstraintType,
-} from '@/core/defs';
+
+import { relativeToPercent } from '@/core/utilParse';
+import { AnimateStrategy, ConstraintType } from '@/core/interfaces';
+import { negateChildren } from '@/core/utilChild';
 import type SplitPanel from '@/core/SplitPanel';
 
 export default function configureAnimate(config?: Omit<anime.AnimeAnimParams, 'update'>): AnimateStrategy {

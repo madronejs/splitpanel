@@ -80,7 +80,7 @@ describe('calculateSizes', () => {
     const sizes = splitPanel.calculateSizes({
       item,
       size,
-      itemsToConstrain: item.siblings,
+      // itemsToConstrain: item.siblings,
     });
 
     for (const key of Object.keys(sizes)) {
@@ -143,12 +143,22 @@ describe('calculateSizes', () => {
       size: '50%',
       ids: [IDS.ID1, IDS.ID2],
       expectedSizes: {
-        [IDS.ID1]: '47%',
-        [IDS.ID2]: '47%',
-        [IDS.ID3]: '16.666666669999998%',
-        [IDS.ID4]: '16.666666669999998%',
+        [IDS.ID1]: '48%',
+        [IDS.ID2]: '48%',
+        [IDS.ID3]: '2%',
+        [IDS.ID4]: '2%',
       }
     },
+    // {
+    //   size: ['10%'],
+    //   ids: [IDS.ID1],
+    //   expectedSizes: {
+    //     [IDS.ID1]: '10%',
+    //     [IDS.ID2]: '30%',
+    //     [IDS.ID3]: '30%',
+    //     [IDS.ID4]: '30%',
+    //   }
+    // }
   ])('can adjust $ids to be the correct size when set to $size', ({ size, expectedSizes, ids }) => {
     const splitPanel = create4SplitPanel();
     const item = ids.map((id) => splitPanel.byId(id));
