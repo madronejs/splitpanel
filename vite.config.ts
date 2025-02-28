@@ -7,6 +7,7 @@ export default defineConfig({
   plugins: [jsxPlugin()],
   build: {
     cssMinify: true,
+    minify: process.env.NODE_ENV === 'production',
     lib: {
       // Could also be a dictionary or array of multiple entry points
       entry: [
