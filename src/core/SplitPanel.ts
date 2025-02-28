@@ -957,7 +957,7 @@ class SplitPanel<DType = any> {
   async equalizeChildrenSizes(options?: { recursive?: boolean }) {
     if (this.numChildren) {
       const sizeMap = this.calculateSizes({
-        itemsToConstrain: this.children,
+        item: this.children,
         size: relativeToPercent(1 / this.numChildren),
       });
       const needsResize = this.children.some((item) => item.sizeInfo.relativeSize !== sizeMap[item.id]?.relativeSize);
@@ -1033,8 +1033,6 @@ class SplitPanel<DType = any> {
       initialize?: boolean,
     }
   ): Record<string, SizeInfoType> {
-    const newItems = options?.itemsToConstrain ? [options.itemsToConstrain].flat().filter(Boolean) : undefined;
-    const itemsToConsider = newItems || this.children;
     const sizeMap: Record<string, SizeInfoType> = {};
 
     const addToSizeMap = (child: SplitPanel<DType>, sizeInfo?: SizeInfoType) => {
@@ -1052,6 +1050,8 @@ class SplitPanel<DType = any> {
     let leftToAllocate = this.rectSize;
     let itemsToSum = this.children;
     const itemsToSet = options.item ? [options.item].flat() : undefined;
+    const newItems = options?.itemsToConstrain ? [options.itemsToConstrain].flat().filter(Boolean) : undefined;
+    const itemsToConsider = newItems || negateChildren(this, itemsToSet);
 
     if (itemsToSet) {
       itemsToSum = negateChildren(this, itemsToSet);
