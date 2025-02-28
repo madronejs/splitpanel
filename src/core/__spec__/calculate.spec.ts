@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import SplitPanel from './SplitPanel';
+import SplitPanel from '../SplitPanel';
 
 
 describe('calculateSizes', () => {

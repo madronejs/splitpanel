@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
 
-import { PANEL_DIRECTION } from './interfaces';
-import { resizeAll } from './resize';
-import SplitPanel from './SplitPanel';
+import { PANEL_DIRECTION } from '../interfaces';
+import { resizeAll } from '../resize';
+import SplitPanel from '../SplitPanel';
 
 const BASE_WIDTH = 1000;
 

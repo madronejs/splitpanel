@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 
-import SplitPanel from './SplitPanel';
-import { rebalanceSizes, getBalancedPanelSizeArray } from './utilBalance';
+import SplitPanel from '../SplitPanel';
+import { rebalanceSizes, getBalancedPanelSizeArray } from '../utilBalance';
 
 describe('rebalanceSizes', () => {
   it('does not change sizes when percent sum is less than 100%', () => {

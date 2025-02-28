@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import { examplePanel1 } from './flatten.mock';
-import SplitPanel from './SplitPanel';
+import SplitPanel from '../SplitPanel';
 
 describe('rawDefinition', () => {
   it('can output a normalized configuration for the current panel', () => {
