@@ -21,6 +21,7 @@ import {
   getCoordFromMouseEvent,
   getDistance,
   getSizeInfo,
+  getBalancedPanelSizeArray,
   getDirectionInfo,
   htmlElementToBoxRect,
   mergePanelConstraints,
@@ -41,6 +42,7 @@ import {
   type SplitPanelDef,
   type SizeInfoType,
   sumMinSizes,
+  type SizeInfoOptions,
   sumSizes,
 } from './defs';
 import { flattenDepthFirst } from './flatten';
@@ -677,12 +679,13 @@ class SplitPanel<DType = any> {
   }
 
   /** Calculate size information based on this panel's constraints */
-  getSizeInfo(size?: ConstraintType): SizeInfoType {
+  getSizeInfo(size?: ConstraintType, options?: Partial<Omit<SizeInfoOptions, 'size'>>): SizeInfoType {
     return getSizeInfo({
       size,
       parsedConstraints: this.parsedConstraints,
       rectSize: this.rectSize,
       comparativeSize: this.comparativeSize,
+      ...options,
     });
   }
 
@@ -1052,14 +1055,22 @@ class SplitPanel<DType = any> {
     const newItems = options?.itemsToConstrain ? [options.itemsToConstrain].flat().filter(Boolean) : undefined;
     const itemsToConsider = newItems || negateChildren(this, itemsToSet);
 
+    // we're explicitly setting the sizes of some panels here
     if (itemsToSet) {
       itemsToSum = negateChildren(this, itemsToSet);
 
+      // the other panels will have min sizes, so we need to calculate how much space is left to allocate
+      const minSizeSum = sumMinSizes(itemsToSum);
+      const remainingSpace = this.rectSize - minSizeSum;
+      // make sure that the sizes we're setting the panels to don't exceed the remaining space
+      const balancedSizes = getBalancedPanelSizeArray(options.size, itemsToSet, remainingSpace);
       let index = 0;
 
       for (const item of itemsToSet) {
-        const optSize = Array.isArray(options.size) ? options.size[index] : options.size;
-        const sizeInfo = item.getSizeInfo(optSize ?? item.originalSize);
+        const optSize = balancedSizes[index].exactValue;
+        const sizeInfo = item.getSizeInfo(optSize ?? item.originalSize, {
+          comparativeSize: remainingSpace,
+        });
 
         leftToAllocate -= sizeInfo?.exactSize ?? 0;
         addToSizeMap(item, sizeInfo);

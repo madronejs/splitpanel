@@ -346,9 +346,13 @@ export function getChildInfo<T>(children: Array<SplitPanel<T>>) {
 
 export type SizeInfoType = ReturnType<typeof getSizeInfo>;
 export type SizeInfoOptions = {
+  /** Constraints */
   parsedConstraints?: ParsedPanelConstraints;
+  /** Target size */
   size: ConstraintType;
+  /** Current container size */
   rectSize: number;
+  /** Parent container size */
   comparativeSize: number;
 };
 
@@ -410,6 +414,46 @@ export function getSizeInfo(options: SizeInfoOptions) {
     appliedMax,
     appliedMin,
   };
+}
+
+export function rebalanceSizes(size: ConstraintType | ConstraintType[], comparativeSize: number): ParsedConstraint[] {
+  const sizes = [size || []].flat();
+
+  if (sizes.length === 0) return [];
+
+  const parsedSizes: ParsedConstraint[] = [];
+  let totalExact: number = 0;
+  let totalRelative: number = 0;
+
+  for (const item of sizes) {
+    const parsed = parseConstraint(item, comparativeSize);
+
+    totalRelative += parsed.relativeValue;
+    totalExact += parsed.exactValue;
+    parsedSizes.push(parsed);
+  }
+
+  if (totalRelative > 1) {
+    for (const item of parsedSizes) {
+      item.relativeValue /= totalRelative;
+      item.exactValue = item.relativeValue * comparativeSize;
+    }
+  }
+
+  return parsedSizes;
+}
+
+export function getBalancedPanelSizeArray(
+  size: ConstraintType | ConstraintType[],
+  panel: SplitPanel | SplitPanel[],
+  comparativeSize: number,
+): ParsedConstraint[] {
+  const panels = [panel || []].flat();
+  const sizes = Array.isArray(size)
+    ? panels.map((p, i) => p.getSizeInfo(size[i] != null ? size[i] : p.sizeInfo.formatted, { comparativeSize }).formatted)
+    : panels.map((p) => p.getSizeInfo(size, { comparativeSize }).formatted);
+
+  return rebalanceSizes(sizes, comparativeSize);
 }
 
 type NumberKeys<T> = {
