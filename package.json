@@ -63,6 +63,7 @@
     "dev": "vite",
     "test": "vitest",
     "lint": "eslint src/ --ext .js,.jsx,.ts,.tsx",
+    "build-dev": "NODE_ENV=development pnpm build-all",
     "build-types": "rm -rf types/* && tsc -p ./tsconfig.json && tsc-alias -p tsconfig.json",
     "build": "rm -rf dist/* && vite build",
     "build-all": "pnpm build-types && pnpm build",
@@ -98,5 +99,5 @@
     "node": "^20.11",
     "pnpm": ">= 9"
   },
-  "packageManager": "pnpm@9.12.2"
+  "packageManager": "pnpm@10.5.0"
 }
