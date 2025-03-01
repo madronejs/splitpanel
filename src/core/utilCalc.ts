@@ -1,4 +1,4 @@
-import { ConstraintType, ParsedConstraint, SizeInfoOptions, SizedItem } from './interfaces';
+import { ConstraintType, ParsedConstraint, SizeInfoOptions } from './interfaces';
 import { parseConstraint, relativeToPercent, exactToPx } from './utilParse';
 import { roundVal } from './utilMath';
 
@@ -62,28 +62,53 @@ export function getSizeInfo(options: SizeInfoOptions) {
   };
 }
 
-export function rebalanceSizes(size: ConstraintType | ConstraintType[], comparativeSize: number): {
+export function rebalanceSizes(
+  /** Adjust these sizes */
+  sizesToBalance: ConstraintType | ConstraintType[],
+  /** The container size */
+  comparativeSize: number,
+  /** Consider these sizes, but don't adjust them */
+  sizesToConsider?: ConstraintType | ConstraintType[]
+): {
   totalRelative: number,
   totalExact: number,
   balancedSizes: ParsedConstraint[],
+  reservedSizes: ParsedConstraint[],
 } {
-  const sizes = [size || []].flat();
+  const sizes = [sizesToBalance || []].flat();
+  const sizesConsider = [sizesToConsider || []].flat();
 
   const balancedSizes: ParsedConstraint[] = [];
+  const reservedSizes: ParsedConstraint[] = [];
+  let remainingRelative = 1;
+  let remainingExact = comparativeSize;
   let totalExact: number = 0;
   let totalRelative: number = 0;
+  let totalBalancedRelative: number = 0;
+
+  for (const item of sizesConsider) {
+    const parsed = parseConstraint(item, comparativeSize);
+
+    totalRelative += parsed.relativeValue;
+    totalExact += parsed.exactValue;
+    remainingRelative -= parsed.relativeValue;
+    remainingExact -= parsed.exactValue;
+    reservedSizes.push(parsed);
+  }
 
   for (const item of sizes) {
     const parsed = parseConstraint(item, comparativeSize);
 
     totalRelative += parsed.relativeValue;
+    totalBalancedRelative += parsed.relativeValue;
     totalExact += parsed.exactValue;
     balancedSizes.push(parsed);
   }
 
   if (totalRelative > 1) {
+    const scaleFactor = remainingRelative / totalBalancedRelative;
     for (const item of balancedSizes) {
-      item.relativeValue /= totalRelative;
+      item.relativeValue = roundVal(item.relativeValue * scaleFactor);
       item.exactValue = item.relativeValue * comparativeSize;
     }
   }
@@ -92,28 +117,6 @@ export function rebalanceSizes(size: ConstraintType | ConstraintType[], comparat
     totalRelative,
     totalExact,
     balancedSizes,
+    reservedSizes,
   };
 }
-
-export function getBalancedPanelSizeArray(
-  items: SizedItem[],
-  comparativeSize: number,
-) {
-  const sizes: ConstraintType[] = [];
-
-  for (const { size, item } of items) {
-    console.log('size', size, item.getSizeInfo(size).formatted);
-    sizes.push(size ? item.getSizeInfo(size).formatted : item.sizeInfo.exactMin);
-  }
-
-
-  // const panels = [panel || []].flat();
-  // const sizes = Array.isArray(size)
-  //   ? panels.map((p, i) => p.getSizeInfo(size[i] != null ? size[i] : p.sizeInfo.formatted, { comparativeSize }).formatted)
-  //   : panels.map((p) => p.getSizeInfo(size, { comparativeSize }).formatted);
-
-  return rebalanceSizes(sizes, comparativeSize);
-}
-
-
-

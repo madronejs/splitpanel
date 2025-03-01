@@ -36,7 +36,10 @@ import { resizeNeighbors } from './resize';
 import { relativeToPercent, parsedToFormatted, parseConstraint, parsePanelConstraints, exactToPx } from './utilParse';
 import { mergePanelConstraints } from './utilConstraint';
 import { sumSizes, sumMinSizes } from './utilMath';
-import { getSizeInfo, getBalancedPanelSizeArray } from './utilCalc';
+import {
+  getSizeInfo,
+  rebalanceSizes,
+} from './utilCalc';
 
 type CbMap = {
   resize?: ResizeObserverCallback;
@@ -1061,44 +1064,31 @@ class SplitPanel<DType = any> {
     const newItems = options?.itemsToConstrain ? [options.itemsToConstrain].flat().filter(Boolean) : undefined;
     const itemsToConsider = newItems || negateChildren(this, itemsToSet);
 
-    // we're explicitly setting the sizes of some panels here
+    // We're explicitly setting the sizes of some panels here.
     if (itemsToSet) {
       itemsToSum = negateChildren(this, itemsToSet);
 
-      // the other panels will have min sizes, so we need to calculate how much space is left to allocate
-      const minSizeSum = sumMinSizes(itemsToSum);
-      const remainingSpace = this.rectSize - minSizeSum;
+      const sizes: ConstraintType[] = [];
 
-      const sizedItems = itemsToSet.map((item, index) => ({
-        item,
-        size: Array.isArray(options.size) ? options.size[index] : options.size
-      }))
+      for (const item of itemsToSet) {
+        sizes.push(Array.isArray(options.size) ? options.size[itemsToSet.indexOf(item)] : options.size);
+      }
 
-      sizedItems.push(...itemsToSum.map((item) => ({ item, size: null })));
-
-      // make sure that the sizes we're setting the panels to don't exceed the remaining space
-      const { balancedSizes } = getBalancedPanelSizeArray(
-        sizedItems,
-        remainingSpace
+      const { balancedSizes } = rebalanceSizes(
+        sizes,
+        this.rectSize,
+        itemsToSum.map((item) => item.sizeInfo.exactMin)
       );
       let index = 0;
 
       for (const item of itemsToSet) {
-        const optSize = balancedSizes[index].relativeValue * this.rectSize;
-        const sizeInfo = item.getSizeInfo(optSize, {
-          // comparativeSize: remainingSpace,
-        });
+        const bSize = balancedSizes[index];
+        const sizeInfo = item.getSizeInfo(bSize ? bSize.exactValue : item.sizeInfo.formatted);
 
         leftToAllocate -= sizeInfo?.exactSize ?? 0;
         addToSizeMap(item, sizeInfo);
         index += 1;
       }
-
-      // const balancedSum = balancedSizes.reduce((acc, item) => acc + item.exactValue, 0);
-
-      // console.log('balancedSum', balancedSum, 'remainingSpace', remainingSpace);
-
-      // leftToAllocate -= balancedSum;
     }
 
     if (itemsToConsider.length === 0) {
@@ -1110,6 +1100,8 @@ class SplitPanel<DType = any> {
     if (newItems) {
       leftToAllocate -= sumSizes(negateChildren(this, newItems));
     }
+
+    console.log('leftToAllocate:', leftToAllocate)
 
     const getRemaining = (divideBy = 1) => {
       const fractionRemaining = leftToAllocate / this.rectSize;

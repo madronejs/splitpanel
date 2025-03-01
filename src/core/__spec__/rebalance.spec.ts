@@ -1,7 +1,6 @@
 import { describe, it, expect } from 'vitest';
 
-import SplitPanel from '../SplitPanel';
-import { rebalanceSizes, getBalancedPanelSizeArray } from '../utilCalc';
+import { rebalanceSizes } from '../utilCalc';
 
 describe('rebalanceSizes', () => {
   it('does not change sizes when percent sum is less than 100%', () => {
@@ -21,9 +20,9 @@ describe('rebalanceSizes', () => {
 
     expect(totalRelative).toBeCloseTo(1.2);
     expect(balancedSizes).toEqual([
-      { exactValue: 16.666666666666664, relativeValue: 0.16666666666666666, relative: true },
-      { exactValue: 16.666666666666664, relativeValue: 0.16666666666666666, relative: true },
-      { exactValue: 66.66666666666666, relativeValue: 0.6666666666666666, relative: true },
+      { exactValue: 16.666666669999998, relativeValue: 0.1666666667, relative: true },
+      { exactValue: 16.666666669999998, relativeValue: 0.1666666667, relative: true },
+      { exactValue: 66.66666667, relativeValue: 0.6666666667, relative: true },
     ]);
   });
 
@@ -33,9 +32,9 @@ describe('rebalanceSizes', () => {
 
     expect(totalRelative).toBeCloseTo(1.2);
     expect(balancedSizes).toEqual([
-      { exactValue: 16.666666666666664, relativeValue: 0.16666666666666666, relative: false },
-      { exactValue: 16.666666666666664, relativeValue: 0.16666666666666666, relative: false },
-      { exactValue: 66.66666666666666, relativeValue: 0.6666666666666666, relative: false },
+      { exactValue: 16.666666669999998, relativeValue: 0.1666666667, relative: false },
+      { exactValue: 16.666666669999998, relativeValue: 0.1666666667, relative: false },
+      { exactValue: 66.66666667, relativeValue: 0.6666666667, relative: false },
     ]);
   });
 
@@ -45,105 +44,33 @@ describe('rebalanceSizes', () => {
 
     expect(totalRelative).toBeCloseTo(1.2);
     expect(balancedSizes).toEqual([
-      { exactValue: 16.666666666666664, relativeValue: 0.16666666666666666, relative: true },
-      { exactValue: 16.666666666666664, relativeValue: 0.16666666666666666, relative: true },
-      { exactValue: 66.66666666666666, relativeValue: 0.6666666666666666, relative: false },
+      { exactValue: 16.666666669999998, relativeValue: 0.1666666667, relative: true },
+      { exactValue: 16.666666669999998, relativeValue: 0.1666666667, relative: true },
+      { exactValue: 66.66666667, relativeValue: 0.6666666667, relative: false },
     ]);
   });
-});
 
-describe('getBalancedPanelSizeArray', () => {
-  const BASE_WIDTH = 1000;
-
-  enum IDS {
-    ID1 = 'ID1',
-    ID2 = 'ID2',
-    ID3 = 'ID3',
-    ID4 = 'ID4',
-  }
-
-  function create4SplitPanel() {
-    return SplitPanel.create({
-      observe: false,
-      resizeElSize: 0,
-      rect: {
-        x: 0,
-        y: 0,
-        width: BASE_WIDTH,
-        height: 10,
-      },
-      children: [
-        { id: IDS.ID1 },
-        { id: IDS.ID2 },
-        { id: IDS.ID3 },
-        { id: IDS.ID4 },
-      ],
-    });
-  }
-
-  it.each([
-    {
-      message: 'balances the sizes for four panels and four 25% sizes',
-      size: ['25%', '25%', '25%', '25%'],
-      expected: [
-        { exactValue: 250, relativeValue: 0.25, relative: true },
-        { exactValue: 250, relativeValue: 0.25, relative: true },
-        { exactValue: 250, relativeValue: 0.25, relative: true },
-        { exactValue: 250, relativeValue: 0.25, relative: true },
-      ]
-    },
-    {
-      message: 'balances the sizes for four panels when the total percent is greater than 100%',
-      size: ['50%', '50%', '50%', '50%'],
-      expected: [
-        { exactValue: 250, relativeValue: 0.25, relative: true },
-        { exactValue: 250, relativeValue: 0.25, relative: true },
-        { exactValue: 250, relativeValue: 0.25, relative: true },
-        { exactValue: 250, relativeValue: 0.25, relative: true },
-      ]
-    },
-  ])('$message', ({ size, expected }) => {
-    const panel = create4SplitPanel();
-
-    panel.satisfyConstraints({ initialize: true });
-
-    const { balancedSizes } = getBalancedPanelSizeArray(panel.children.map((item, index) => ({ item, size: size[index] })), BASE_WIDTH);
-
-    expect(balancedSizes).toEqual(expected);
-  });
-
-  it('does not let the panels be smaller than the min size', () => {
-    const panel = SplitPanel.create({
-      observe: false,
-      resizeElSize: 0,
-      rect: {
-        x: 0,
-        y: 0,
-        width: BASE_WIDTH,
-        height: 10,
-      },
-      children: [
-        { id: IDS.ID1 },
-        { id: IDS.ID2 },
-        { id: IDS.ID3, constraints: { minSize: 100 } },
-        { id: IDS.ID4 },
-      ],
-    });
-
-    panel.satisfyConstraints({ initialize: true });
-
-    const { balancedSizes } = getBalancedPanelSizeArray([
-      { item: panel.children[0], size: '50%' },
-      { item: panel.children[1], size: '50%' },
-      { item: panel.children[2], size: '0%' },
-      { item: panel.children[3], size: '0%' },
-    ], BASE_WIDTH);
+  it('will rebalance sizes and consider reserved space', () => {
+    const sizes = ['100%'];
+    const { balancedSizes, reservedSizes } = rebalanceSizes(sizes, 100, ['20px']);
 
     expect(balancedSizes).toEqual([
-      { exactValue: 454.5454545454545, relativeValue: 0.45454545454545453, relative: true },
-      { exactValue: 454.5454545454545, relativeValue: 0.45454545454545453, relative: true },
-      { exactValue: 90.9090909090909, relativeValue: 0.09090909090909091, relative: false },
-      { exactValue: 0, relativeValue: 0, relative: false },
+      { exactValue: 80, relativeValue: 0.8, relative: true },
     ]);
+
+    expect(reservedSizes).toEqual([
+      { exactValue: 20, relativeValue: 0.2, relative: false },
+    ]);
+  });
+
+  it('will rebalance string and number sizes', () => {
+    const sizes = ['50%', '50%'];
+    const { balancedSizes, totalRelative } = rebalanceSizes(sizes, 100, [30, 30]);
+
+    expect(totalRelative).toBeCloseTo(1.6);
+    expect(balancedSizes).toEqual([
+      { exactValue: 20, relativeValue: 0.2, relative: true },
+      { exactValue: 20, relativeValue: 0.2, relative: true },
+    ])
   });
 });
