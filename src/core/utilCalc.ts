@@ -17,7 +17,7 @@ export function getSizeInfo(options: SizeInfoOptions) {
 
     newRelativeSize = Math.max(minSize.relativeValue, newRelativeSize);
     newSize = Math.max(minSize.exactValue, newSize);
-    appliedMin = originSize !== newSize;
+    appliedMin = originSize !== newSize || newSize === minSize.exactValue;
 
     if (appliedMin) {
       useRelative = false;
@@ -102,8 +102,10 @@ export function getBalancedPanelSizeArray(
   const sizes: ConstraintType[] = [];
 
   for (const { size, item } of items) {
+    console.log('size', size, item.getSizeInfo(size).formatted);
     sizes.push(size ? item.getSizeInfo(size).formatted : item.sizeInfo.exactMin);
   }
+
 
   // const panels = [panel || []].flat();
   // const sizes = Array.isArray(size)
