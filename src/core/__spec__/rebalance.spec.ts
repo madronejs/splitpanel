@@ -143,7 +143,7 @@ describe('getBalancedPanelSizeArray', () => {
       { exactValue: 454.5454545454545, relativeValue: 0.45454545454545453, relative: true },
       { exactValue: 454.5454545454545, relativeValue: 0.45454545454545453, relative: true },
       { exactValue: 90.9090909090909, relativeValue: 0.09090909090909091, relative: false },
-      { exactValue: 0, relativeValue: 0, relative: true },
+      { exactValue: 0, relativeValue: 0, relative: false },
     ]);
   });
 });
