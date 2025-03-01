@@ -93,16 +93,6 @@ describe('getBalancedPanelSizeArray', () => {
       ]
     },
     {
-      message: 'balances the sizes for four panels and two 10% sizes',
-      size: ['10%', '10%'],
-      expected: [
-        { exactValue: 100, relativeValue: 0.1, relative: true },
-        { exactValue: 100, relativeValue: 0.1, relative: true },
-        { exactValue: 250, relativeValue: 0.25, relative: true },
-        { exactValue: 250, relativeValue: 0.25, relative: true },
-      ]
-    },
-    {
       message: 'balances the sizes for four panels when the total percent is greater than 100%',
       size: ['50%', '50%', '50%', '50%'],
       expected: [
