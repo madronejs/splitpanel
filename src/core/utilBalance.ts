@@ -1,6 +1,6 @@
 import { ConstraintType, ParsedConstraint, SizeInfoOptions, SizedItem } from './interfaces';
 import { parseConstraint, relativeToPercent, exactToPx } from './utilParse';
-import { roundVal } from './utilCalc';
+import { roundVal } from './utilMath';
 
 export function getSizeInfo(options: SizeInfoOptions) {
   const { minSize, maxSize, size } = options.parsedConstraints || {};

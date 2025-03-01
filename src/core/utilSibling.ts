@@ -1,6 +1,6 @@
 import type SplitPanel from './SplitPanel';
 import { SIBLING_RELATION, ConstraintType } from './interfaces';
-import { sumSizes } from './utilCalc';
+import { sumSizes } from './utilMath';
 
 function getSiblingArray(panel: SplitPanel, relation: SIBLING_RELATION) {
   if (panel.pushPanels) {

@@ -35,7 +35,7 @@ import { flattenDepthFirst } from './flatten';
 import { resizeNeighbors } from './resize';
 import { relativeToPercent, parsedToFormatted, parseConstraint, parsePanelConstraints, exactToPx } from './utilParse';
 import { mergePanelConstraints } from './utilConstraint';
-import { sumSizes, sumMinSizes } from './utilCalc';
+import { sumSizes, sumMinSizes } from './utilMath';
 import { getSizeInfo, getBalancedPanelSizeArray } from './utilBalance';
 
 type CbMap = {
