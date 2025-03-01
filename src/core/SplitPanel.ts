@@ -36,7 +36,7 @@ import { resizeNeighbors } from './resize';
 import { relativeToPercent, parsedToFormatted, parseConstraint, parsePanelConstraints, exactToPx } from './utilParse';
 import { mergePanelConstraints } from './utilConstraint';
 import { sumSizes, sumMinSizes } from './utilMath';
-import { getSizeInfo, getBalancedPanelSizeArray } from './utilBalance';
+import { getSizeInfo, getBalancedPanelSizeArray } from './utilCalc';
 
 type CbMap = {
   resize?: ResizeObserverCallback;
