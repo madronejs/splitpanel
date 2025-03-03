@@ -8,43 +8,37 @@ import { computed, reactive, watch } from '@madronejs/core';
 import { v4 as uuid } from 'uuid';
 
 import {
-  type BoxCoord,
-  type BoxRect,
-  type ConstraintType,
-  exactToPx,
-  type AnimateStrategy,
-  type AnimateStrategyReturn,
-  type FlattenStrategy,
-  type DraggableStrategy,
-  type DraggableStrategyReturn,
-  getChildInfo,
-  getCoordFromMouseEvent,
-  getDistance,
-  getSizeInfo,
-  getDirectionInfo,
-  htmlElementToBoxRect,
-  mergePanelConstraints,
-  type MouseEventCallback,
-  negateChildren,
+  MouseEventCallback,
+  SplitPanelArgs,
+  PanelConstraints,
+  BoxCoord,
+  BoxRect,
   PANEL_DIRECTION,
-  STYLE_PREFIX,
-  type PanelConstraints,
-  parseConstraint,
-  parsedToFormatted,
-  parsePanelConstraints,
-  relativeToPercent,
-  resizeEntryToBoxRect,
-  type ResizeObserverCallback,
-  type ResizeStrategy,
+  ResizeStrategy,
+  SplitPanelDef,
+  SizeInfoType,
+  FlattenStrategy,
+  ResizeObserverCallback,
+  AnimateStrategy,
+  DraggableStrategy,
+  DraggableStrategyReturn,
+  ConstraintType,
+  AnimateStrategyReturn,
+  SizeInfoOptions,
   SIBLING_RELATION,
-  type SplitPanelArgs,
-  type SplitPanelDef,
-  type SizeInfoType,
-  sumMinSizes,
-  sumSizes,
-} from './defs';
+  STYLE_PREFIX,
+} from './interfaces';
+import { getDistance, getDirectionInfo, htmlElementToBoxRect, getCoordFromMouseEvent, resizeEntryToBoxRect } from './utilRect';
+import { getChildInfo, negateChildren } from './utilChild';
 import { flattenDepthFirst } from './flatten';
 import { resizeNeighbors } from './resize';
+import { relativeToPercent, parsedToFormatted, parseConstraint, parsePanelConstraints, exactToPx } from './utilParse';
+import { mergePanelConstraints } from './utilConstraint';
+import { sumSizes, sumMinSizes } from './utilMath';
+import {
+  getSizeInfo,
+  rebalanceSizes,
+} from './utilCalc';
 
 type CbMap = {
   resize?: ResizeObserverCallback;
@@ -677,13 +671,13 @@ class SplitPanel<DType = any> {
   }
 
   /** Calculate size information based on this panel's constraints */
-  getSizeInfo(size?: ConstraintType): SizeInfoType {
+  getSizeInfo(size?: ConstraintType, options?: Partial<Omit<SizeInfoOptions, 'size'>>): SizeInfoType {
     return getSizeInfo({
       size,
       parsedConstraints: this.parsedConstraints,
       rectSize: this.rectSize,
-      relativeSize: this.relativeSize,
       comparativeSize: this.comparativeSize,
+      ...options,
     });
   }
 
@@ -912,6 +906,31 @@ class SplitPanel<DType = any> {
     }
   }
 
+  /**
+   * Set child panel sizes
+   * @param sizes Mapping of panel ids to their new sizes
+   * @param options Options to change the resize behavior
+   */
+  async setChildrenSizes(sizes: Record<string, ConstraintType>, options?: { animate?: boolean }) {
+    const sizeArray: ConstraintType[] = [];
+    const panels: SplitPanel<DType>[] = [];
+
+    Object.keys(sizes || {}).forEach((id) => {
+      const panel = this.byId(id);
+
+      if (panel && sizes[id] != null) {
+        sizeArray.push(sizes[id]);
+        panels.push(panel);
+      }
+    });
+
+    if (options?.animate === false) {
+      this.satisfyConstraints({ items: panels, size: sizeArray });
+    } else {
+      await this.animateChildren(sizeArray, panels);
+    }
+  }
+
   async animateChildren(val?: ConstraintType | ConstraintType[], items?: SplitPanel<DType>[]) {
     this._animateStrategyData?.cancel?.();
     this.snapshotChildSizeInfo();
@@ -957,7 +976,7 @@ class SplitPanel<DType = any> {
   async equalizeChildrenSizes(options?: { recursive?: boolean }) {
     if (this.numChildren) {
       const sizeMap = this.calculateSizes({
-        itemsToConstrain: this.children,
+        item: this.children,
         size: relativeToPercent(1 / this.numChildren),
       });
       const needsResize = this.children.some((item) => item.sizeInfo.relativeSize !== sizeMap[item.id]?.relativeSize);
@@ -1033,8 +1052,6 @@ class SplitPanel<DType = any> {
       initialize?: boolean,
     }
   ): Record<string, SizeInfoType> {
-    const newItems = options?.itemsToConstrain ? [options.itemsToConstrain].flat().filter(Boolean) : undefined;
-    const itemsToConsider = newItems || this.children;
     const sizeMap: Record<string, SizeInfoType> = {};
 
     const addToSizeMap = (child: SplitPanel<DType>, sizeInfo?: SizeInfoType) => {
@@ -1052,15 +1069,29 @@ class SplitPanel<DType = any> {
     let leftToAllocate = this.rectSize;
     let itemsToSum = this.children;
     const itemsToSet = options.item ? [options.item].flat() : undefined;
+    const itemsToConstrain = options?.itemsToConstrain ? [options.itemsToConstrain].flat().filter(Boolean) : undefined;
+    const itemsToConsider = itemsToConstrain || negateChildren(this, itemsToSet);
 
+    // We're explicitly setting the sizes of some panels here.
     if (itemsToSet) {
       itemsToSum = negateChildren(this, itemsToSet);
 
+      const sizes: ConstraintType[] = [];
+
+      for (const item of itemsToSet) {
+        sizes.push(Array.isArray(options.size) ? options.size[itemsToSet.indexOf(item)] : options.size);
+      }
+
+      const { balancedSizes } = rebalanceSizes(
+        sizes,
+        this.rectSize,
+        itemsToSum.map((item) => item.sizeInfo.exactMin)
+      );
       let index = 0;
 
       for (const item of itemsToSet) {
-        const optSize = Array.isArray(options.size) ? options.size[index] : options.size;
-        const sizeInfo = item.getSizeInfo(optSize ?? item.originalSize);
+        const bSize = balancedSizes[index];
+        const sizeInfo = item.getSizeInfo(bSize ? bSize.exactValue : item.sizeInfo.formatted);
 
         leftToAllocate -= sizeInfo?.exactSize ?? 0;
         addToSizeMap(item, sizeInfo);
@@ -1074,8 +1105,8 @@ class SplitPanel<DType = any> {
 
     const diff = leftToAllocate - sumSizes(itemsToSum);
 
-    if (newItems) {
-      leftToAllocate -= sumSizes(negateChildren(this, newItems));
+    if (itemsToConstrain) {
+      leftToAllocate -= sumSizes(negateChildren(this, itemsToConstrain));
     }
 
     const getRemaining = (divideBy = 1) => {

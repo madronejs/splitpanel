@@ -1,4 +1,4 @@
-import type { SplitPanelDef } from './defs';
+import type { SplitPanelDef } from '../interfaces';
 
 export const examplePanel1: SplitPanelDef = {
   id: 'test1',

@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
 
-import { flattenBreadthFirst, flattenDepthFirst } from './flatten';
+import { flattenBreadthFirst, flattenDepthFirst } from '../flatten';
 import { examplePanel1 } from './flatten.mock';
-import SplitPanel from './SplitPanel';
+import SplitPanel from '../SplitPanel';
 
 describe('flatten strategies', () => {
   describe.each([

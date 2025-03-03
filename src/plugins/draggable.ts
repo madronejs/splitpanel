@@ -1,5 +1,6 @@
 import { auto, watch } from '@madronejs/core';
-import { type DraggableStrategy, type DraggableStrategyReturn, BoxCoord } from '@/core/defs';
+import { BoxCoord, DraggableStrategy, DraggableStrategyReturn, } from '@/core/interfaces';
+
 import type SplitPanel from '@/core/SplitPanel';
 
 import 'drag-drop-touch';

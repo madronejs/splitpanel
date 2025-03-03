@@ -1,4 +1,4 @@
-import type { SplitPanelDef } from './defs';
+import type { SplitPanelDef } from './interfaces';
 
 function getChildren(item: SplitPanelDef) {
   return item?.children || [];
