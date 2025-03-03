@@ -27,7 +27,6 @@ import {
   SizeInfoOptions,
   SIBLING_RELATION,
   STYLE_PREFIX,
-  SizedItem,
 } from './interfaces';
 import { getDistance, getDirectionInfo, htmlElementToBoxRect, getCoordFromMouseEvent, resizeEntryToBoxRect } from './utilRect';
 import { getChildInfo, negateChildren } from './utilChild';
@@ -907,19 +906,28 @@ class SplitPanel<DType = any> {
     }
   }
 
-  async setChildrenSizes(items: SizedItem<DType>[], options?: { animate?: boolean }) {
-    const sizes: ConstraintType[] = [];
+  /**
+   * Set child panel sizes
+   * @param sizes Mapping of panel ids to their new sizes
+   * @param options Options to change the resize behavior
+   */
+  async setChildrenSizes(sizes: Record<string, ConstraintType>, options?: { animate?: boolean }) {
+    const sizeArray: ConstraintType[] = [];
     const panels: SplitPanel<DType>[] = [];
 
-    for (const { size, item } of items) {
-      sizes.push(size);
-      panels.push(item);
-    }
+    Object.keys(sizes || {}).forEach((id) => {
+      const panel = this.byId(id);
+
+      if (panel && sizes[id] != null) {
+        sizeArray.push(sizes[id]);
+        panels.push(panel);
+      }
+    });
 
     if (options?.animate === false) {
-      this.satisfyConstraints({ items: panels, size: sizes });
+      this.satisfyConstraints({ items: panels, size: sizeArray });
     } else {
-      await this.animateChildren(sizes, panels);
+      await this.animateChildren(sizeArray, panels);
     }
   }
 

@@ -81,8 +81,6 @@ export enum STYLE_PREFIX {
   panelResize = 'sp-resize-'
 }
 
-export type SizedItem<DType = any> = { size?: ConstraintType; item: SplitPanel<DType> };
-
 export type SplitPanelDef<DType = any> = {
   /** Panel id. If not set, one will be automatically generated */
   id?: string;
