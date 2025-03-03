@@ -1061,8 +1061,8 @@ class SplitPanel<DType = any> {
     let leftToAllocate = this.rectSize;
     let itemsToSum = this.children;
     const itemsToSet = options.item ? [options.item].flat() : undefined;
-    const newItems = options?.itemsToConstrain ? [options.itemsToConstrain].flat().filter(Boolean) : undefined;
-    const itemsToConsider = newItems || negateChildren(this, itemsToSet);
+    const itemsToConstrain = options?.itemsToConstrain ? [options.itemsToConstrain].flat().filter(Boolean) : undefined;
+    const itemsToConsider = itemsToConstrain || negateChildren(this, itemsToSet);
 
     // We're explicitly setting the sizes of some panels here.
     if (itemsToSet) {
@@ -1097,11 +1097,9 @@ class SplitPanel<DType = any> {
 
     const diff = leftToAllocate - sumSizes(itemsToSum);
 
-    if (newItems) {
-      leftToAllocate -= sumSizes(negateChildren(this, newItems));
+    if (itemsToConstrain) {
+      leftToAllocate -= sumSizes(negateChildren(this, itemsToConstrain));
     }
-
-    console.log('leftToAllocate:', leftToAllocate)
 
     const getRemaining = (divideBy = 1) => {
       const fractionRemaining = leftToAllocate / this.rectSize;

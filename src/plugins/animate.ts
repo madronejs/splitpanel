@@ -2,7 +2,6 @@ import anime from 'animejs';
 
 import { relativeToPercent } from '@/core/utilParse';
 import { AnimateStrategy, ConstraintType } from '@/core/interfaces';
-import { negateChildren } from '@/core/utilChild';
 import type SplitPanel from '@/core/SplitPanel';
 
 export default function configureAnimate(config?: Omit<anime.AnimeAnimParams, 'update'>): AnimateStrategy {
@@ -14,12 +13,10 @@ export default function configureAnimate(config?: Omit<anime.AnimeAnimParams, 'u
     /** The size (or parallel array of sizes) */
     size?: ConstraintType | ConstraintType[]
   ) => {
-    const others = negateChildren(panel, items);
     const timeline = anime.timeline({ autoplay: false });
     const newSizes = panel.calculateSizes({
       item: items,
       size,
-      itemsToConstrain: others,
     });
 
     for (const item of panel.children) {
