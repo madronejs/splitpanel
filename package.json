@@ -2,6 +2,8 @@
   "name": "@madronejs/splitpanel",
   "version": "0.0.17",
   "private": false,
+  "license": "MIT",
+  "type": "module",
   "files": [
     "dist/*.js",
     "dist/*.mjs",
