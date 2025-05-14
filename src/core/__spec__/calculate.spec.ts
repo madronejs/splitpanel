@@ -2,7 +2,6 @@ import { describe, expect, it } from 'vitest';
 
 import SplitPanel from '../SplitPanel';
 
-
 describe('calculateSizes', () => {
   const BASE_WIDTH = 1000;
 
@@ -97,7 +96,7 @@ describe('calculateSizes', () => {
         [IDS.ID2]: '16.666666669999998%',
         [IDS.ID3]: '16.666666669999998%',
         [IDS.ID4]: '16.666666669999998%',
-      }
+      },
     },
     {
       size: ['20%'],
@@ -107,7 +106,7 @@ describe('calculateSizes', () => {
         [IDS.ID2]: '26.66666667%',
         [IDS.ID3]: '26.66666667%',
         [IDS.ID4]: '26.66666667%',
-      }
+      },
     },
     {
       size: ['20%', '20%'],
@@ -117,7 +116,7 @@ describe('calculateSizes', () => {
         [IDS.ID2]: '20%',
         [IDS.ID3]: '30%',
         [IDS.ID4]: '30%',
-      }
+      },
     },
     {
       size: ['20%', '20%', '20%'],
@@ -127,7 +126,7 @@ describe('calculateSizes', () => {
         [IDS.ID2]: '20%',
         [IDS.ID3]: '20%',
         [IDS.ID4]: '40%',
-      }
+      },
     },
     {
       size: ['10%', '20%', '30%', '40%'],
@@ -137,7 +136,7 @@ describe('calculateSizes', () => {
         [IDS.ID2]: '20%',
         [IDS.ID3]: '30%',
         [IDS.ID4]: '40%',
-      }
+      },
     },
     {
       size: ['50%', '50%'],
@@ -147,7 +146,7 @@ describe('calculateSizes', () => {
         [IDS.ID2]: '48%',
         [IDS.ID3]: '20px',
         [IDS.ID4]: '20px',
-      }
+      },
     },
   ])('can adjust $ids to be the correct size when set to $size', ({ size, expectedSizes, ids }) => {
     const splitPanel = create4SplitPanel();
@@ -157,8 +156,8 @@ describe('calculateSizes', () => {
       size,
     });
 
-    Object.keys(expectedSizes).forEach((key) => {
+    for (const key of Object.keys(expectedSizes)) {
       expect(sizes[key].formatted).toEqual(expectedSizes[key]);
-    });
+    }
   });
 });

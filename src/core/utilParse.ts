@@ -38,6 +38,7 @@ export function exactToPx(val: number) {
 
 export function parsedToFormatted(parsed: ParsedConstraint | SizeInfoType): string {
   if (!parsed) return undefined;
+
   if ('relativeValue' in parsed) {
     return parsed.relative
       ? relativeToPercent(parsed.relativeValue)

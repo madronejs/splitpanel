@@ -28,11 +28,15 @@ import {
   SIBLING_RELATION,
   STYLE_PREFIX,
 } from './interfaces';
-import { getDistance, getDirectionInfo, htmlElementToBoxRect, getCoordFromMouseEvent, resizeEntryToBoxRect } from './utilRect';
+import {
+  getDistance, getDirectionInfo, htmlElementToBoxRect, getCoordFromMouseEvent, resizeEntryToBoxRect,
+} from './utilRect';
 import { getChildInfo, negateChildren } from './utilChild';
 import { flattenDepthFirst } from './flatten';
 import { resizeNeighbors } from './resize';
-import { relativeToPercent, parsedToFormatted, parseConstraint, parsePanelConstraints, exactToPx } from './utilParse';
+import {
+  relativeToPercent, parsedToFormatted, parseConstraint, parsePanelConstraints, exactToPx,
+} from './utilParse';
 import { mergePanelConstraints } from './utilConstraint';
 import { sumSizes, sumMinSizes } from './utilMath';
 import {
@@ -41,10 +45,10 @@ import {
 } from './utilCalc';
 
 type CbMap = {
-  resize?: ResizeObserverCallback;
-  mousemove?: MouseEventCallback;
-  mouseup?: MouseEventCallback;
-  visibilitychange?: EventListener;
+  resize?: ResizeObserverCallback,
+  mousemove?: MouseEventCallback,
+  mouseup?: MouseEventCallback,
+  visibilitychange?: EventListener,
 };
 
 function makeUniqueId() {
@@ -682,7 +686,7 @@ class SplitPanel<DType = any> {
   }
 
   /** The raw definition for this panel and all of its children */
-  getRawDefinition(options?: {includeData?: boolean}): SplitPanelDef<DType> {
+  getRawDefinition(options?: { includeData?: boolean }): SplitPanelDef<DType> {
     const def: SplitPanelDef<DType> = { id: this.id };
 
     if (this.data != null && options?.includeData) {
@@ -915,14 +919,14 @@ class SplitPanel<DType = any> {
     const sizeArray: ConstraintType[] = [];
     const panels: SplitPanel<DType>[] = [];
 
-    Object.keys(sizes || {}).forEach((id) => {
+    for (const id of Object.keys(sizes || {})) {
       const panel = this.byId(id);
 
       if (panel && sizes[id] != null) {
         sizeArray.push(sizes[id]);
         panels.push(panel);
       }
-    });
+    }
 
     if (options?.animate === false) {
       this.satisfyConstraints({ items: panels, size: sizeArray });
@@ -942,20 +946,24 @@ class SplitPanel<DType = any> {
 
     if (!this.animateStrategy) {
       const others = negateChildren(this, newItems);
-      const parsed = (val == null || Array.isArray(val)) ? undefined : getSizeInfo({
-        size: val,
-        rectSize: this.contentRectSize,
-        comparativeSize: this.contentRectSize,
-      });
+      const parsed = (val == null || Array.isArray(val))
+        ? undefined
+        : getSizeInfo({
+            size: val,
+            rectSize: this.contentRectSize,
+            comparativeSize: this.contentRectSize,
+          });
 
       let index = 0;
 
       for (const item of newItems) {
-        const newSize = Array.isArray(val) ? getSizeInfo({
-          size: val[index],
-          rectSize: this.contentRectSize,
-          comparativeSize: this.contentRectSize,
-        }) : parsed;
+        const newSize = Array.isArray(val)
+          ? getSizeInfo({
+              size: val[index],
+              rectSize: this.contentRectSize,
+              comparativeSize: this.contentRectSize,
+            })
+          : parsed;
 
         item.setSize(newSize.formatted);
         index += 1;

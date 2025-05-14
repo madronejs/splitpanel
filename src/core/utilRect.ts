@@ -1,5 +1,7 @@
 import pick from 'lodash/pick';
-import { BoxRect, BoxCoord, DIMENSION, PANEL_DIRECTION, AXIS } from './interfaces';
+import {
+  BoxRect, BoxCoord, DIMENSION, PANEL_DIRECTION, AXIS,
+} from './interfaces';
 
 export function resizeEntryToBoxRect(data: ResizeObserverEntry) {
   const target = data.target as HTMLElement;
@@ -24,17 +26,19 @@ export function getCoordFromMouseEvent(e: MouseEvent | TouchEvent): BoxCoord {
 }
 
 export function getDirectionInfo(direction: PANEL_DIRECTION) {
-  return direction === PANEL_DIRECTION.column ? {
-    dimension: DIMENSION.height,
-    dimensionInverse: DIMENSION.width,
-    axis: AXIS.y,
-    axisInverse: AXIS.x,
-  } : {
-    dimension: DIMENSION.width,
-    dimensionInverse: DIMENSION.height,
-    axis: AXIS.x,
-    axisInverse: AXIS.y,
-  };
+  return direction === PANEL_DIRECTION.column
+    ? {
+        dimension: DIMENSION.height,
+        dimensionInverse: DIMENSION.width,
+        axis: AXIS.y,
+        axisInverse: AXIS.x,
+      }
+    : {
+        dimension: DIMENSION.width,
+        dimensionInverse: DIMENSION.height,
+        axis: AXIS.x,
+        axisInverse: AXIS.y,
+      };
 }
 
 export function getDistance(

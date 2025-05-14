@@ -70,18 +70,17 @@ export function rebalanceSizes(
   /** Consider these sizes, but don't adjust them */
   sizesToConsider?: ConstraintType | ConstraintType[]
 ): {
-  totalRelative: number,
-  totalExact: number,
-  balancedSizes: ParsedConstraint[],
-  reservedSizes: ParsedConstraint[],
-} {
+    totalRelative: number,
+    totalExact: number,
+    balancedSizes: ParsedConstraint[],
+    reservedSizes: ParsedConstraint[],
+  } {
   const sizes = [sizesToBalance || []].flat();
   const sizesConsider = [sizesToConsider || []].flat();
 
   const balancedSizes: ParsedConstraint[] = [];
   const reservedSizes: ParsedConstraint[] = [];
   let remainingRelative = 1;
-  let remainingExact = comparativeSize;
   let totalExact: number = 0;
   let totalRelative: number = 0;
   let totalBalancedRelative: number = 0;
@@ -92,7 +91,6 @@ export function rebalanceSizes(
     totalRelative += parsed.relativeValue;
     totalExact += parsed.exactValue;
     remainingRelative -= parsed.relativeValue;
-    remainingExact -= parsed.exactValue;
     reservedSizes.push(parsed);
   }
 
@@ -107,6 +105,7 @@ export function rebalanceSizes(
 
   if (totalRelative > 1) {
     const scaleFactor = remainingRelative / totalBalancedRelative;
+
     for (const item of balancedSizes) {
       item.relativeValue = roundVal(item.relativeValue * scaleFactor);
       item.exactValue = item.relativeValue * comparativeSize;
