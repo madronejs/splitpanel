@@ -1,7 +1,11 @@
 import type SplitPanel from './SplitPanel';
-import { ConstraintType, SIBLING_RELATION, SumOptions, PanelConstraints } from './interfaces';
+import {
+  ConstraintType, SIBLING_RELATION, SumOptions, PanelConstraints,
+} from './interfaces';
 import { estimateSizeInfo, findNearestSibling, findFurthestSibling } from './utilSibling';
-import { roundVal, sumMinSizes, sumSizes, sumSizesBetween } from './utilMath';
+import {
+  roundVal, sumMinSizes, sumSizes, sumSizesBetween,
+} from './utilMath';
 import { relativeToPercent } from './utilParse';
 
 export function resizeAll(panel: SplitPanel, val: ConstraintType) {

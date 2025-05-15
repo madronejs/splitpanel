@@ -24,11 +24,11 @@ export type DraggableStrategy<DType = any> = (panel: SplitPanel<DType>) => Dragg
 
 export type PanelConstraints = {
   /** Minimum size */
-  minSize?: ConstraintType;
+  minSize?: ConstraintType,
   /** Maximum size */
-  maxSize?: ConstraintType;
+  maxSize?: ConstraintType,
   /** Default size */
-  size?: ConstraintType;
+  size?: ConstraintType,
 };
 
 type NumberKeys<T> = {
@@ -36,20 +36,20 @@ type NumberKeys<T> = {
 }[keyof T];
 
 export type SumOptions = {
-  includeNegative?: boolean;
-  sumSource?: 'sizeInfo' | 'sizeInfoSnapshot';
-  sumProperty?: NumberKeys<SizeInfoType>;
-  getter?: (panel: SplitPanel) => number;
+  includeNegative?: boolean,
+  sumSource?: 'sizeInfo' | 'sizeInfoSnapshot',
+  sumProperty?: NumberKeys<SizeInfoType>,
+  getter?: (panel: SplitPanel) => number,
 };
 
 export type BoxDims = {
-  width?: number;
-  height?: number;
+  width?: number,
+  height?: number,
 };
 
 export type BoxCoord = {
-  x: number;
-  y: number;
+  x: number,
+  y: number,
 };
 
 export type BoxRect = BoxDims & BoxCoord;
@@ -83,55 +83,55 @@ export enum STYLE_PREFIX {
 
 export type SplitPanelDef<DType = any> = {
   /** Panel id. If not set, one will be automatically generated */
-  id?: string;
+  id?: string,
   /** (Only applies to parent items) Set the data array for the subtree */
   dataArray?: DType[],
   /** Optional data to associate with the panel */
-  data?: DType;
+  data?: DType,
   /** Sizing constraints for the panel */
-  constraints?: PanelConstraints;
+  constraints?: PanelConstraints,
   /** This panel's children */
-  children?: Array<SplitPanelDef<DType>>;
+  children?: Array<SplitPanelDef<DType>>,
   /** This panel's direction */
-  direction?: PANEL_DIRECTION;
+  direction?: PANEL_DIRECTION,
 };
 
 export type SplitPanelArgs<DType = any> = SplitPanelDef<DType> & {
   /** The parent of the current panel */
-  parent?: SplitPanel<DType>;
+  parent?: SplitPanel<DType>,
   /** The root panel */
-  root?: SplitPanel<DType>;
+  root?: SplitPanel<DType>,
   /** Push other panels if current panel can no longer be resized */
-  pushPanels?: boolean;
+  pushPanels?: boolean,
   /** How to re-balance remaining child sizes after a child's sizes is set */
-  resizeStrategy?: ResizeStrategy;
+  resizeStrategy?: ResizeStrategy,
   /** How to flatten the tree structure to calculate indices */
-  flattenStrategy?: FlattenStrategy;
+  flattenStrategy?: FlattenStrategy,
   /** Use built in resize observer or not (defaults to true) */
-  observe?: boolean;
+  observe?: boolean,
   /** Starting box size */
-  rect?: BoxRect;
+  rect?: BoxRect,
   /** Animation duration in milliseconds */
-  animationDuration?: number;
+  animationDuration?: number,
   /** How far the panel can be from its max with before its considered fully expanded */
-  expandTolerance?: number;
+  expandTolerance?: number,
   /** Show the first resize element */
-  showFirstResizeEl?: boolean;
+  showFirstResizeEl?: boolean,
   /** Selector for the resize element */
-  resizeElSelector?: string;
+  resizeElSelector?: string,
   /** The width/height of the resize element */
-  resizeElSize?: ConstraintType;
+  resizeElSize?: ConstraintType,
   /** Border styles for the resize element */
-  resizeElBorderStyle?: string;
+  resizeElBorderStyle?: string,
 };
 
 export type ParsedConstraint = {
   /** If constraint is relative */
-  relative: boolean;
+  relative: boolean,
   /** Number between 0 and 1 */
-  relativeValue: number;
+  relativeValue: number,
   /** Exact pixel value */
-  exactValue: number;
+  exactValue: number,
 };
 
 export type ParsedPanelConstraints = {
@@ -154,13 +154,13 @@ export type SizeInfoType = {
 };
 export type SizeInfoOptions = {
   /** Constraints */
-  parsedConstraints?: ParsedPanelConstraints;
+  parsedConstraints?: ParsedPanelConstraints,
   /** Target size */
-  size: ConstraintType;
+  size: ConstraintType,
   /** Current container size */
-  rectSize: number;
+  rectSize: number,
   /** Parent container size */
-  comparativeSize: number;
+  comparativeSize: number,
 };
 
 export type ResizeObserverCallback = (event: ResizeObserverEntry) => void;
