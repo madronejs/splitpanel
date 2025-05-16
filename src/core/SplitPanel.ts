@@ -559,22 +559,22 @@ class SplitPanel<DType = any> {
     const style: Record<string, any> = {};
 
     if (!this.isRoot) {
-      style[`--${StylePrefix.panel}size`] = formatted;
+      style[`--${StylePrefix.Panel}size`] = formatted;
 
       if (this.canResize && (this.resizing || this.hovering)) {
-        style[`--${StylePrefix.panel}cursor`] = this.contentDirection === PanelDirection.Column ? 'row-resize' : 'col-resize';
+        style[`--${StylePrefix.Panel}cursor`] = this.contentDirection === PanelDirection.Column ? 'row-resize' : 'col-resize';
       } else {
-        style[`--${StylePrefix.panel}cursor`] = null;
+        style[`--${StylePrefix.Panel}cursor`] = null;
       }
     }
 
-    style[`--${StylePrefix.panel}opacity`] = this.isReady ? 1 : 0;
-    style[`--${StylePrefix.panel}min-size`] = (exactMin !== this.parent?.absoluteMin && Number.isFinite(exactMin)) ? exactToPx(exactMin) : null;
-    style[`--${StylePrefix.panel}max-size`] = (exactMax !== this.parent?.absoluteMax && Number.isFinite(exactMax)) ? exactToPx(exactMax) : null;
+    style[`--${StylePrefix.Panel}opacity`] = this.isReady ? 1 : 0;
+    style[`--${StylePrefix.Panel}min-size`] = (exactMin !== this.parent?.absoluteMin && Number.isFinite(exactMin)) ? exactToPx(exactMin) : null;
+    style[`--${StylePrefix.Panel}max-size`] = (exactMax !== this.parent?.absoluteMax && Number.isFinite(exactMax)) ? exactToPx(exactMax) : null;
 
     // RESIZE ELEMENT STYLES
-    style[`--${StylePrefix.panelResize}size`] = this.isRoot || this._resizeElSize != null ? exactToPx(this.resizeElSize) : null;
-    style[`--${StylePrefix.panelResize}border`] = this.isRoot || this._resizeElBorderStyle != null ? this.resizeElBorderStyle : null;
+    style[`--${StylePrefix.PanelResize}size`] = this.isRoot || this._resizeElSize != null ? exactToPx(this.resizeElSize) : null;
+    style[`--${StylePrefix.PanelResize}border`] = this.isRoot || this._resizeElBorderStyle != null ? this.resizeElBorderStyle : null;
 
     return style;
   }

@@ -77,8 +77,8 @@ export enum Axis {
 }
 
 export enum StylePrefix {
-  panel = 'sp-',
-  panelResize = 'sp-resize-'
+  Panel = 'sp-',
+  PanelResize = 'sp-resize-'
 }
 
 export type SplitPanelDef<DType = any> = {
