@@ -188,15 +188,15 @@ class SplitPanel<DType = any> {
   @reactive private _direction: PanelDirection;
 
   @computed get inverseDirection() {
-    return this._direction === PanelDirection.column ? PanelDirection.row : PanelDirection.column;
+    return this._direction === PanelDirection.Column ? PanelDirection.Row : PanelDirection.Column;
   }
 
   /** The direction the panel is split */
   @computed get direction(): PanelDirection {
     if (this.numChildren) {
-      return this._direction ?? this.parent?.inverseDirection ?? PanelDirection.row;
+      return this._direction ?? this.parent?.inverseDirection ?? PanelDirection.Row;
     }
-    return this._direction ?? this.parent?.direction ?? PanelDirection.row;
+    return this._direction ?? this.parent?.direction ?? PanelDirection.Row;
   }
 
   @computed get contentDirection() {
@@ -562,7 +562,7 @@ class SplitPanel<DType = any> {
       style[`--${StylePrefix.panel}size`] = formatted;
 
       if (this.canResize && (this.resizing || this.hovering)) {
-        style[`--${StylePrefix.panel}cursor`] = this.contentDirection === PanelDirection.column ? 'row-resize' : 'col-resize';
+        style[`--${StylePrefix.panel}cursor`] = this.contentDirection === PanelDirection.Column ? 'row-resize' : 'col-resize';
       } else {
         style[`--${StylePrefix.panel}cursor`] = null;
       }

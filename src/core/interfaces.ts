@@ -56,9 +56,9 @@ export type BoxRect = BoxDims & BoxCoord;
 
 export enum PanelDirection {
   /** Split vertically (create columns) */
-  column = 'column',
+  Column = 'column',
   /** Split horizontally (create rows) */
-  row = 'row',
+  Row = 'row',
 }
 
 export enum SiblingRelation {

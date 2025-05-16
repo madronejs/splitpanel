@@ -26,7 +26,7 @@ export function getCoordFromMouseEvent(e: MouseEvent | TouchEvent): BoxCoord {
 }
 
 export function getDirectionInfo(direction: PanelDirection) {
-  return direction === PanelDirection.column
+  return direction === PanelDirection.Column
     ? {
         dimension: Dimension.height,
         dimensionInverse: Dimension.width,
@@ -54,7 +54,7 @@ export function getDistance(
   const { x: x2, y: y2 } = coord2;
 
   // Don't need to be too fancy here... diagonal distance doesn't matter.
-  if (direction === PanelDirection.row) {
+  if (direction === PanelDirection.Row) {
     return x2 - x1;
   }
 

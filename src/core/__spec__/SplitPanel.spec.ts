@@ -144,7 +144,7 @@ describe('SplitPanel', () => {
       const sp1 = splitPanel.byId(IDS.ID1);
 
       sp1.addChild({ id: 'foobar' });
-      expect(sp1.direction).toEqual(PanelDirection.column);
+      expect(sp1.direction).toEqual(PanelDirection.Column);
     });
   });
 
