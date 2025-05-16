@@ -28,14 +28,14 @@ export function getCoordFromMouseEvent(e: MouseEvent | TouchEvent): BoxCoord {
 export function getDirectionInfo(direction: PanelDirection) {
   return direction === PanelDirection.Column
     ? {
-        dimension: Dimension.height,
-        dimensionInverse: Dimension.width,
+        dimension: Dimension.Height,
+        dimensionInverse: Dimension.Width,
         axis: Axis.y,
         axisInverse: Axis.x,
       }
     : {
-        dimension: Dimension.width,
-        dimensionInverse: Dimension.height,
+        dimension: Dimension.Width,
+        dimensionInverse: Dimension.Height,
         axis: Axis.x,
         axisInverse: Axis.y,
       };

@@ -67,8 +67,8 @@ export enum SiblingRelation {
 }
 
 export enum Dimension {
-  width = 'width',
-  height = 'height',
+  Width = 'width',
+  Height = 'height',
 }
 
 export enum Axis {
