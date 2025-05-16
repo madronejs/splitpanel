@@ -310,7 +310,7 @@ class SplitPanel<DType = any> {
 
   /** The direction of the current drag */
   @computed get dragRelation() {
-    return getDistance(this.prevDragPos, this.dragPos, this.contentDirection) <= 0 ? SiblingRelation.before : SiblingRelation.after;
+    return getDistance(this.prevDragPos, this.dragPos, this.contentDirection) <= 0 ? SiblingRelation.Before : SiblingRelation.After;
   }
 
   /** Relative distance dragged compared to the parent container's size */

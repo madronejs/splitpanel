@@ -62,8 +62,8 @@ export enum PanelDirection {
 }
 
 export enum SiblingRelation {
-  before = 'siblingBefore',
-  after = 'siblingAfter',
+  Before = 'siblingBefore',
+  After = 'siblingAfter',
 }
 
 export enum Dimension {

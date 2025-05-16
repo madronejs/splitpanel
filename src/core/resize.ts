@@ -21,8 +21,8 @@ export function resizeAll(panel: SplitPanel, val: ConstraintType) {
   if (appliedMin) {
     panel.setSize(val);
 
-    const shrinkableAfter = findNearestSibling(panel, SiblingRelation.after, (sibling) => sibling.canShrink);
-    const growableBefore = findNearestSibling(panel, SiblingRelation.before, (sibling) => sibling.canGrow);
+    const shrinkableAfter = findNearestSibling(panel, SiblingRelation.After, (sibling) => sibling.canShrink);
+    const growableBefore = findNearestSibling(panel, SiblingRelation.Before, (sibling) => sibling.canGrow);
 
     if (shrinkableAfter?.sizeInfoSnapshot) {
       const shrinkBy = relativeSize - parsedSize.relativeValue;
@@ -35,7 +35,7 @@ export function resizeAll(panel: SplitPanel, val: ConstraintType) {
       toSatisfy.push(growableBefore);
     }
   } else {
-    const shrinkableBefore = findNearestSibling(panel, SiblingRelation.before, (sibling) => sibling.canShrink);
+    const shrinkableBefore = findNearestSibling(panel, SiblingRelation.Before, (sibling) => sibling.canShrink);
 
     if (siblingsNeedGrow || shrinkableBefore) {
       panel.setSize(val);
@@ -90,10 +90,10 @@ export function resizeNeighbors(panel: SplitPanel, val: ConstraintType) {
     // If we're resizing in the "before" direction (ie. left or up), find the furthest sibling in the
     // "after" direction (ie. right or down) that can be increased in size.
     // If we're resizing in the "after" direction, find the nearest sibling that can shrink.
-    if ((panel.dragRelation === SiblingRelation.before || panelGrowing) && afterSumLess) {
+    if ((panel.dragRelation === SiblingRelation.Before || panelGrowing) && afterSumLess) {
       siblingAfter = findFurthestSibling(
         panel,
-        SiblingRelation.after,
+        SiblingRelation.After,
         (sibling) => sibling.canGrow && (
           !sibling.sizeInfoSnapshot
           || sibling.sizeInfoSnapshot.relativeSize > sibling.sizeInfo.relativeSize
@@ -106,7 +106,7 @@ export function resizeNeighbors(panel: SplitPanel, val: ConstraintType) {
         maxSize: siblingAfter.sizeInfoSnapshot.exactSize,
       });
     } else {
-      siblingAfter = findNearestSibling(panel, SiblingRelation.after, (sibling) => sibling.canShrink);
+      siblingAfter = findNearestSibling(panel, SiblingRelation.After, (sibling) => sibling.canShrink);
     }
 
     if (siblingAfter) {
@@ -117,15 +117,15 @@ export function resizeNeighbors(panel: SplitPanel, val: ConstraintType) {
       siblingAfter.setSize(relativeToPercent(newSize));
     }
 
-    const growableBefore = findNearestSibling(panel, SiblingRelation.before, (sibling) => sibling.canGrow);
+    const growableBefore = findNearestSibling(panel, SiblingRelation.Before, (sibling) => sibling.canGrow);
 
     if (growableBefore) {
       toSatisfy.push(growableBefore);
     }
   } else {
     // The current panel can be resized
-    const shrinkableBefore = findNearestSibling(panel, SiblingRelation.before, (sibling) => sibling.canShrink);
-    const shrinkableAfter = findNearestSibling(panel, SiblingRelation.after, (sibling) => sibling.canShrink);
+    const shrinkableBefore = findNearestSibling(panel, SiblingRelation.Before, (sibling) => sibling.canShrink);
+    const shrinkableAfter = findNearestSibling(panel, SiblingRelation.After, (sibling) => sibling.canShrink);
 
     if (siblingsNeedGrow) {
       // The current panel is _decreasing_ in size, meaning any panel "before" should grow
@@ -136,10 +136,10 @@ export function resizeNeighbors(panel: SplitPanel, val: ConstraintType) {
       const beforeSumLess = beforeSumCurrent < beforeSumOriginal;
       let growableBefore: SplitPanel;
 
-      if ((panel.dragRelation === SiblingRelation.after || panelGrowing) && beforeSumLess) {
+      if ((panel.dragRelation === SiblingRelation.After || panelGrowing) && beforeSumLess) {
         growableBefore = findFurthestSibling(
           panel,
-          SiblingRelation.before,
+          SiblingRelation.Before,
           (sibling) => sibling.canGrow && (
             !sibling.sizeInfoSnapshot
             || sibling.sizeInfoSnapshot.relativeSize > sibling.sizeInfo.relativeSize
@@ -152,7 +152,7 @@ export function resizeNeighbors(panel: SplitPanel, val: ConstraintType) {
           maxSize: growableBefore.sizeInfoSnapshot.exactSize,
         });
       } else {
-        growableBefore = findNearestSibling(panel, SiblingRelation.before, (sibling) => sibling.canGrow);
+        growableBefore = findNearestSibling(panel, SiblingRelation.Before, (sibling) => sibling.canGrow);
       }
 
       if (growableBefore) {

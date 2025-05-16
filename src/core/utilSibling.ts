@@ -4,10 +4,10 @@ import { sumSizes } from './utilMath';
 
 function getSiblingArray(panel: SplitPanel, relation: SiblingRelation) {
   if (panel.pushPanels) {
-    return [...((relation === SiblingRelation.before ? panel.siblingsBefore : panel.siblingsAfter) || [])];
+    return [...((relation === SiblingRelation.Before ? panel.siblingsBefore : panel.siblingsAfter) || [])];
   }
 
-  return relation === SiblingRelation.before ? [panel.siblingBefore].filter(Boolean) : [panel.siblingAfter].filter(Boolean);
+  return relation === SiblingRelation.Before ? [panel.siblingBefore].filter(Boolean) : [panel.siblingAfter].filter(Boolean);
 }
 
 function findPanelMatch(items: SplitPanel[], condition: (sibling: SplitPanel) => boolean) {
@@ -27,7 +27,7 @@ export function findNearestSibling(
 ) {
   const siblings = getSiblingArray(panel, relation);
 
-  if (relation === SiblingRelation.before) {
+  if (relation === SiblingRelation.Before) {
     siblings.reverse();
   }
 
@@ -41,7 +41,7 @@ export function findFurthestSibling(
 ) {
   const siblings = getSiblingArray(panel, relation);
 
-  if (relation === SiblingRelation.after) {
+  if (relation === SiblingRelation.After) {
     siblings.reverse();
   }
 
