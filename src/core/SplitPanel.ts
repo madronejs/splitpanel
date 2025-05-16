@@ -13,7 +13,7 @@ import {
   PanelConstraints,
   BoxCoord,
   BoxRect,
-  PANEL_DIRECTION,
+  PanelDirection,
   ResizeStrategy,
   SplitPanelDef,
   SizeInfoType,
@@ -25,8 +25,8 @@ import {
   ConstraintType,
   AnimateStrategyReturn,
   SizeInfoOptions,
-  SIBLING_RELATION,
-  STYLE_PREFIX,
+  SiblingRelation,
+  StylePrefix,
 } from './interfaces';
 import {
   getDistance, getDirectionInfo, htmlElementToBoxRect, getCoordFromMouseEvent, resizeEntryToBoxRect,
@@ -185,18 +185,18 @@ class SplitPanel<DType = any> {
     }
   }
 
-  @reactive private _direction: PANEL_DIRECTION;
+  @reactive private _direction: PanelDirection;
 
   @computed get inverseDirection() {
-    return this._direction === PANEL_DIRECTION.column ? PANEL_DIRECTION.row : PANEL_DIRECTION.column;
+    return this._direction === PanelDirection.column ? PanelDirection.row : PanelDirection.column;
   }
 
   /** The direction the panel is split */
-  @computed get direction(): PANEL_DIRECTION {
+  @computed get direction(): PanelDirection {
     if (this.numChildren) {
-      return this._direction ?? this.parent?.inverseDirection ?? PANEL_DIRECTION.row;
+      return this._direction ?? this.parent?.inverseDirection ?? PanelDirection.row;
     }
-    return this._direction ?? this.parent?.direction ?? PANEL_DIRECTION.row;
+    return this._direction ?? this.parent?.direction ?? PanelDirection.row;
   }
 
   @computed get contentDirection() {
@@ -310,7 +310,7 @@ class SplitPanel<DType = any> {
 
   /** The direction of the current drag */
   @computed get dragRelation() {
-    return getDistance(this.prevDragPos, this.dragPos, this.contentDirection) <= 0 ? SIBLING_RELATION.before : SIBLING_RELATION.after;
+    return getDistance(this.prevDragPos, this.dragPos, this.contentDirection) <= 0 ? SiblingRelation.before : SiblingRelation.after;
   }
 
   /** Relative distance dragged compared to the parent container's size */
@@ -559,22 +559,22 @@ class SplitPanel<DType = any> {
     const style: Record<string, any> = {};
 
     if (!this.isRoot) {
-      style[`--${STYLE_PREFIX.panel}size`] = formatted;
+      style[`--${StylePrefix.panel}size`] = formatted;
 
       if (this.canResize && (this.resizing || this.hovering)) {
-        style[`--${STYLE_PREFIX.panel}cursor`] = this.contentDirection === PANEL_DIRECTION.column ? 'row-resize' : 'col-resize';
+        style[`--${StylePrefix.panel}cursor`] = this.contentDirection === PanelDirection.column ? 'row-resize' : 'col-resize';
       } else {
-        style[`--${STYLE_PREFIX.panel}cursor`] = null;
+        style[`--${StylePrefix.panel}cursor`] = null;
       }
     }
 
-    style[`--${STYLE_PREFIX.panel}opacity`] = this.isReady ? 1 : 0;
-    style[`--${STYLE_PREFIX.panel}min-size`] = (exactMin !== this.parent?.absoluteMin && Number.isFinite(exactMin)) ? exactToPx(exactMin) : null;
-    style[`--${STYLE_PREFIX.panel}max-size`] = (exactMax !== this.parent?.absoluteMax && Number.isFinite(exactMax)) ? exactToPx(exactMax) : null;
+    style[`--${StylePrefix.panel}opacity`] = this.isReady ? 1 : 0;
+    style[`--${StylePrefix.panel}min-size`] = (exactMin !== this.parent?.absoluteMin && Number.isFinite(exactMin)) ? exactToPx(exactMin) : null;
+    style[`--${StylePrefix.panel}max-size`] = (exactMax !== this.parent?.absoluteMax && Number.isFinite(exactMax)) ? exactToPx(exactMax) : null;
 
     // RESIZE ELEMENT STYLES
-    style[`--${STYLE_PREFIX.panelResize}size`] = this.isRoot || this._resizeElSize != null ? exactToPx(this.resizeElSize) : null;
-    style[`--${STYLE_PREFIX.panelResize}border`] = this.isRoot || this._resizeElBorderStyle != null ? this.resizeElBorderStyle : null;
+    style[`--${StylePrefix.panelResize}size`] = this.isRoot || this._resizeElSize != null ? exactToPx(this.resizeElSize) : null;
+    style[`--${StylePrefix.panelResize}border`] = this.isRoot || this._resizeElBorderStyle != null ? this.resizeElBorderStyle : null;
 
     return style;
   }
@@ -788,7 +788,7 @@ class SplitPanel<DType = any> {
   }
 
   /** Set the direction of this panel */
-  setDirection(direction: PANEL_DIRECTION) {
+  setDirection(direction: PanelDirection) {
     this._direction = direction;
     this._debouncedSatisfyConstraints();
   }

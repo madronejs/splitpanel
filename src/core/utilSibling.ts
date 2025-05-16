@@ -1,13 +1,13 @@
 import type SplitPanel from './SplitPanel';
-import { SIBLING_RELATION, ConstraintType } from './interfaces';
+import { SiblingRelation, ConstraintType } from './interfaces';
 import { sumSizes } from './utilMath';
 
-function getSiblingArray(panel: SplitPanel, relation: SIBLING_RELATION) {
+function getSiblingArray(panel: SplitPanel, relation: SiblingRelation) {
   if (panel.pushPanels) {
-    return [...((relation === SIBLING_RELATION.before ? panel.siblingsBefore : panel.siblingsAfter) || [])];
+    return [...((relation === SiblingRelation.before ? panel.siblingsBefore : panel.siblingsAfter) || [])];
   }
 
-  return relation === SIBLING_RELATION.before ? [panel.siblingBefore].filter(Boolean) : [panel.siblingAfter].filter(Boolean);
+  return relation === SiblingRelation.before ? [panel.siblingBefore].filter(Boolean) : [panel.siblingAfter].filter(Boolean);
 }
 
 function findPanelMatch(items: SplitPanel[], condition: (sibling: SplitPanel) => boolean) {
@@ -22,12 +22,12 @@ function findPanelMatch(items: SplitPanel[], condition: (sibling: SplitPanel) =>
 
 export function findNearestSibling(
   panel: SplitPanel,
-  relation: SIBLING_RELATION,
+  relation: SiblingRelation,
   condition: (sibling: SplitPanel) => boolean,
 ) {
   const siblings = getSiblingArray(panel, relation);
 
-  if (relation === SIBLING_RELATION.before) {
+  if (relation === SiblingRelation.before) {
     siblings.reverse();
   }
 
@@ -36,12 +36,12 @@ export function findNearestSibling(
 
 export function findFurthestSibling(
   panel: SplitPanel,
-  relation: SIBLING_RELATION,
+  relation: SiblingRelation,
   condition: (sibling: SplitPanel) => boolean,
 ) {
   const siblings = getSiblingArray(panel, relation);
 
-  if (relation === SIBLING_RELATION.after) {
+  if (relation === SiblingRelation.after) {
     siblings.reverse();
   }
 

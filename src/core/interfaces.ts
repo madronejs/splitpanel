@@ -54,29 +54,29 @@ export type BoxCoord = {
 
 export type BoxRect = BoxDims & BoxCoord;
 
-export enum PANEL_DIRECTION {
+export enum PanelDirection {
   /** Split vertically (create columns) */
   column = 'column',
   /** Split horizontally (create rows) */
   row = 'row',
 }
 
-export enum SIBLING_RELATION {
+export enum SiblingRelation {
   before = 'siblingBefore',
   after = 'siblingAfter',
 }
 
-export enum DIMENSION {
+export enum Dimension {
   width = 'width',
   height = 'height',
 }
 
-export enum AXIS {
+export enum Axis {
   x = 'x',
   y = 'y',
 }
 
-export enum STYLE_PREFIX {
+export enum StylePrefix {
   panel = 'sp-',
   panelResize = 'sp-resize-'
 }
@@ -93,7 +93,7 @@ export type SplitPanelDef<DType = any> = {
   /** This panel's children */
   children?: Array<SplitPanelDef<DType>>,
   /** This panel's direction */
-  direction?: PANEL_DIRECTION,
+  direction?: PanelDirection,
 };
 
 export type SplitPanelArgs<DType = any> = SplitPanelDef<DType> & {
