@@ -40,26 +40,26 @@
   },
   "exports": {
     ".": {
-      "import": "./dist/index.mjs",
-      "require": "./dist/index.js"
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
     },
     "./vue3": {
-      "import": "./dist/vue3.mjs",
-      "require": "./dist/vue3.js"
+      "import": "./dist/vue3.js",
+      "require": "./dist/vue3.cjs"
     },
     "./webc": {
-      "import": "./dist/webComponent.mjs",
-      "require": "./dist/webComponent.js"
+      "import": "./dist/webComponent.js",
+      "require": "./dist/webComponent.cjs"
     },
     "./animate": {
-      "import": "./dist/animate.mjs",
-      "require": "./dist/animate.js"
+      "import": "./dist/animate.js",
+      "require": "./dist/animate.cjs"
     },
     "./draggable": {
-      "import": "./dist/draggable.mjs",
-      "require": "./dist/draggable.js"
+      "import": "./dist/draggable.js",
+      "require": "./dist/draggable.cjs"
     },
-    "./style": "./dist/style.css"
+    "./style": "./dist/splitpanel.css"
   },
   "scripts": {
     "dev": "vite",
