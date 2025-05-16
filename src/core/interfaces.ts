@@ -72,8 +72,8 @@ export enum Dimension {
 }
 
 export enum Axis {
-  x = 'x',
-  y = 'y',
+  X = 'x',
+  Y = 'y',
 }
 
 export enum StylePrefix {

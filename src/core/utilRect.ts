@@ -30,14 +30,14 @@ export function getDirectionInfo(direction: PanelDirection) {
     ? {
         dimension: Dimension.Height,
         dimensionInverse: Dimension.Width,
-        axis: Axis.y,
-        axisInverse: Axis.x,
+        axis: Axis.Y,
+        axisInverse: Axis.X,
       }
     : {
         dimension: Dimension.Width,
         dimensionInverse: Dimension.Height,
-        axis: Axis.x,
-        axisInverse: Axis.y,
+        axis: Axis.X,
+        axisInverse: Axis.Y,
       };
 }
 
