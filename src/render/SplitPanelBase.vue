@@ -1,24 +1,10 @@
 <script setup lang="ts">
-import {
-  ref,
-  onBeforeUnmount,
-  type PropType,
-  useSlots,
-  computed,
-} from 'vue';
+import { onBeforeUnmount, computed } from 'vue';
 import SplitPanel from '@/core/SplitPanel';
+import { PanelScope, SplitPanelBaseSlots, SplitPanelBaseProps } from './interfaces';
 
-interface Scope {
-  panel: SplitPanel;
-}
-
-function makeScope(panel: SplitPanel): Scope {
+function makeScope(panel: SplitPanel): PanelScope {
   return { panel };
-}
-
-interface SplitPanelBaseProps {
-  splitPanel: SplitPanel;
-  manualUnbind?: boolean;
 }
 
 defineOptions({
@@ -26,7 +12,7 @@ defineOptions({
 });
 
 const props = defineProps<SplitPanelBaseProps>();
-const slots = useSlots();
+const slots = defineSlots<SplitPanelBaseSlots>();
 
 onBeforeUnmount(() => {
   if (!props.manualUnbind && props.splitPanel?.isRoot) {
@@ -70,14 +56,19 @@ const resizeClasses = computed(() => ({
       class="split-panel-content"
       :ref="splitPanel.attachContentEl"
     >
-      <template v-if="splitPanel.numChildren">
+      <slot
+        v-if="slots.content"
+        name="content"
+        v-bind="makeScope(splitPanel)"
+      />
+      <template v-else-if="splitPanel.numChildren">
         <SplitPanelBase
           v-for="child in splitPanel.children"
           :key="child.id"
           :splitPanel="child"
         >
           <template
-            v-for="(_, name) in $slots"
+            v-for="(_, name) in slots"
             #[name]="slotProps"
           >
             <slot

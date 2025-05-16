@@ -1296,7 +1296,7 @@ class SplitPanel<DType = any> {
   }
 
   /** Create a child panel that inherits properties from this panel */
-  private _createChild(item?: SplitPanelDef<DType>) {
+  createChild(item?: SplitPanelDef<DType>) {
     return SplitPanel.create<DType>({
       ...item,
       id: item?.id ?? makeUniqueId(),
@@ -1312,7 +1312,7 @@ class SplitPanel<DType = any> {
 
     if (items) {
       for (const item of items) {
-        const child = this._createChild(item);
+        const child = this.createChild(item);
 
         if (!this.childMap[child.id]) {
           children.push(child);
@@ -1414,7 +1414,7 @@ class SplitPanel<DType = any> {
         existing.setDefinition(item);
         newItems.push(existing);
       } else {
-        newItems.push(this._createChild(item));
+        newItems.push(this.createChild(item));
       }
     }
 

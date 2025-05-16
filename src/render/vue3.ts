@@ -1,6 +1,4 @@
-import SplitPanelView from './SplitPanelBase.vue';
-import SplitPanelViewDefault from './vue3Default';
-import SplitPanelItem from './vue3SplitPanelItem';
-
-export default SplitPanelView;
-export { SplitPanelViewDefault, SplitPanelItem };
+export * from './interfaces';
+export { default as SplitPanelBase } from './SplitPanelBase.vue';
+export { default as SplitPanelView } from './SplitPanelView.vue';
+export { default as SplitPanelItem } from './SplitPanelItem.vue';
