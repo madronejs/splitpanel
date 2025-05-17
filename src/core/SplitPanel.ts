@@ -137,6 +137,8 @@ class SplitPanel<DType = any> {
   @reactive sizeInfoSnapshot: SizeInfoType;
   /** If the mouse is hovering over the resizer */
   @reactive hovering: boolean;
+  /** If this panel is "disabled" (ie. omitted from the layout) */
+  @reactive disabled: boolean;
   @reactive private _readyPromise: Promise<void>;
   @reactive private _syncReady: boolean = true;
   @reactive private _constraintsReady: boolean = false;
@@ -413,16 +415,28 @@ class SplitPanel<DType = any> {
     return this.totalExactAvailableSpace / this.rectSize;
   }
 
+  @computed private get _absoluteMinResizeElSize() {
+    return Math.max(this.shouldShowResizeEl ? this.resizeElSize : 0, 0);
+  }
+
   /** The absolute minimum size a panel can be */
   @computed get absoluteMin() {
+    if (this.disabled) {
+      return this._absoluteMinResizeElSize;
+    }
+
     return Math.max(
       this.parsedUserConstraints.minSize?.exactValue || 0,
-      Math.max(this.shouldShowResizeEl ? this.resizeElSize : 0, 0),
+      this._absoluteMinResizeElSize,
     );
   }
 
   /** The absolute maximum size this panel can be while still respecting the minSizes of its siblings */
   @computed get absoluteMax() {
+    if (this.disabled) {
+      return this._absoluteMinResizeElSize;
+    }
+
     if (!this.parent) {
       return Number.POSITIVE_INFINITY;
     }
@@ -772,6 +786,15 @@ class SplitPanel<DType = any> {
 
       panel.root.setDataArray(cpy);
     }
+  }
+
+  /**
+   * Disable this panel so that only the resize element is shown
+   * @param val The new disabled state
+   */
+  setDisabled(val: boolean = true) {
+    this.disabled = !!val;
+    this.parent?.satisfyConstraints();
   }
 
   setShowFirstResizeEl(val: boolean) {
