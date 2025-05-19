@@ -101,6 +101,8 @@ export type SplitPanelArgs<DType = any> = SplitPanelDef<DType> & {
   parent?: SplitPanel<DType>,
   /** The root panel */
   root?: SplitPanel<DType>,
+  /** "Close" this panel and disabled the resize ability */
+  disabled?: boolean,
   /** Push other panels if current panel can no longer be resized */
   pushPanels?: boolean,
   /** How to re-balance remaining child sizes after a child's sizes is set */

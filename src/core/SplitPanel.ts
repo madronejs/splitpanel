@@ -99,6 +99,7 @@ class SplitPanel<DType = any> {
     this.setShowFirstResizeEl(options?.showFirstResizeEl);
     this.setExpandTolerance(options?.expandTolerance);
     this.setRect(options?.rect);
+    this.setDisabled(options?.disabled ?? false);
   }
 
   /** This panel's unique id */
