@@ -549,7 +549,7 @@ class SplitPanel<DType = any> {
 
   /** If the panel can be resized */
   @computed get canResize() {
-    return !(this.isRoot || this.isFirstChild || this.disabled || (!this.canGrow && !this.canShrink));
+    return !(this.isRoot || this.disabled) && (this.canGrow || this.canShrink);
   }
 
   /** If this panel can grow based on its constraints */
@@ -576,7 +576,7 @@ class SplitPanel<DType = any> {
     if (!this.isRoot) {
       style[`--${StylePrefix.Panel}size`] = formatted;
 
-      if (this.canResize && (this.resizing || this.hovering)) {
+      if (this.canResize && !this.isFirstChild && (this.resizing || this.hovering)) {
         style[`--${StylePrefix.Panel}cursor`] = this.contentDirection === PanelDirection.Column ? 'row-resize' : 'col-resize';
       } else {
         style[`--${StylePrefix.Panel}cursor`] = null;
@@ -1507,7 +1507,8 @@ class SplitPanel<DType = any> {
 
   private _onResizeElMouseDown(e: MouseEvent | TouchEvent) {
     // There are no other resizable panels, so this is a no-op
-    if (!this.siblingsResizable) return;
+    // or if this is the first child, we don't want to resize
+    if (!this.siblingsResizable || this.isFirstChild) return;
 
     this.parent?.snapshotChildSizeInfo();
     this.dragPosStart = getCoordFromMouseEvent(e);
@@ -1530,7 +1531,7 @@ class SplitPanel<DType = any> {
   }
 
   private _onMouseMove(e: MouseEvent) {
-    if (!this.canResize) {
+    if (!this.canResize && !this.isFirstChild) {
       return;
     }
 
