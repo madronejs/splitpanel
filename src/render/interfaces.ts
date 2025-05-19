@@ -41,8 +41,9 @@ export interface SplitPanelViewProps extends Pick<
   draggableStrategy?: DraggableStrategy,
 }
 
-export interface SplitPanelItemProps extends Omit<SplitPanelDef, 'id' | 'dataArray' | 'children' | 'direction'> {
-  itemId: string,
+export interface SplitPanelItemProps extends Omit<SplitPanelDef, 'id' | 'dataArray' | 'children'> {
+  /** Id of the panel. Will default to a uniquely generated id. */
+  itemId?: string,
 }
 
 export interface SplitPanelItemSlots {
