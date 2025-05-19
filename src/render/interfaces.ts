@@ -37,6 +37,7 @@ export interface SplitPanelViewProps extends Pick<
   SplitPanelArgs,
   'resizeElSize' | 'showFirstResizeEl' | 'direction'
 > {
+  splitPanel?: SplitPanel,
   animateStrategy?: AnimateStrategy,
   draggableStrategy?: DraggableStrategy,
 }

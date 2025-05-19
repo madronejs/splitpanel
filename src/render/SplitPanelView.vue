@@ -8,26 +8,34 @@ import SplitPanelBase from './SplitPanelBase.vue';
 
 const props = defineProps<SplitPanelViewProps>();
 const slots = defineSlots<SplitPanelViewSlots>();
-const splitPanel = shallowRef(SplitPanel.create({
-  resizeElSize: props.resizeElSize,
-  showFirstResizeEl: props.showFirstResizeEl,
-}));
+const splitPanel = shallowRef<SplitPanel>();
+
+function initSplitPanel() {
+  splitPanel.value ??= SplitPanel.create({
+    resizeElSize: props.resizeElSize,
+    showFirstResizeEl: props.showFirstResizeEl,
+  })
+  splitPanel.value.setAnimateStrategy(props.animateStrategy ?? configureAnimate());
+  splitPanel.value.setDraggableStrategy(props.draggableStrategy ?? configureDraggable({
+    dragSelector: '.drag-handle',
+    canDrag: () => true,
+    onDrop: (data) => {
+      if (data?.panel) {
+        const { target, panel } = data;
+        target.moveData(panel);
+      }
+    },
+    ghostAnchor: () => ({ x: 0.5, y: 0.5 }),
+  }));
+}
+
+watch(() => props.splitPanel, (newVal) => {
+  splitPanel.value = newVal;
+  initSplitPanel();
+}, { immediate: true });
 
 provide('splitPanel', splitPanel);
 defineExpose({ splitPanel });
-
-splitPanel.value.setAnimateStrategy(props.animateStrategy ?? configureAnimate());
-splitPanel.value.setDraggableStrategy(props.draggableStrategy ?? configureDraggable({
-  dragSelector: '.drag-handle',
-  canDrag: () => true,
-  onDrop: (data) => {
-    if (data?.panel) {
-      const { target, panel } = data;
-      target.moveData(panel);
-    }
-  },
-  ghostAnchor: () => ({ x: 0.5, y: 0.5 }),
-}));
 
 watch(() => props.showFirstResizeEl, (newVal) => {
   splitPanel.value.setShowFirstResizeEl(newVal);
