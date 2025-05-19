@@ -96,6 +96,8 @@ export type SplitPanelDef<DType = any> = {
   direction?: PanelDirection,
 };
 
+export type ResizeFn<DType> = (panel: SplitPanel<DType>) => ConstraintType;
+
 export type SplitPanelArgs<DType = any> = SplitPanelDef<DType> & {
   /** The parent of the current panel */
   parent?: SplitPanel<DType>,
@@ -103,6 +105,11 @@ export type SplitPanelArgs<DType = any> = SplitPanelDef<DType> & {
   root?: SplitPanel<DType>,
   /** "Close" this panel and disabled the resize ability */
   disabled?: boolean,
+  /**
+   * Evaluate what the size of hte panel should be
+   * when the panel is enabled (coming from a disabled state)
+   */
+  enabledSizer?: ResizeFn<DType>,
   /** Push other panels if current panel can no longer be resized */
   pushPanels?: boolean,
   /** How to re-balance remaining child sizes after a child's sizes is set */

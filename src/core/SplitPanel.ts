@@ -18,6 +18,7 @@ import {
   SplitPanelDef,
   SizeInfoType,
   FlattenStrategy,
+  ResizeFn,
   ResizeObserverCallback,
   AnimateStrategy,
   DraggableStrategy,
@@ -78,6 +79,8 @@ class SplitPanel<DType = any> {
     this.attachResizeEl = this.attachResizeEl.bind(this);
     this.attachDropZoneEl = this.attachDropZoneEl.bind(this);
     this.attachGhostEl = this.attachGhostEl.bind(this);
+    this.toggleDisabled = this.toggleDisabled.bind(this);
+    this.setDisabled = this.setDisabled.bind(this);
     // This._onElementClick = this._onElementClick.bind(this);
     // setup
     this._children = [];
@@ -99,6 +102,7 @@ class SplitPanel<DType = any> {
     this.setShowFirstResizeEl(options?.showFirstResizeEl);
     this.setExpandTolerance(options?.expandTolerance);
     this.setRect(options?.rect);
+    this.setEnabledSizer(options?.enabledSizer);
     this.setDisabled(options?.disabled ?? false);
   }
 
@@ -139,11 +143,12 @@ class SplitPanel<DType = any> {
   /** If the mouse is hovering over the resizer */
   @reactive hovering: boolean;
   /** If this panel is "disabled" (ie. omitted from the layout) */
-  @reactive disabled: boolean;
+  @reactive disabled: boolean = false;
   @reactive private _readyPromise: Promise<void>;
   @reactive private _syncReady: boolean = true;
   @reactive private _constraintsReady: boolean = false;
   @reactive private _readyCallbacks: Set<() => void>;
+  @reactive private _enabledSizer: ResizeFn<DType>;
 
   @reactive private _showFirstResizeEl: boolean;
   /** Show the first resize element */
@@ -796,12 +801,35 @@ class SplitPanel<DType = any> {
   }
 
   /**
+   * Set a resizer function that will determine the size of the panel when transitioning
+   * from disabled to enabled
+   * @param val The resize function
+   */
+  setEnabledSizer(val: ResizeFn<DType>) {
+    this._enabledSizer = val;
+  }
+
+  /**
    * Disable this panel so that only the resize element is shown
    * @param val The new disabled state
    */
   setDisabled(val: boolean = true) {
-    this.disabled = !!val;
+    const disabled = !!val;
+
+    if (this.disabled === disabled) return;
+
+    const resizeFn = this._enabledSizer
+      || ((panel) => parsedToFormatted(panel.parsedConstraints.size)
+        ?? relativeToPercent(1 / (this.parent?.numChildren || 1)));
+
+    this.disabled = disabled;
+    this.setSize(this.disabled ? 0 : resizeFn(this));
     this.parent?.satisfyConstraints();
+  }
+
+  /** Toggle the disabled state of this panel */
+  toggleDisabled() {
+    this.setDisabled(!this.disabled);
   }
 
   setShowFirstResizeEl(val: boolean) {

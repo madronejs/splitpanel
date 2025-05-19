@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onBeforeUnmount, inject } from 'vue';
+import { onBeforeUnmount, inject, ShallowRef } from 'vue';
 import { SplitPanel } from '@/core';
 
 import { SplitPanelItemProps, SplitPanelViewSlots } from './interfaces';
@@ -7,11 +7,12 @@ import SplitPanelBase from './SplitPanelBase.vue';
 
 const props = defineProps<SplitPanelItemProps>();
 const slots = defineSlots<SplitPanelViewSlots>();
-const splitPanelParent = inject<SplitPanel>('splitPanel');
-const [splitPanel] = splitPanelParent.addChild({ ...props, id: props.itemId });
+const splitPanelParent = inject<ShallowRef<SplitPanel>>('splitPanel');
+const [splitPanel] = splitPanelParent.value.addChild({ ...props, id: props.itemId });
 
+defineExpose({ splitPanel });
 onBeforeUnmount(() => {
-  splitPanelParent.removeChild(splitPanel);
+  splitPanelParent.value.removeChild(splitPanel);
 });
 </script>
 
