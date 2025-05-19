@@ -3,7 +3,6 @@ import debounce from 'lodash/debounce';
 import differenceBy from 'lodash/differenceBy';
 import uniqBy from 'lodash/uniqBy';
 import uniqueId from 'lodash/uniqueId';
-import sortBy from 'lodash/sortBy';
 import { computed, reactive, watch } from '@madronejs/core';
 import { v4 as uuid } from 'uuid';
 
@@ -44,6 +43,7 @@ import {
   getSizeInfo,
   rebalanceSizes,
 } from './utilCalc';
+import { sortPanels } from './utilSort';
 
 type CbMap = {
   resize?: ResizeObserverCallback,
@@ -831,11 +831,16 @@ class SplitPanel<DType = any> {
     if (this.disabled === disabled) return;
 
     const resizeFn = this._enabledSizer
-      || ((panel) => parsedToFormatted(panel.parsedConstraints.size)
-        ?? relativeToPercent(1 / (this.parent?.numChildren || 1)));
+      || ((panel) => parsedToFormatted(panel.parsedConstraints.size));
 
     this.disabled = disabled;
-    this.setSize(this.disabled ? 0 : resizeFn(this));
+
+    const newSize = this.disabled ? null : resizeFn(this);
+
+    if (!this.disabled && newSize != null) {
+      this.setSize(newSize);
+    }
+
     this.parent?.satisfyConstraints();
   }
 
@@ -935,19 +940,6 @@ class SplitPanel<DType = any> {
     for (const item of this.children) {
       item.snapshotSizeInfo();
     }
-  }
-
-  /** Calculate a new size based on the current size and the value passed in */
-  getAddSizeValue(val: ConstraintType) {
-    const parsed = parseConstraint(val, this.comparativeSize);
-    return this.sizeInfo.relative
-      ? relativeToPercent(parsed.relativeValue + this.sizeInfo.relativeSize)
-      : exactToPx(parsed.exactValue + this.sizeInfo.exactSize);
-  }
-
-  /** Add or remove from this panel */
-  addSize(val: ConstraintType) {
-    this.setSize(this.getAddSizeValue(val));
   }
 
   /** Set the size of this panel */
@@ -1117,7 +1109,9 @@ class SplitPanel<DType = any> {
     await this.prevExpandibleChild?.maximize();
   }
 
-  /** Calculate the new sizes for the panels without setting any new sizes */
+  /**
+   * Calculate the new sizes for the panels without setting any new sizes
+   */
   calculateSizes(
     options?: {
       /** The item (or items) that will have their sizes set */
@@ -1131,7 +1125,6 @@ class SplitPanel<DType = any> {
     }
   ): Record<string, SizeInfoType> {
     const sizeMap: Record<string, SizeInfoType> = {};
-
     const addToSizeMap = (child: SplitPanel<DType>, sizeInfo?: SizeInfoType) => {
       const newSizeInfo = sizeInfo?.parsedSize ? sizeInfo : child.sizeInfo;
 
@@ -1195,8 +1188,7 @@ class SplitPanel<DType = any> {
 
     if (this.rectSize && Number.isFinite(this.rectSize)) {
       const remainingToObserve = new Set<SplitPanel<DType>>(itemsToConsider);
-      // find the items with the smallest set size and address those first so the remaining items can be given more space
-      const sortedItems: SplitPanel<DType>[] = sortBy(itemsToConsider, (item: SplitPanel<DType>) => item.parsedConstraints?.size);
+      const sortedItems = sortPanels(itemsToConsider);
 
       for (const item of sortedItems) {
         const remaining = relativeToPercent(getRemaining(remainingToObserve.size));
