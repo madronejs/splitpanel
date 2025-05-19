@@ -1271,12 +1271,14 @@ class SplitPanel<DType = any> {
     }
   }
 
+  /** Attach a DOM element to act as the drop zone for this panel */
   attachDropZoneEl(el: HTMLElement) {
     if (el && this.dropZoneEl !== el) {
       this.dropZoneEl = el;
     }
   }
 
+  /** Attach a DOM element to act as the content for the drag ghost for this panel */
   attachGhostEl(el: HTMLElement) {
     if (el && this.ghostEl !== el) {
       this.ghostEl = el;
