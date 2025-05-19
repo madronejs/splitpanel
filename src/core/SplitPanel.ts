@@ -154,10 +154,6 @@ class SplitPanel<DType = any> {
     return !this.isFirstChild || Boolean(this.parent?.showFirstResizeEl);
   }
 
-  @computed get canResize() {
-    return !(this.isRoot || this.isFirstChild);
-  }
-
   /** If the panel's container element has a nonzero width and height */
   @computed get hasRect() {
     return Boolean(this.rect?.width && this.rect?.height);
@@ -551,14 +547,19 @@ class SplitPanel<DType = any> {
     return this.getSizeInfo(this._size);
   }
 
+  /** If the panel can be resized */
+  @computed get canResize() {
+    return !(this.isRoot || this.isFirstChild || this.disabled || (!this.canGrow && !this.canShrink));
+  }
+
   /** If this panel can grow based on its constraints */
   @computed get canGrow() {
-    return !this.sizeInfo.appliedMax;
+    return !this.disabled && !this.sizeInfo.appliedMax;
   }
 
   /** If this panel can shrink based on its constraints */
   @computed get canShrink() {
-    return !this.sizeInfo.appliedMin;
+    return !this.disabled && !this.sizeInfo.appliedMin;
   }
 
   @reactive private _pushPanels: boolean;
@@ -661,6 +662,11 @@ class SplitPanel<DType = any> {
   /** This panel's siblings */
   @computed get siblings() {
     return this.parent?.children?.filter((item) => item.id !== this.id) || [];
+  }
+
+  /** If any of this panel's siblings can be resized */
+  @computed get siblingsResizable() {
+    return this.siblings.some((item) => item.canResize);
   }
 
   /** Number of children this panel has */
@@ -1500,6 +1506,9 @@ class SplitPanel<DType = any> {
   }
 
   private _onResizeElMouseDown(e: MouseEvent | TouchEvent) {
+    // There are no other resizable panels, so this is a no-op
+    if (!this.siblingsResizable) return;
+
     this.parent?.snapshotChildSizeInfo();
     this.dragPosStart = getCoordFromMouseEvent(e);
     e.preventDefault();
