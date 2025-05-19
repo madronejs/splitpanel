@@ -38,9 +38,8 @@ import {
   relativeToPercent, parsedToFormatted, parseConstraint, parsePanelConstraints, exactToPx,
 } from './utilParse';
 import { mergePanelConstraints } from './utilConstraint';
-import { sumSizes, sumMinSizes } from './utilMath';
+import { sumSizes, sumMinSizes, withinTolerance } from './utilMath';
 import {
-  withinTolerance,
   getSizeInfo,
   rebalanceSizes,
 } from './utilCalc';
@@ -1176,6 +1175,8 @@ class SplitPanel<DType = any> {
     }
 
     const diff = leftToAllocate - sumSizes(itemsToSum);
+    const growing = diff >= 0;
+    const shrinking = diff < 0;
 
     if (itemsToConstrain) {
       leftToAllocate -= sumSizes(negateChildren(this, itemsToConstrain));
@@ -1193,8 +1194,6 @@ class SplitPanel<DType = any> {
 
       for (const item of sortedItems) {
         const remaining = relativeToPercent(getRemaining(remainingToObserve.size));
-        const canGrow = item.canGrow && diff >= 0;
-        const canShrink = item.canShrink && diff < 0;
         let newSize: SizeInfoType;
 
         if (!item.hasSize || options?.initialize) {
@@ -1202,7 +1201,7 @@ class SplitPanel<DType = any> {
             parsedToFormatted(item.parsedConstraints?.size)
             ?? remaining
           );
-        } else if (canGrow || canShrink) {
+        } else if ((item.canGrow && growing) || (item.canShrink && shrinking)) {
           newSize = item.getSizeInfo(remaining);
         } else {
           newSize = item.sizeInfo;

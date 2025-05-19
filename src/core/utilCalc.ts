@@ -1,16 +1,6 @@
 import { ConstraintType, ParsedConstraint, SizeInfoOptions } from './interfaces';
 import { parseConstraint, relativeToPercent, exactToPx } from './utilParse';
-import { roundVal } from './utilMath';
-
-const EPSILON = 0.000_000_1; // A small tolerance value
-
-export function withinTolerance(a: number, b: number, tolerance = EPSILON) {
-  return Math.abs(a - b) <= tolerance;
-}
-
-export function exceedsTolerance(a: number, b: number, tolerance = EPSILON) {
-  return Math.abs(a - b) >= tolerance;
-}
+import { roundVal, withinTolerance } from './utilMath';
 
 export function getSizeInfo(options: SizeInfoOptions) {
   const { minSize, maxSize, size } = options.parsedConstraints || {};
@@ -27,7 +17,7 @@ export function getSizeInfo(options: SizeInfoOptions) {
 
     newRelativeSize = Math.max(minSize.relativeValue, newRelativeSize);
     newSize = Math.max(minSize.exactValue, newSize);
-    appliedMin = originSize !== newSize || newSize === minSize.exactValue;
+    appliedMin = !withinTolerance(originSize, newSize) || withinTolerance(newSize, minSize.exactValue);
 
     if (appliedMin) {
       useRelative = false;
@@ -39,7 +29,7 @@ export function getSizeInfo(options: SizeInfoOptions) {
 
     newRelativeSize = Math.min(maxSize.relativeValue, newRelativeSize);
     newSize = Math.min(maxSize.exactValue, newSize);
-    appliedMax = originSize !== newSize;
+    appliedMax = !withinTolerance(originSize, newSize);
   }
 
   newRelativeSize = roundVal(newRelativeSize);
