@@ -191,6 +191,14 @@ class SplitPanel<DType = any> {
 
   @reactive private _direction: PanelDirection;
 
+  /**
+   * The inverse direction of the panel
+   * @example
+   * ```ts
+   * const panel = SplitPanel.create({ direction: PanelDirection.Row });
+   * console.log(panel.inverseDirection); // Column
+   * ```
+   */
   @computed get inverseDirection() {
     return this._direction === PanelDirection.Column ? PanelDirection.Row : PanelDirection.Column;
   }
@@ -203,6 +211,10 @@ class SplitPanel<DType = any> {
     return this._direction ?? this.parent?.direction ?? PanelDirection.Row;
   }
 
+  /**
+   * The direction the content of the panel is split.
+   * If not set, it will default to the panel's parent direction.
+   */
   @computed get contentDirection() {
     return this.parent?.direction ?? this.direction;
   }
