@@ -1201,7 +1201,7 @@ class SplitPanel<DType = any> {
             parsedToFormatted(item.parsedConstraints?.size)
             ?? remaining
           );
-        } else if ((item.canGrow && growing) || (item.canShrink && shrinking)) {
+        } else if ((item.canGrow && (growing || !itemsToConstrain)) || (item.canShrink && (shrinking || !itemsToConstrain))) {
           newSize = item.getSizeInfo(remaining);
         } else {
           newSize = item.sizeInfo;
