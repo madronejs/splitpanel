@@ -129,7 +129,6 @@ export function resizeNeighbors(panel: SplitPanel, val: ConstraintType) {
 
     if (siblingsNeedGrow) {
       // The current panel is _decreasing_ in size, meaning any panel "before" should grow
-      panel.setSize(val);
 
       const beforeSumOriginal = sumSizes(panel.siblingsBefore, relativeSnapshotOptions);
       const beforeSumCurrent = sumSizes(panel.siblingsBefore, relativeSizeOptions);
@@ -155,8 +154,11 @@ export function resizeNeighbors(panel: SplitPanel, val: ConstraintType) {
         growableBefore = findNearestSibling(panel, SiblingRelation.Before, (sibling) => sibling.canGrow);
       }
 
-      if (growableBefore) {
+      if (panel.siblingBefore && growableBefore) {
         toSatisfy.push(growableBefore);
+        panel.setSize(val);
+      } else if (!panel.siblingBefore) {
+        panel.setSize(val);
       }
     } else if (shrinkableBefore) {
       // The current panel is _increasing_ in size, meaning any panel "before" should shrink
