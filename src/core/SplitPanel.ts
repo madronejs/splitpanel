@@ -1566,7 +1566,7 @@ class SplitPanel<DType = any> {
   }
 
   private _onMouseMove(e: MouseEvent) {
-    if (!this.canResize && !this.isFirstChild) {
+    if ((!this.canResize && !this.isFirstChild) || !this.siblingsResizable) {
       return;
     }
 
