@@ -40,6 +40,7 @@ import {
 import { mergePanelConstraints } from './utilConstraint';
 import { sumSizes, sumMinSizes } from './utilMath';
 import {
+  withinTolerance,
   getSizeInfo,
   rebalanceSizes,
 } from './utilCalc';
@@ -572,12 +573,12 @@ class SplitPanel<DType = any> {
 
   /** If this panel can grow based on its constraints */
   @computed get canGrow() {
-    return !this.disabled && !this.sizeInfo.appliedMax;
+    return !this.disabled && !withinTolerance(this.sizeInfo.exactSize, this.sizeInfo.exactMax);
   }
 
   /** If this panel can shrink based on its constraints */
   @computed get canShrink() {
-    return !this.disabled && !this.sizeInfo.appliedMin;
+    return !this.disabled && !withinTolerance(this.sizeInfo.exactSize, this.sizeInfo.exactMin);
   }
 
   @reactive private _pushPanels: boolean;

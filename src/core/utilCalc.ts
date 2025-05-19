@@ -2,6 +2,16 @@ import { ConstraintType, ParsedConstraint, SizeInfoOptions } from './interfaces'
 import { parseConstraint, relativeToPercent, exactToPx } from './utilParse';
 import { roundVal } from './utilMath';
 
+const EPSILON = 0.000_000_1; // A small tolerance value
+
+export function withinTolerance(a: number, b: number, tolerance = EPSILON) {
+  return Math.abs(a - b) <= tolerance;
+}
+
+export function exceedsTolerance(a: number, b: number, tolerance = EPSILON) {
+  return Math.abs(a - b) >= tolerance;
+}
+
 export function getSizeInfo(options: SizeInfoOptions) {
   const { minSize, maxSize, size } = options.parsedConstraints || {};
   const parsedSize = options.size === undefined ? size : parseConstraint(options.size, options.comparativeSize);
