@@ -2,6 +2,7 @@ import cloneDeep from 'lodash/cloneDeep';
 import debounce from 'lodash/debounce';
 import differenceBy from 'lodash/differenceBy';
 import uniqBy from 'lodash/uniqBy';
+import orderBy from 'lodash/orderBy';
 import uniqueId from 'lodash/uniqueId';
 import { computed, reactive, watch } from '@madronejs/core';
 import { v4 as uuid } from 'uuid';
@@ -83,12 +84,16 @@ class SplitPanel<DType = any> {
     this.attachGhostEl = this.attachGhostEl.bind(this);
     this.toggleDisabled = this.toggleDisabled.bind(this);
     this.setDisabled = this.setDisabled.bind(this);
+    this._removeChildrenCallbacks = new Set();
+    this._addChildrenCallbacks = new Set();
+
     // This._onElementClick = this._onElementClick.bind(this);
     // setup
     this._children = [];
     this._readyCallbacks = new Set();
     this._root = options?.root;
     this._observeElement = options?.observe ?? true;
+    this.order = options?.order ?? null;
     this.resizeEl = null;
     this.contentEl = null;
     this.containerEl = null;
@@ -157,6 +162,14 @@ class SplitPanel<DType = any> {
   @reactive private _constraintsReady: boolean = false;
   @reactive private _readyCallbacks: Set<() => void>;
   @reactive private _enabledSizer: ResizeFn<DType>;
+  @reactive private _removeChildrenCallbacks: Set<(panels: Array<SplitPanel<DType>>) => void>;
+  @reactive private _addChildrenCallbacks: Set<(panels: Array<SplitPanel<DType>>) => void>;
+  /**
+   * The preferred display order of this panel in its parent panel.
+   * If unset, will be in insertion order.
+   * Strings will be cast to numbers.
+   */
+  @reactive order: number | string;
 
   @reactive private _showFirstResizeEl: boolean;
   /** Show the first resize element */
@@ -379,7 +392,7 @@ class SplitPanel<DType = any> {
   @reactive private _children: Array<SplitPanel<DType>>;
   /** The children of this panel */
   @computed get children(): Array<SplitPanel<DType>> {
-    return uniqBy(this._children, 'id') || [];
+    return orderBy(uniqBy(this._children, 'id'), (item) => Number(item.order)) || [];
   }
 
   @computed private get _childInfo() {
@@ -1390,6 +1403,7 @@ class SplitPanel<DType = any> {
       this.resizeEl = el;
 
       if (this.resizeEl && this._observeElement) {
+        this.resizeObserver.unobserve(this.resizeEl);
         this._addRootCb(this.resizeEl, 'resize', this._onResizeElResize);
         this.resizeObserver.observe(this.resizeEl);
         this.resizeEl.addEventListener('mousedown', this._onResizeElMouseDown);
@@ -1446,7 +1460,9 @@ class SplitPanel<DType = any> {
   addChild(...items: Array<SplitPanelDef<DType>>) {
     const children = this._createChildren(items);
 
-    this._children.push(...children);
+    this._children = [...this._children, ...children];
+
+    for (const cb of this._addChildrenCallbacks) cb(children);
     return children;
   }
 
@@ -1477,6 +1493,7 @@ class SplitPanel<DType = any> {
       });
     }
 
+    for (const cb of this._removeChildrenCallbacks) cb(removed);
     return removed;
   }
 
@@ -1576,6 +1593,26 @@ class SplitPanel<DType = any> {
   onReady(cb: () => void) {
     this._readyCallbacks.add(cb);
     return () => this._readyCallbacks.delete(cb);
+  }
+
+  /**
+   * Listen for when this panel has children removed
+   * @param cb Callback to run when children of this panel are removed
+   * @returns Disposer function
+   */
+  onRemoveChildren(cb: (panels: Array<SplitPanel<DType>>) => void) {
+    this._removeChildrenCallbacks.add(cb);
+    return () => this._removeChildrenCallbacks.delete(cb);
+  }
+
+  /**
+   * Listen for when this panel has children added
+   * @param cb Callback to run when children are added to this panel
+   * @returns Disposer function
+   */
+  onAddChildren(cb: (panels: Array<SplitPanel<DType>>) => void) {
+    this._addChildrenCallbacks.add(cb);
+    return () => this._addChildrenCallbacks.delete(cb);
   }
 
   // ///////////////////////////////////////

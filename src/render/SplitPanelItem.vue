@@ -1,12 +1,12 @@
-<script setup lang="ts">
+<script setup lang="ts" generic="T">
 import { computed, onBeforeUnmount, inject, ShallowRef, watch } from 'vue';
 import { type SplitPanel, type PanelConstraints } from '@/core';
 
 import { SplitPanelItemProps, SplitPanelViewSlots } from './interfaces';
 import SplitPanelBase from './SplitPanelBase.vue';
 
-const props = defineProps<SplitPanelItemProps>();
-const slots = defineSlots<SplitPanelViewSlots>();
+const props = defineProps<SplitPanelItemProps<T>>();
+const slots = defineSlots<SplitPanelViewSlots<T>>();
 const splitPanelParent = inject<ShallowRef<SplitPanel>>('splitPanel');
 const [splitPanel] = splitPanelParent.value.addChild({ ...props, id: props.itemId });
 

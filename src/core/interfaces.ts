@@ -118,6 +118,8 @@ export type SplitPanelArgs<DType = any> = SplitPanelDef<DType> & {
   flattenStrategy?: FlattenStrategy,
   /** Use built in resize observer or not (defaults to true) */
   observe?: boolean,
+  /** The preferred order of this panel in its parent panel */
+  order?: number | string,
   /** Starting box size */
   rect?: BoxRect,
   /** Animation duration in milliseconds */
