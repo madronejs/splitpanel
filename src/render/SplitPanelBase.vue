@@ -1,9 +1,9 @@
-<script setup lang="ts">
+<script setup lang="ts" generic="T">
 import { onBeforeUnmount, computed } from 'vue';
 import SplitPanel from '@/core/SplitPanel';
 import { PanelScope, SplitPanelBaseSlots, SplitPanelBaseProps } from './interfaces';
 
-function makeScope(panel: SplitPanel): PanelScope {
+function makeScope(panel: SplitPanel<T>): PanelScope<T> {
   return { panel };
 }
 
@@ -11,8 +11,8 @@ defineOptions({
   name: 'SplitPanelBase',
 });
 
-const props = defineProps<SplitPanelBaseProps>();
-const slots = defineSlots<SplitPanelBaseSlots>();
+const props = defineProps<SplitPanelBaseProps<T>>();
+const slots = defineSlots<SplitPanelBaseSlots<T>>();
 
 onBeforeUnmount(() => {
   if (!props.manualUnbind && props.splitPanel?.isRoot) {
@@ -39,19 +39,18 @@ const resizeClasses = computed(() => ({
     :class="panelClasses"
     :style="splitPanel.style"
   >
-    <template v-if="!splitPanel.isRoot && !(splitPanel.isFirstChild && !splitPanel.showFirstResizeEl)">
-      <div
-        :ref="splitPanel.attachResizeEl"
-        :class="resizeClasses"
-      >
-        <div class="split-panel-resize-inner">
-          <slot
-            name="resize"
-            v-bind="makeScope(splitPanel)"
-          />
-        </div>
+    <div
+      v-if="!splitPanel.isRoot && !(splitPanel.isFirstChild && !splitPanel.showFirstResizeEl)"
+      :ref="splitPanel.attachResizeEl"
+      :class="resizeClasses"
+    >
+      <div class="split-panel-resize-inner">
+        <slot
+          name="resize"
+          v-bind="makeScope(splitPanel)"
+        />
       </div>
-    </template>
+    </div>
     <div
       class="split-panel-content"
       :ref="splitPanel.attachContentEl"

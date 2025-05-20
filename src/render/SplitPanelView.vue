@@ -1,17 +1,24 @@
-<script setup lang="ts">
-import { provide, shallowRef, watch } from 'vue';
+<script setup lang="ts" generic="T">
+import { provide, shallowRef, watch, onBeforeUnmount } from 'vue';
 import SplitPanel from '@/core/SplitPanel';
 import configureAnimate from '@/plugins/animate';
 import configureDraggable from '@/plugins/draggable';
-import { SplitPanelViewSlots, SplitPanelViewProps } from './interfaces';
+import { ChildrenChangedEvent, SplitPanelViewSlots, SplitPanelViewProps } from './interfaces';
 import SplitPanelBase from './SplitPanelBase.vue';
 
-const props = defineProps<SplitPanelViewProps>();
-const slots = defineSlots<SplitPanelViewSlots>();
+const props = defineProps<SplitPanelViewProps<T>>();
+const slots = defineSlots<SplitPanelViewSlots<T>>();
 const splitPanel = shallowRef<SplitPanel>();
+const emit = defineEmits<{
+  'update:children': [event: ChildrenChangedEvent<T>]
+}>();
+
+let disposeListeners: (() => void) | undefined;
 
 function initSplitPanel() {
+  disposeListeners?.();
   splitPanel.value ??= SplitPanel.create({
+    id: props.itemId,
     resizeElSize: props.resizeElSize,
     showFirstResizeEl: props.showFirstResizeEl,
   })
@@ -27,6 +34,18 @@ function initSplitPanel() {
     },
     ghostAnchor: () => ({ x: 0.5, y: 0.5 }),
   }));
+
+  const disposeAdd = splitPanel.value.onAddChildren((children) => {
+    emit('update:children', { splitPanel: splitPanel.value, type: 'add', children });
+  });
+  const disposeRemove = splitPanel.value.onRemoveChildren((children) => {
+    emit('update:children', { splitPanel: splitPanel.value, type: 'remove', children });
+  });
+
+  disposeListeners = () => {
+    disposeAdd();
+    disposeRemove();
+  };
 }
 
 watch(() => props.splitPanel, (newVal) => {
@@ -46,6 +65,10 @@ watch(() => props.direction, (newVal) => {
     splitPanel.value.setDirection(newVal);
   }
 }, { immediate: true });
+
+onBeforeUnmount(() => {
+  disposeListeners?.();
+});
 </script>
 
 <template>
