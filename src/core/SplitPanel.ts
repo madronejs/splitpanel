@@ -27,6 +27,7 @@ import {
   SizeInfoOptions,
   SiblingRelation,
   StylePrefix,
+  BoxDims,
 } from './interfaces';
 import {
   getDistance, getDirectionInfo, htmlElementToBoxRect, getCoordFromMouseEvent, resizeEntryToBoxRect,
@@ -67,6 +68,7 @@ class SplitPanel<DType = any> {
     this._onElementResize = this._onElementResize.bind(this);
     this._onResizeElMouseDown = this._onResizeElMouseDown.bind(this);
     this._onResizeElResize = this._onResizeElResize.bind(this);
+    this._onContentElResize = this._onContentElResize.bind(this);
     this._onDblClick = this._onDblClick.bind(this);
     this._onMouseUp = this._onMouseUp.bind(this);
     this._onMouseMove = this._onMouseMove.bind(this);
@@ -90,7 +92,7 @@ class SplitPanel<DType = any> {
     this.resizeEl = null;
     this.contentEl = null;
     this.containerEl = null;
-    this._debouncedSatisfyConstraints = debounce(this.satisfyConstraints.bind(this));
+    this.queueRerender = debounce(this.satisfyConstraints.bind(this));
     this.parent = options?.parent;
     this._setupRootIfNeeded();
     this.setFlattenStrategy(options?.flattenStrategy);
@@ -122,6 +124,12 @@ class SplitPanel<DType = any> {
   @reactive private _unbindContainerEl: () => void;
   /** The html element containing the content of the panel */
   @reactive contentEl: HTMLElement;
+  /** The content element rect */
+  @reactive contentElRect: BoxRect;
+  /** Scroll dimensions of the content element */
+  @reactive contentElScrollDims: BoxDims;
+  /** Unbind the content el */
+  @reactive private _unbindContentEl: () => void;
   /** Unbind all events for resize el */
   @reactive private _unbindResizeEl: () => void;
   /** The html element for containing the dropzone content of the panel */
@@ -339,7 +347,8 @@ class SplitPanel<DType = any> {
     return this.relativeDragDistance + (this.sizeInfoSnapshot?.relativeSize ?? this.sizeInfo.relativeSize);
   }
 
-  private _debouncedSatisfyConstraints: () => void;
+  /** Queue a re-render after a debounce. */
+  queueRerender: () => void;
 
   /** If this panel is the root of the panel */
   @computed get isRoot() {
@@ -356,6 +365,7 @@ class SplitPanel<DType = any> {
   /** Unbind all the event listeners and cleanup */
   unbind() {
     this._unbindResizeEl?.();
+    this._unbindContentEl?.();
     this._unbindContainerEl?.();
     this._unbindDropZoneEl?.();
     this._unbindGhostEl?.();
@@ -501,7 +511,7 @@ class SplitPanel<DType = any> {
 
   /** User defined constraints for this panel */
   @computed get parsedUserConstraints() {
-    return parsePanelConstraints(this.constraints, this.comparativeSize);
+    return parsePanelConstraints(this.disabled ? null : this.constraints, this.comparativeSize);
   }
 
   /** Strategy defined constraints for this panel */
@@ -538,6 +548,11 @@ class SplitPanel<DType = any> {
     return this.rect?.[this.contentDirectionInfo.dimension] || 0;
   }
 
+  /** Current scroll size in pixels */
+  @computed get contentScrollSize() {
+    return this.disabled ? 0 : this.contentElScrollDims?.[this.contentDirectionInfo.dimension] || 0;
+  }
+
   /** The size this panel is compared to calculate relative size */
   @computed get comparativeSize() {
     if (this.isRoot) {
@@ -547,9 +562,14 @@ class SplitPanel<DType = any> {
     return this.parent?.rectSize;
   }
 
-  /** Current container size in pixels */
+  /** Current resize element size in pixels */
   @computed get resizeRectSize() {
     return this.resizeElRect?.[this.directionInfo.dimension] || 0;
+  }
+
+  /** Current container element size in pixels */
+  @computed get contentElRectSize() {
+    return this.contentElRect?.[this.contentDirectionInfo.dimension] || 0;
   }
 
   /** If a size has been explicitly set on this panel */
@@ -759,7 +779,7 @@ class SplitPanel<DType = any> {
       this.rect = val;
 
       if (!hadRect && this.hasRect) {
-        this._debouncedSatisfyConstraints();
+        this.queueRerender();
       }
     }
   }
@@ -769,6 +789,24 @@ class SplitPanel<DType = any> {
     if (val) {
       this.resizeElRect = val;
     }
+  }
+
+  /** Set the current bounding box of this panel's content */
+  setContentRect(val: BoxRect) {
+    if (val) {
+      this.contentElRect = val;
+      this.setContentScrollDims();
+    }
+  }
+
+  /** Set the current scroll dimensions of the content element */
+  setContentScrollDims() {
+    if (!this.contentEl) return;
+
+    this.contentElScrollDims = {
+      width: this.contentEl.scrollWidth,
+      height: this.contentEl.scrollHeight,
+    };
   }
 
   /** Set the expandTolerance */
@@ -835,13 +873,12 @@ class SplitPanel<DType = any> {
 
     this.disabled = disabled;
 
-    const newSize = this.disabled ? null : resizeFn(this);
+    const newSize = this.disabled ? 0 : resizeFn(this);
 
-    if (!this.disabled && newSize != null) {
+    if (newSize != null) {
       this.setSize(newSize);
+      this.parent?.queueRerender();
     }
-
-    this.parent?.satisfyConstraints();
   }
 
   /** Toggle the disabled state of this panel */
@@ -865,7 +902,7 @@ class SplitPanel<DType = any> {
   /** Set the direction of this panel */
   setDirection(direction: PanelDirection) {
     this._direction = direction;
-    this._debouncedSatisfyConstraints();
+    this.queueRerender();
   }
 
   /** Set this panel's size constraints */
@@ -1293,7 +1330,7 @@ class SplitPanel<DType = any> {
         this._addRootCb(el, 'mouseup', this._onMouseUp);
         this.setRect(htmlElementToBoxRect(el));
         this.resizeObserver.observe(el);
-        this._debouncedSatisfyConstraints();
+        this.queueRerender();
       }
 
       this._setupDraggable();
@@ -1320,7 +1357,26 @@ class SplitPanel<DType = any> {
   /** Attach a DOM element to act as the content for this panel */
   attachContentEl(el: HTMLElement) {
     if (el && this.contentEl !== el) {
+      this._unbindContentEl?.();
       this.contentEl = el;
+
+      const toUnbind: Array<(() => void)> = [];
+
+      if (this._observeElement) {
+        this._addRootCb(this.contentEl, 'resize', this._onContentElResize);
+        this.resizeObserver.observe(this.contentEl);
+
+        toUnbind.push(() => {
+          if (this.contentEl) {
+            this.resizeObserver.unobserve(this.contentEl);
+            this._removeRootCb(this.contentEl, 'resize');
+          }
+        });
+      }
+
+      this._unbindContentEl = () => {
+        for (const cb of toUnbind) cb();
+      };
     }
   }
 
@@ -1528,7 +1584,7 @@ class SplitPanel<DType = any> {
 
   private _onVisibilityChange() {
     if (typeof document !== 'undefined' && document.visibilityState !== 'hidden') {
-      this._debouncedSatisfyConstraints();
+      this.queueRerender();
     }
   }
 
@@ -1538,6 +1594,10 @@ class SplitPanel<DType = any> {
 
   private _onResizeElResize(data: ResizeObserverEntry) {
     this.setResizeRect(resizeEntryToBoxRect(data));
+  }
+
+  private _onContentElResize(data: ResizeObserverEntry) {
+    this.setContentRect(resizeEntryToBoxRect(data));
   }
 
   private _onResizeElMouseDown(e: MouseEvent | TouchEvent) {

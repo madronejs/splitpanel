@@ -45,6 +45,8 @@ export interface SplitPanelViewProps extends Pick<
 export interface SplitPanelItemProps extends Omit<SplitPanelDef, 'id' | 'dataArray' | 'children'> {
   /** Id of the panel. Will default to a uniquely generated id. */
   itemId?: string,
+  /** Constrain the panel to fit the scroll size of the contents */
+  constrainToScroll?: boolean,
 }
 
 export interface SplitPanelItemSlots {

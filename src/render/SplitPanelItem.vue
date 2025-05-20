@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { onBeforeUnmount, inject, ShallowRef, watch } from 'vue';
-import { SplitPanel } from '@/core';
+import { computed, onBeforeUnmount, inject, ShallowRef, watch } from 'vue';
+import { type SplitPanel, type PanelConstraints } from '@/core';
 
 import { SplitPanelItemProps, SplitPanelViewSlots } from './interfaces';
 import SplitPanelBase from './SplitPanelBase.vue';
@@ -10,10 +10,25 @@ const slots = defineSlots<SplitPanelViewSlots>();
 const splitPanelParent = inject<ShallowRef<SplitPanel>>('splitPanel');
 const [splitPanel] = splitPanelParent.value.addChild({ ...props, id: props.itemId });
 
-watch(() => props.constraints, (val) => {
-  splitPanel.setConstraints(val);
-  splitPanelParent.value.satisfyConstraints();
+const panelConstraints = computed<PanelConstraints>(() => {
+  if (props.constrainToScroll && splitPanel.contentScrollSize) {
+    return {
+      minSize: splitPanel.contentScrollSize,
+      maxSize: splitPanel.contentScrollSize,
+    };
+  }
+
+  return props.constraints;
 });
+
+function setConstraints() {
+  if (!panelConstraints.value) return;
+
+  splitPanel.setConstraints(panelConstraints.value);
+  splitPanelParent.value.queueRerender();
+}
+
+watch(() => panelConstraints.value, setConstraints, { immediate: true });
 
 defineExpose({ splitPanel });
 onBeforeUnmount(() => {
