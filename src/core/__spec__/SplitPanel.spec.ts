@@ -212,6 +212,40 @@ describe('SplitPanel', () => {
       expect(splitPanel.byId(IDS.ID4).sizeInfo.relativeSize).toEqual(0.1);
       expect(splitPanel.byId(IDS.ID4).sizeInfo.exactSize).toEqual(100);
     });
+
+    describe('size', () => {
+      it('can keep its size if the remaining space allows it', () => {
+        const splitPanel = create4SplitPanelResizeAll();
+        const child = splitPanel.byId(IDS.ID4);
+
+        child.setConstraints({ size: 100 });
+        splitPanel.satisfyConstraints();
+        expect(splitPanel.byId(IDS.ID4).sizeInfo.relativeSize).toEqual(0.1);
+        expect(splitPanel.byId(IDS.ID4).sizeInfo.exactSize).toEqual(100);
+      });
+
+      it('shrinks its size if the other panels take up too much space', () => {
+        const splitPanel = create4SplitPanelResizeAll();
+
+        splitPanel.byId(IDS.ID1).setConstraints({ minSize: 950 });
+        splitPanel.byId(IDS.ID4).setConstraints({ size: 100 });
+        splitPanel.satisfyConstraints();
+        expect(splitPanel.byId(IDS.ID4).sizeInfo.relativeSize).toEqual(0.05);
+        expect(splitPanel.byId(IDS.ID4).sizeInfo.exactSize).toEqual(50);
+      });
+
+      it('shrinks its size if the other panels take up too much space and resizeElSize is set', () => {
+        const splitPanel = create4SplitPanelResizeAll();
+
+        splitPanel.setResizeElSize(10);
+        splitPanel.byId(IDS.ID1).setConstraints({ minSize: 950 });
+        splitPanel.byId(IDS.ID4).setConstraints({ size: 100 });
+        splitPanel.satisfyConstraints();
+        expect(splitPanel.byId(IDS.ID2).sizeInfo.relativeSize).toEqual(0.01);
+        expect(splitPanel.byId(IDS.ID3).sizeInfo.relativeSize).toEqual(0.01);
+        expect(splitPanel.byId(IDS.ID4).sizeInfo.relativeSize).toEqual(0.03);
+      });
+    });
   });
 
   describe('resizeStrategyNeighbor', () => {
