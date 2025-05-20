@@ -1246,11 +1246,17 @@ class SplitPanel<DType = any> {
         const remaining = relativeToPercent(getRemaining(remainingToObserve.size));
         let newSize: SizeInfoType;
 
-        if (!item.hasSize || options?.initialize) {
-          newSize = item.getSizeInfo(
-            parsedToFormatted(item.parsedConstraints?.size)
-            ?? remaining
-          );
+        if (
+          !item.hasSize
+          || options?.initialize
+          || (
+            // If the item has a size constraint, try to respect it
+            item.parsedConstraints?.size != null
+            && !itemsToConstrain
+            && item.parsedConstraints?.size?.exactValue < leftToAllocate
+          )
+        ) {
+          newSize = item.getSizeInfo(parsedToFormatted(item.parsedConstraints?.size) ?? remaining);
         } else if ((item.canGrow && (growing || !itemsToConstrain)) || (item.canShrink && (shrinking || !itemsToConstrain))) {
           newSize = item.getSizeInfo(remaining);
         } else {
