@@ -54,31 +54,31 @@ export type BoxCoord = {
 
 export type BoxRect = BoxDims & BoxCoord;
 
-export enum PANEL_DIRECTION {
+export enum PanelDirection {
   /** Split vertically (create columns) */
-  column = 'column',
+  Column = 'column',
   /** Split horizontally (create rows) */
-  row = 'row',
+  Row = 'row',
 }
 
-export enum SIBLING_RELATION {
-  before = 'siblingBefore',
-  after = 'siblingAfter',
+export enum SiblingRelation {
+  Before = 'siblingBefore',
+  After = 'siblingAfter',
 }
 
-export enum DIMENSION {
-  width = 'width',
-  height = 'height',
+export enum Dimension {
+  Width = 'width',
+  Height = 'height',
 }
 
-export enum AXIS {
-  x = 'x',
-  y = 'y',
+export enum Axis {
+  X = 'x',
+  Y = 'y',
 }
 
-export enum STYLE_PREFIX {
-  panel = 'sp-',
-  panelResize = 'sp-resize-'
+export enum StylePrefix {
+  Panel = 'sp-',
+  PanelResize = 'sp-resize-'
 }
 
 export type SplitPanelDef<DType = any> = {
@@ -93,14 +93,23 @@ export type SplitPanelDef<DType = any> = {
   /** This panel's children */
   children?: Array<SplitPanelDef<DType>>,
   /** This panel's direction */
-  direction?: PANEL_DIRECTION,
+  direction?: PanelDirection,
 };
+
+export type ResizeFn<DType> = (panel: SplitPanel<DType>) => ConstraintType;
 
 export type SplitPanelArgs<DType = any> = SplitPanelDef<DType> & {
   /** The parent of the current panel */
   parent?: SplitPanel<DType>,
   /** The root panel */
   root?: SplitPanel<DType>,
+  /** "Close" this panel and disabled the resize ability */
+  disabled?: boolean,
+  /**
+   * Evaluate what the size of hte panel should be
+   * when the panel is enabled (coming from a disabled state)
+   */
+  enabledSizer?: ResizeFn<DType>,
   /** Push other panels if current panel can no longer be resized */
   pushPanels?: boolean,
   /** How to re-balance remaining child sizes after a child's sizes is set */

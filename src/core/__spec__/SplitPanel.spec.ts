@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { PANEL_DIRECTION } from '../interfaces';
+import { PanelDirection } from '../interfaces';
 import { resizeAll } from '../resize';
 import SplitPanel from '../SplitPanel';
 
@@ -144,7 +144,7 @@ describe('SplitPanel', () => {
       const sp1 = splitPanel.byId(IDS.ID1);
 
       sp1.addChild({ id: 'foobar' });
-      expect(sp1.direction).toEqual(PANEL_DIRECTION.column);
+      expect(sp1.direction).toEqual(PanelDirection.Column);
     });
   });
 

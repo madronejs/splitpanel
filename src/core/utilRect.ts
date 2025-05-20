@@ -1,6 +1,6 @@
 import pick from 'lodash/pick';
 import {
-  BoxRect, BoxCoord, DIMENSION, PANEL_DIRECTION, AXIS,
+  BoxRect, BoxCoord, Dimension, PanelDirection, Axis,
 } from './interfaces';
 
 export function resizeEntryToBoxRect(data: ResizeObserverEntry) {
@@ -25,26 +25,26 @@ export function getCoordFromMouseEvent(e: MouseEvent | TouchEvent): BoxCoord {
   return { x: e.pageX, y: e.pageY };
 }
 
-export function getDirectionInfo(direction: PANEL_DIRECTION) {
-  return direction === PANEL_DIRECTION.column
+export function getDirectionInfo(direction: PanelDirection) {
+  return direction === PanelDirection.Column
     ? {
-        dimension: DIMENSION.height,
-        dimensionInverse: DIMENSION.width,
-        axis: AXIS.y,
-        axisInverse: AXIS.x,
+        dimension: Dimension.Height,
+        dimensionInverse: Dimension.Width,
+        axis: Axis.Y,
+        axisInverse: Axis.X,
       }
     : {
-        dimension: DIMENSION.width,
-        dimensionInverse: DIMENSION.height,
-        axis: AXIS.x,
-        axisInverse: AXIS.y,
+        dimension: Dimension.Width,
+        dimensionInverse: Dimension.Height,
+        axis: Axis.X,
+        axisInverse: Axis.Y,
       };
 }
 
 export function getDistance(
   coord1: BoxCoord,
   coord2: BoxCoord,
-  direction?: PANEL_DIRECTION,
+  direction?: PanelDirection,
 ): number {
   if (!coord1 || !coord2) {
     return 0;
@@ -54,7 +54,7 @@ export function getDistance(
   const { x: x2, y: y2 } = coord2;
 
   // Don't need to be too fancy here... diagonal distance doesn't matter.
-  if (direction === PANEL_DIRECTION.row) {
+  if (direction === PanelDirection.Row) {
     return x2 - x1;
   }
 

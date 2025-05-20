@@ -40,33 +40,33 @@
   },
   "exports": {
     ".": {
-      "import": "./dist/index.mjs",
-      "require": "./dist/index.js"
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
     },
     "./vue3": {
-      "import": "./dist/vue3.mjs",
-      "require": "./dist/vue3.js"
+      "import": "./dist/vue3.js",
+      "require": "./dist/vue3.cjs"
     },
     "./webc": {
-      "import": "./dist/webComponent.mjs",
-      "require": "./dist/webComponent.js"
+      "import": "./dist/webComponent.js",
+      "require": "./dist/webComponent.cjs"
     },
     "./animate": {
-      "import": "./dist/animate.mjs",
-      "require": "./dist/animate.js"
+      "import": "./dist/animate.js",
+      "require": "./dist/animate.cjs"
     },
     "./draggable": {
-      "import": "./dist/draggable.mjs",
-      "require": "./dist/draggable.js"
+      "import": "./dist/draggable.js",
+      "require": "./dist/draggable.cjs"
     },
-    "./style": "./dist/style.css"
+    "./style": "./dist/splitpanel.css"
   },
   "scripts": {
     "dev": "vite",
     "test": "vitest",
     "lint": "eslint src/ --ext .js,.jsx,.ts,.tsx",
     "build-dev": "NODE_ENV=development pnpm build-all",
-    "build-types": "rm -rf types/* && tsc -p ./tsconfig.json && tsc-alias -p tsconfig.json",
+    "build-types": "rm -rf types/* && vue-tsc -p ./tsconfig.json && tsc-alias -p tsconfig.json",
     "build": "rm -rf dist/* && vite build",
     "build-all": "pnpm build-types && pnpm build",
     "preview": "vite preview"
@@ -79,6 +79,7 @@
     "@types/animejs": "^3.1.13",
     "@typescript-eslint/eslint-plugin": "^8.32.1",
     "@typescript-eslint/parser": "^8.32.1",
+    "@vitejs/plugin-vue": "^5.2.4",
     "@vitejs/plugin-vue-jsx": "^4.1.2",
     "eslint": "~9.26.0",
     "eslint-plugin-import": "^2.31.0",
@@ -89,7 +90,8 @@
     "typescript": "^5.8.3",
     "typescript-eslint": "8.32.1",
     "vite": "^6.3.5",
-    "vitest": "^3.1.3"
+    "vitest": "^3.1.3",
+    "vue-tsc": "^2.2.10"
   },
   "dependencies": {
     "drag-drop-touch": "^1.3.1",

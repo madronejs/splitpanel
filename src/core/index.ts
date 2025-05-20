@@ -9,3 +9,4 @@ export * from './utilMath';
 export * from './utilParse';
 export * from './utilRect';
 export * from './utilSibling';
+export * from './utilSort';

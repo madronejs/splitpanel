@@ -3,7 +3,6 @@ import debounce from 'lodash/debounce';
 import differenceBy from 'lodash/differenceBy';
 import uniqBy from 'lodash/uniqBy';
 import uniqueId from 'lodash/uniqueId';
-import sortBy from 'lodash/sortBy';
 import { computed, reactive, watch } from '@madronejs/core';
 import { v4 as uuid } from 'uuid';
 
@@ -13,11 +12,12 @@ import {
   PanelConstraints,
   BoxCoord,
   BoxRect,
-  PANEL_DIRECTION,
+  PanelDirection,
   ResizeStrategy,
   SplitPanelDef,
   SizeInfoType,
   FlattenStrategy,
+  ResizeFn,
   ResizeObserverCallback,
   AnimateStrategy,
   DraggableStrategy,
@@ -25,8 +25,9 @@ import {
   ConstraintType,
   AnimateStrategyReturn,
   SizeInfoOptions,
-  SIBLING_RELATION,
-  STYLE_PREFIX,
+  SiblingRelation,
+  StylePrefix,
+  BoxDims,
 } from './interfaces';
 import {
   getDistance, getDirectionInfo, htmlElementToBoxRect, getCoordFromMouseEvent, resizeEntryToBoxRect,
@@ -38,11 +39,12 @@ import {
   relativeToPercent, parsedToFormatted, parseConstraint, parsePanelConstraints, exactToPx,
 } from './utilParse';
 import { mergePanelConstraints } from './utilConstraint';
-import { sumSizes, sumMinSizes } from './utilMath';
+import { sumSizes, sumMinSizes, withinTolerance } from './utilMath';
 import {
   getSizeInfo,
   rebalanceSizes,
 } from './utilCalc';
+import { sortPanels } from './utilSort';
 
 type CbMap = {
   resize?: ResizeObserverCallback,
@@ -66,6 +68,7 @@ class SplitPanel<DType = any> {
     this._onElementResize = this._onElementResize.bind(this);
     this._onResizeElMouseDown = this._onResizeElMouseDown.bind(this);
     this._onResizeElResize = this._onResizeElResize.bind(this);
+    this._onContentElResize = this._onContentElResize.bind(this);
     this._onDblClick = this._onDblClick.bind(this);
     this._onMouseUp = this._onMouseUp.bind(this);
     this._onMouseMove = this._onMouseMove.bind(this);
@@ -78,6 +81,8 @@ class SplitPanel<DType = any> {
     this.attachResizeEl = this.attachResizeEl.bind(this);
     this.attachDropZoneEl = this.attachDropZoneEl.bind(this);
     this.attachGhostEl = this.attachGhostEl.bind(this);
+    this.toggleDisabled = this.toggleDisabled.bind(this);
+    this.setDisabled = this.setDisabled.bind(this);
     // This._onElementClick = this._onElementClick.bind(this);
     // setup
     this._children = [];
@@ -87,7 +92,7 @@ class SplitPanel<DType = any> {
     this.resizeEl = null;
     this.contentEl = null;
     this.containerEl = null;
-    this._debouncedSatisfyConstraints = debounce(this.satisfyConstraints.bind(this));
+    this.queueRerender = debounce(this.satisfyConstraints.bind(this));
     this.parent = options?.parent;
     this._setupRootIfNeeded();
     this.setFlattenStrategy(options?.flattenStrategy);
@@ -99,6 +104,8 @@ class SplitPanel<DType = any> {
     this.setShowFirstResizeEl(options?.showFirstResizeEl);
     this.setExpandTolerance(options?.expandTolerance);
     this.setRect(options?.rect);
+    this.setEnabledSizer(options?.enabledSizer);
+    this.setDisabled(options?.disabled ?? false);
   }
 
   /** This panel's unique id */
@@ -117,6 +124,12 @@ class SplitPanel<DType = any> {
   @reactive private _unbindContainerEl: () => void;
   /** The html element containing the content of the panel */
   @reactive contentEl: HTMLElement;
+  /** The content element rect */
+  @reactive contentElRect: BoxRect;
+  /** Scroll dimensions of the content element */
+  @reactive contentElScrollDims: BoxDims;
+  /** Unbind the content el */
+  @reactive private _unbindContentEl: () => void;
   /** Unbind all events for resize el */
   @reactive private _unbindResizeEl: () => void;
   /** The html element for containing the dropzone content of the panel */
@@ -137,10 +150,13 @@ class SplitPanel<DType = any> {
   @reactive sizeInfoSnapshot: SizeInfoType;
   /** If the mouse is hovering over the resizer */
   @reactive hovering: boolean;
+  /** If this panel is "disabled" (ie. omitted from the layout) */
+  @reactive disabled: boolean = false;
   @reactive private _readyPromise: Promise<void>;
   @reactive private _syncReady: boolean = true;
   @reactive private _constraintsReady: boolean = false;
   @reactive private _readyCallbacks: Set<() => void>;
+  @reactive private _enabledSizer: ResizeFn<DType>;
 
   @reactive private _showFirstResizeEl: boolean;
   /** Show the first resize element */
@@ -150,10 +166,6 @@ class SplitPanel<DType = any> {
 
   @computed get shouldShowResizeEl() {
     return !this.isFirstChild || Boolean(this.parent?.showFirstResizeEl);
-  }
-
-  @computed get canResize() {
-    return !(this.isRoot || this.isFirstChild);
   }
 
   /** If the panel's container element has a nonzero width and height */
@@ -185,20 +197,32 @@ class SplitPanel<DType = any> {
     }
   }
 
-  @reactive private _direction: PANEL_DIRECTION;
+  @reactive private _direction: PanelDirection;
 
+  /**
+   * The inverse direction of the panel
+   * @example
+   * ```ts
+   * const panel = SplitPanel.create({ direction: PanelDirection.Row });
+   * console.log(panel.inverseDirection); // Column
+   * ```
+   */
   @computed get inverseDirection() {
-    return this._direction === PANEL_DIRECTION.column ? PANEL_DIRECTION.row : PANEL_DIRECTION.column;
+    return this._direction === PanelDirection.Column ? PanelDirection.Row : PanelDirection.Column;
   }
 
   /** The direction the panel is split */
-  @computed get direction(): PANEL_DIRECTION {
+  @computed get direction(): PanelDirection {
     if (this.numChildren) {
-      return this._direction ?? this.parent?.inverseDirection ?? PANEL_DIRECTION.row;
+      return this._direction ?? this.parent?.inverseDirection ?? PanelDirection.Row;
     }
-    return this._direction ?? this.parent?.direction ?? PANEL_DIRECTION.row;
+    return this._direction ?? this.parent?.direction ?? PanelDirection.Row;
   }
 
+  /**
+   * The direction the content of the panel is split.
+   * If not set, it will default to the panel's parent direction.
+   */
   @computed get contentDirection() {
     return this.parent?.direction ?? this.direction;
   }
@@ -310,7 +334,7 @@ class SplitPanel<DType = any> {
 
   /** The direction of the current drag */
   @computed get dragRelation() {
-    return getDistance(this.prevDragPos, this.dragPos, this.contentDirection) <= 0 ? SIBLING_RELATION.before : SIBLING_RELATION.after;
+    return getDistance(this.prevDragPos, this.dragPos, this.contentDirection) <= 0 ? SiblingRelation.Before : SiblingRelation.After;
   }
 
   /** Relative distance dragged compared to the parent container's size */
@@ -323,7 +347,8 @@ class SplitPanel<DType = any> {
     return this.relativeDragDistance + (this.sizeInfoSnapshot?.relativeSize ?? this.sizeInfo.relativeSize);
   }
 
-  private _debouncedSatisfyConstraints: () => void;
+  /** Queue a re-render after a debounce. */
+  queueRerender: () => void;
 
   /** If this panel is the root of the panel */
   @computed get isRoot() {
@@ -340,6 +365,7 @@ class SplitPanel<DType = any> {
   /** Unbind all the event listeners and cleanup */
   unbind() {
     this._unbindResizeEl?.();
+    this._unbindContentEl?.();
     this._unbindContainerEl?.();
     this._unbindDropZoneEl?.();
     this._unbindGhostEl?.();
@@ -413,16 +439,28 @@ class SplitPanel<DType = any> {
     return this.totalExactAvailableSpace / this.rectSize;
   }
 
+  @computed private get _absoluteMinResizeElSize() {
+    return Math.max(this.shouldShowResizeEl ? this.resizeElSize : 0, 0);
+  }
+
   /** The absolute minimum size a panel can be */
   @computed get absoluteMin() {
+    if (this.disabled) {
+      return this._absoluteMinResizeElSize;
+    }
+
     return Math.max(
       this.parsedUserConstraints.minSize?.exactValue || 0,
-      Math.max(this.shouldShowResizeEl ? this.resizeElSize : 0, 0),
+      this._absoluteMinResizeElSize,
     );
   }
 
   /** The absolute maximum size this panel can be while still respecting the minSizes of its siblings */
   @computed get absoluteMax() {
+    if (this.disabled) {
+      return this._absoluteMinResizeElSize;
+    }
+
     if (!this.parent) {
       return Number.POSITIVE_INFINITY;
     }
@@ -473,7 +511,7 @@ class SplitPanel<DType = any> {
 
   /** User defined constraints for this panel */
   @computed get parsedUserConstraints() {
-    return parsePanelConstraints(this.constraints, this.comparativeSize);
+    return parsePanelConstraints(this.disabled ? null : this.constraints, this.comparativeSize);
   }
 
   /** Strategy defined constraints for this panel */
@@ -510,6 +548,11 @@ class SplitPanel<DType = any> {
     return this.rect?.[this.contentDirectionInfo.dimension] || 0;
   }
 
+  /** Current scroll size in pixels */
+  @computed get contentScrollSize() {
+    return this.disabled ? 0 : this.contentElScrollDims?.[this.contentDirectionInfo.dimension] || 0;
+  }
+
   /** The size this panel is compared to calculate relative size */
   @computed get comparativeSize() {
     if (this.isRoot) {
@@ -519,9 +562,14 @@ class SplitPanel<DType = any> {
     return this.parent?.rectSize;
   }
 
-  /** Current container size in pixels */
+  /** Current resize element size in pixels */
   @computed get resizeRectSize() {
     return this.resizeElRect?.[this.directionInfo.dimension] || 0;
+  }
+
+  /** Current container element size in pixels */
+  @computed get contentElRectSize() {
+    return this.contentElRect?.[this.contentDirectionInfo.dimension] || 0;
   }
 
   /** If a size has been explicitly set on this panel */
@@ -537,14 +585,19 @@ class SplitPanel<DType = any> {
     return this.getSizeInfo(this._size);
   }
 
+  /** If the panel can be resized */
+  @computed get canResize() {
+    return !(this.isRoot || this.disabled) && (this.canGrow || this.canShrink);
+  }
+
   /** If this panel can grow based on its constraints */
   @computed get canGrow() {
-    return !this.sizeInfo.appliedMax;
+    return !this.disabled && !withinTolerance(this.sizeInfo.exactSize, this.sizeInfo.exactMax);
   }
 
   /** If this panel can shrink based on its constraints */
   @computed get canShrink() {
-    return !this.sizeInfo.appliedMin;
+    return !this.disabled && !withinTolerance(this.sizeInfo.exactSize, this.sizeInfo.exactMin);
   }
 
   @reactive private _pushPanels: boolean;
@@ -559,22 +612,22 @@ class SplitPanel<DType = any> {
     const style: Record<string, any> = {};
 
     if (!this.isRoot) {
-      style[`--${STYLE_PREFIX.panel}size`] = formatted;
+      style[`--${StylePrefix.Panel}size`] = formatted;
 
-      if (this.canResize && (this.resizing || this.hovering)) {
-        style[`--${STYLE_PREFIX.panel}cursor`] = this.contentDirection === PANEL_DIRECTION.column ? 'row-resize' : 'col-resize';
+      if (this.canResize && !this.isFirstChild && (this.resizing || this.hovering)) {
+        style[`--${StylePrefix.Panel}cursor`] = this.contentDirection === PanelDirection.Column ? 'row-resize' : 'col-resize';
       } else {
-        style[`--${STYLE_PREFIX.panel}cursor`] = null;
+        style[`--${StylePrefix.Panel}cursor`] = null;
       }
     }
 
-    style[`--${STYLE_PREFIX.panel}opacity`] = this.isReady ? 1 : 0;
-    style[`--${STYLE_PREFIX.panel}min-size`] = (exactMin !== this.parent?.absoluteMin && Number.isFinite(exactMin)) ? exactToPx(exactMin) : null;
-    style[`--${STYLE_PREFIX.panel}max-size`] = (exactMax !== this.parent?.absoluteMax && Number.isFinite(exactMax)) ? exactToPx(exactMax) : null;
+    style[`--${StylePrefix.Panel}opacity`] = this.isReady ? 1 : 0;
+    style[`--${StylePrefix.Panel}min-size`] = (exactMin !== this.parent?.absoluteMin && Number.isFinite(exactMin)) ? exactToPx(exactMin) : null;
+    style[`--${StylePrefix.Panel}max-size`] = (exactMax !== this.parent?.absoluteMax && Number.isFinite(exactMax)) ? exactToPx(exactMax) : null;
 
     // RESIZE ELEMENT STYLES
-    style[`--${STYLE_PREFIX.panelResize}size`] = this.isRoot || this._resizeElSize != null ? exactToPx(this.resizeElSize) : null;
-    style[`--${STYLE_PREFIX.panelResize}border`] = this.isRoot || this._resizeElBorderStyle != null ? this.resizeElBorderStyle : null;
+    style[`--${StylePrefix.PanelResize}size`] = this.isRoot || this._resizeElSize != null ? exactToPx(this.resizeElSize) : null;
+    style[`--${StylePrefix.PanelResize}border`] = this.isRoot || this._resizeElBorderStyle != null ? this.resizeElBorderStyle : null;
 
     return style;
   }
@@ -649,6 +702,11 @@ class SplitPanel<DType = any> {
     return this.parent?.children?.filter((item) => item.id !== this.id) || [];
   }
 
+  /** If any of this panel's siblings can be resized */
+  @computed get siblingsResizable() {
+    return this.siblings.some((item) => item.canResize);
+  }
+
   /** Number of children this panel has */
   @computed get numChildren() {
     return this.children?.length || 0;
@@ -721,7 +779,7 @@ class SplitPanel<DType = any> {
       this.rect = val;
 
       if (!hadRect && this.hasRect) {
-        this._debouncedSatisfyConstraints();
+        this.queueRerender();
       }
     }
   }
@@ -731,6 +789,24 @@ class SplitPanel<DType = any> {
     if (val) {
       this.resizeElRect = val;
     }
+  }
+
+  /** Set the current bounding box of this panel's content */
+  setContentRect(val: BoxRect) {
+    if (val) {
+      this.contentElRect = val;
+      this.setContentScrollDims();
+    }
+  }
+
+  /** Set the current scroll dimensions of the content element */
+  setContentScrollDims() {
+    if (!this.contentEl) return;
+
+    this.contentElScrollDims = {
+      width: this.contentEl.scrollWidth,
+      height: this.contentEl.scrollHeight,
+    };
   }
 
   /** Set the expandTolerance */
@@ -774,6 +850,42 @@ class SplitPanel<DType = any> {
     }
   }
 
+  /**
+   * Set a resizer function that will determine the size of the panel when transitioning
+   * from disabled to enabled
+   * @param val The resize function
+   */
+  setEnabledSizer(val: ResizeFn<DType>) {
+    this._enabledSizer = val;
+  }
+
+  /**
+   * Disable this panel so that only the resize element is shown
+   * @param val The new disabled state
+   */
+  setDisabled(val: boolean = true) {
+    const disabled = !!val;
+
+    if (this.disabled === disabled) return;
+
+    const resizeFn = this._enabledSizer
+      || ((panel) => parsedToFormatted(panel.parsedConstraints.size));
+
+    this.disabled = disabled;
+
+    const newSize = this.disabled ? 0 : resizeFn(this);
+
+    if (newSize != null) {
+      this.setSize(newSize);
+      this.parent?.queueRerender();
+    }
+  }
+
+  /** Toggle the disabled state of this panel */
+  toggleDisabled() {
+    this.setDisabled(!this.disabled);
+  }
+
   setShowFirstResizeEl(val: boolean) {
     this._showFirstResizeEl = val;
   }
@@ -788,9 +900,9 @@ class SplitPanel<DType = any> {
   }
 
   /** Set the direction of this panel */
-  setDirection(direction: PANEL_DIRECTION) {
+  setDirection(direction: PanelDirection) {
     this._direction = direction;
-    this._debouncedSatisfyConstraints();
+    this.queueRerender();
   }
 
   /** Set this panel's size constraints */
@@ -865,19 +977,6 @@ class SplitPanel<DType = any> {
     for (const item of this.children) {
       item.snapshotSizeInfo();
     }
-  }
-
-  /** Calculate a new size based on the current size and the value passed in */
-  getAddSizeValue(val: ConstraintType) {
-    const parsed = parseConstraint(val, this.comparativeSize);
-    return this.sizeInfo.relative
-      ? relativeToPercent(parsed.relativeValue + this.sizeInfo.relativeSize)
-      : exactToPx(parsed.exactValue + this.sizeInfo.exactSize);
-  }
-
-  /** Add or remove from this panel */
-  addSize(val: ConstraintType) {
-    this.setSize(this.getAddSizeValue(val));
   }
 
   /** Set the size of this panel */
@@ -1047,7 +1146,9 @@ class SplitPanel<DType = any> {
     await this.prevExpandibleChild?.maximize();
   }
 
-  /** Calculate the new sizes for the panels without setting any new sizes */
+  /**
+   * Calculate the new sizes for the panels without setting any new sizes
+   */
   calculateSizes(
     options?: {
       /** The item (or items) that will have their sizes set */
@@ -1061,7 +1162,6 @@ class SplitPanel<DType = any> {
     }
   ): Record<string, SizeInfoType> {
     const sizeMap: Record<string, SizeInfoType> = {};
-
     const addToSizeMap = (child: SplitPanel<DType>, sizeInfo?: SizeInfoType) => {
       const newSizeInfo = sizeInfo?.parsedSize ? sizeInfo : child.sizeInfo;
 
@@ -1112,6 +1212,8 @@ class SplitPanel<DType = any> {
     }
 
     const diff = leftToAllocate - sumSizes(itemsToSum);
+    const growing = diff >= 0;
+    const shrinking = diff < 0;
 
     if (itemsToConstrain) {
       leftToAllocate -= sumSizes(negateChildren(this, itemsToConstrain));
@@ -1125,13 +1227,10 @@ class SplitPanel<DType = any> {
 
     if (this.rectSize && Number.isFinite(this.rectSize)) {
       const remainingToObserve = new Set<SplitPanel<DType>>(itemsToConsider);
-      // find the items with the smallest set size and address those first so the remaining items can be given more space
-      const sortedItems: SplitPanel<DType>[] = sortBy(itemsToConsider, (item: SplitPanel<DType>) => item.parsedConstraints?.size);
+      const sortedItems = sortPanels(itemsToConsider);
 
       for (const item of sortedItems) {
         const remaining = relativeToPercent(getRemaining(remainingToObserve.size));
-        const canGrow = item.canGrow && diff >= 0;
-        const canShrink = item.canShrink && diff < 0;
         let newSize: SizeInfoType;
 
         if (!item.hasSize || options?.initialize) {
@@ -1139,7 +1238,7 @@ class SplitPanel<DType = any> {
             parsedToFormatted(item.parsedConstraints?.size)
             ?? remaining
           );
-        } else if (canGrow || canShrink) {
+        } else if ((item.canGrow && (growing || !itemsToConstrain)) || (item.canShrink && (shrinking || !itemsToConstrain))) {
           newSize = item.getSizeInfo(remaining);
         } else {
           newSize = item.sizeInfo;
@@ -1231,7 +1330,7 @@ class SplitPanel<DType = any> {
         this._addRootCb(el, 'mouseup', this._onMouseUp);
         this.setRect(htmlElementToBoxRect(el));
         this.resizeObserver.observe(el);
-        this._debouncedSatisfyConstraints();
+        this.queueRerender();
       }
 
       this._setupDraggable();
@@ -1241,12 +1340,14 @@ class SplitPanel<DType = any> {
     }
   }
 
+  /** Attach a DOM element to act as the drop zone for this panel */
   attachDropZoneEl(el: HTMLElement) {
     if (el && this.dropZoneEl !== el) {
       this.dropZoneEl = el;
     }
   }
 
+  /** Attach a DOM element to act as the content for the drag ghost for this panel */
   attachGhostEl(el: HTMLElement) {
     if (el && this.ghostEl !== el) {
       this.ghostEl = el;
@@ -1256,7 +1357,26 @@ class SplitPanel<DType = any> {
   /** Attach a DOM element to act as the content for this panel */
   attachContentEl(el: HTMLElement) {
     if (el && this.contentEl !== el) {
+      this._unbindContentEl?.();
       this.contentEl = el;
+
+      const toUnbind: Array<(() => void)> = [];
+
+      if (this._observeElement) {
+        this._addRootCb(this.contentEl, 'resize', this._onContentElResize);
+        this.resizeObserver.observe(this.contentEl);
+
+        toUnbind.push(() => {
+          if (this.contentEl) {
+            this.resizeObserver.unobserve(this.contentEl);
+            this._removeRootCb(this.contentEl, 'resize');
+          }
+        });
+      }
+
+      this._unbindContentEl = () => {
+        for (const cb of toUnbind) cb();
+      };
     }
   }
 
@@ -1296,7 +1416,7 @@ class SplitPanel<DType = any> {
   }
 
   /** Create a child panel that inherits properties from this panel */
-  private _createChild(item?: SplitPanelDef<DType>) {
+  createChild(item?: SplitPanelDef<DType>) {
     return SplitPanel.create<DType>({
       ...item,
       id: item?.id ?? makeUniqueId(),
@@ -1312,7 +1432,7 @@ class SplitPanel<DType = any> {
 
     if (items) {
       for (const item of items) {
-        const child = this._createChild(item);
+        const child = this.createChild(item);
 
         if (!this.childMap[child.id]) {
           children.push(child);
@@ -1414,7 +1534,7 @@ class SplitPanel<DType = any> {
         existing.setDefinition(item);
         newItems.push(existing);
       } else {
-        newItems.push(this._createChild(item));
+        newItems.push(this.createChild(item));
       }
     }
 
@@ -1464,7 +1584,7 @@ class SplitPanel<DType = any> {
 
   private _onVisibilityChange() {
     if (typeof document !== 'undefined' && document.visibilityState !== 'hidden') {
-      this._debouncedSatisfyConstraints();
+      this.queueRerender();
     }
   }
 
@@ -1476,7 +1596,15 @@ class SplitPanel<DType = any> {
     this.setResizeRect(resizeEntryToBoxRect(data));
   }
 
+  private _onContentElResize(data: ResizeObserverEntry) {
+    this.setContentRect(resizeEntryToBoxRect(data));
+  }
+
   private _onResizeElMouseDown(e: MouseEvent | TouchEvent) {
+    // There are no other resizable panels, so this is a no-op
+    // or if this is the first child, we don't want to resize
+    if (!this.siblingsResizable || this.isFirstChild) return;
+
     this.parent?.snapshotChildSizeInfo();
     this.dragPosStart = getCoordFromMouseEvent(e);
     e.preventDefault();
@@ -1498,7 +1626,7 @@ class SplitPanel<DType = any> {
   }
 
   private _onMouseMove(e: MouseEvent) {
-    if (!this.canResize) {
+    if ((!this.canResize && !this.isFirstChild) || !this.siblingsResizable) {
       return;
     }
 

@@ -2,9 +2,10 @@
 import { resolve } from 'node:path';
 import { defineConfig } from 'vite';
 import jsxPlugin from '@vitejs/plugin-vue-jsx';
+import vuePlugin from '@vitejs/plugin-vue';
 
 export default defineConfig({
-  plugins: [jsxPlugin()],
+  plugins: [vuePlugin(), jsxPlugin()],
   build: {
     cssMinify: true,
     minify: process.env.NODE_ENV === 'production',
@@ -12,7 +13,7 @@ export default defineConfig({
       // Could also be a dictionary or array of multiple entry points
       entry: [
         resolve(__dirname, 'src/core/index.ts'),
-        resolve(__dirname, 'src/render/vue3.tsx'),
+        resolve(__dirname, 'src/render/vue3.ts'),
         // resolve(__dirname, 'src/render/webComponent.ts'),
         resolve(__dirname, 'src/style.ts'),
         resolve(__dirname, 'src/plugins/animate.ts'),

@@ -7,6 +7,16 @@ export function roundVal(val: number, precision?: number) {
   return round(val, precision ?? 10);
 }
 
+const EPSILON = 0.000_000_1; // A small tolerance value
+
+export function withinTolerance(a: number, b: number, tolerance = EPSILON) {
+  return Math.abs(a - b) <= tolerance;
+}
+
+export function exceedsTolerance(a: number, b: number, tolerance = EPSILON) {
+  return Math.abs(a - b) >= tolerance;
+}
+
 /** Get the total combined width in pixels of the items passed */
 export function sumSizes(items: SplitPanel[], options?: SumOptions) {
   let sum = 0;
