@@ -1,10 +1,10 @@
-import anime from 'animejs';
+import { createTimeline, DefaultsParams } from 'animejs';
 
 import { relativeToPercent } from '@/core/utilParse';
 import { AnimateStrategy, ConstraintType } from '@/core/interfaces';
 import type SplitPanel from '@/core/SplitPanel';
 
-export default function configureAnimate(config?: Omit<anime.AnimeAnimParams, 'update'>): AnimateStrategy {
+export default function configureAnimate(config?: Omit<DefaultsParams, 'onUpdate'>): AnimateStrategy {
   return (
     /** The container panel */
     panel: SplitPanel,
@@ -13,7 +13,7 @@ export default function configureAnimate(config?: Omit<anime.AnimeAnimParams, 'u
     /** The size (or parallel array of sizes) */
     size?: ConstraintType | ConstraintType[]
   ) => {
-    const timeline = anime.timeline({ autoplay: false });
+    const timeline = createTimeline({ defaults: { autoplay: false } });
     const newSizes = panel.calculateSizes({
       item: items,
       size,
@@ -28,13 +28,12 @@ export default function configureAnimate(config?: Omit<anime.AnimeAnimParams, 'u
 
       if (startSize !== finalSize) {
         timeline
-          .add({
+          .add(targets, {
             duration: config?.duration ?? 750,
-            easing: 'easeInOutQuart',
+            ease: 'inOutQuart',
             size: finalSize,
             ...config,
-            targets,
-            update: () => {
+            onUpdate: () => {
               item.setSize(targets.size);
             },
           }, 0);
@@ -44,7 +43,7 @@ export default function configureAnimate(config?: Omit<anime.AnimeAnimParams, 'u
     timeline.play();
 
     return {
-      promise: timeline.finished,
+      promise: timeline.then(),
       cancel: () => timeline.pause(),
     };
   };
