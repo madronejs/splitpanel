@@ -70,11 +70,11 @@ export function rebalanceSizes(
   /** Consider these sizes, but don't adjust them */
   sizesToConsider?: ConstraintType | ConstraintType[]
 ): {
-    totalRelative: number,
-    totalExact: number,
-    balancedSizes: ParsedConstraint[],
-    reservedSizes: ParsedConstraint[],
-  } {
+  totalRelative: number,
+  totalExact: number,
+  balancedSizes: ParsedConstraint[],
+  reservedSizes: ParsedConstraint[],
+} {
   const sizes = [sizesToBalance || []].flat();
   const sizesConsider = [sizesToConsider || []].flat();
 
