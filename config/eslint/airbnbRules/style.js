@@ -76,10 +76,6 @@ export default {
     // https://eslint.org/docs/rules/function-call-argument-newline
     'function-call-argument-newline': ['error', 'consistent'],
 
-    // enforce spacing between functions and their invocations
-    // https://eslint.org/docs/rules/func-call-spacing
-    'func-call-spacing': ['error', 'never'],
-
     // requires function names to match the name of the variable or property to which they are
     // assigned
     // https://eslint.org/docs/rules/func-name-matching
