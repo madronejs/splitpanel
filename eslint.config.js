@@ -198,6 +198,7 @@ export default [
       case: 'camelCase',
     }],
 
+    'unicorn/no-array-sort': 'off',
     'unicorn/no-null': 'off',
     'unicorn/no-useless-undefined': 'off',
     'unicorn/prevent-abbreviations': 'off',
