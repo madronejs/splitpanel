@@ -10,15 +10,11 @@ export default defineConfig({
     cssMinify: true,
     minify: process.env.NODE_ENV === 'production',
     lib: {
-      // Could also be a dictionary or array of multiple entry points
-      entry: [
-        resolve(__dirname, 'src/core/index.ts'),
-        resolve(__dirname, 'src/render/vue3.ts'),
-        // resolve(__dirname, 'src/render/webComponent.ts'),
-        resolve(__dirname, 'src/style.ts'),
-        resolve(__dirname, 'src/plugins/animate.ts'),
-        resolve(__dirname, 'src/plugins/draggable.ts'),
-      ],
+      // Single unified entry point
+      entry: {
+        index: resolve(__dirname, 'src/index.ts'),
+        style: resolve(__dirname, 'src/style.ts'),
+      },
       // the proper extensions will be added
       name: 'SplitPanel',
     },

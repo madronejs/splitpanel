@@ -21,43 +21,12 @@
     "vue",
     "web components"
   ],
-  "types": "types/core/index.d.ts",
-  "typesVersions": {
-    "*": {
-      "vue3": [
-        "./types/render/vue3.d.ts"
-      ],
-      "webc": [
-        "./types/render/webComponent.d.ts"
-      ],
-      "animate": [
-        "./types/plugins/animate.d.ts"
-      ],
-      "draggable": [
-        "./types/plugins/draggable.d.ts"
-      ]
-    }
-  },
+  "types": "types/index.d.ts",
   "exports": {
     ".": {
+      "types": "./types/index.d.ts",
       "import": "./dist/index.js",
       "require": "./dist/index.cjs"
-    },
-    "./vue3": {
-      "import": "./dist/vue3.js",
-      "require": "./dist/vue3.cjs"
-    },
-    "./webc": {
-      "import": "./dist/webComponent.js",
-      "require": "./dist/webComponent.cjs"
-    },
-    "./animate": {
-      "import": "./dist/animate.js",
-      "require": "./dist/animate.cjs"
-    },
-    "./draggable": {
-      "import": "./dist/draggable.js",
-      "require": "./dist/draggable.cjs"
     },
     "./style": "./dist/splitpanel.css"
   },
