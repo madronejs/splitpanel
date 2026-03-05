@@ -48,23 +48,23 @@
     "@types/animejs": "^3.1.13",
     "@typescript-eslint/eslint-plugin": "^8.46.1",
     "@typescript-eslint/parser": "^8.46.1",
-    "@vitejs/plugin-vue": "^6.0.1",
-    "@vitejs/plugin-vue-jsx": "^5.1.1",
+    "@vitejs/plugin-vue": "^6.0.4",
+    "@vitejs/plugin-vue-jsx": "^5.1.4",
     "eslint": "~9.37.0",
     "eslint-plugin-import": "^2.32.0",
     "eslint-plugin-unicorn": "^61.0.2",
     "globals": "~16.4.0",
-    "sass": "^1.93.2",
+    "sass": "^1.97.3",
     "tsc-alias": "^1.8.16",
     "typescript": "^5.9.3",
     "typescript-eslint": "8.46.1",
-    "vite": "^7.1.9",
-    "vitest": "^3.2.4",
-    "vue-tsc": "^3.1.1"
+    "vite": "^7.3.1",
+    "vitest": "^4.0.18",
+    "vue-tsc": "^3.2.5"
   },
   "dependencies": {
     "drag-drop-touch": "^1.3.1",
-    "lodash": "^4.17.21",
+    "lodash": "^4.17.23",
     "uuid": "^13.0.0"
   },
   "peerDependencies": {
@@ -76,5 +76,12 @@
     "node": ">=20.11 || >=22.14",
     "pnpm": ">= 10"
   },
-  "packageManager": "pnpm@10.18.3"
+  "packageManager": "pnpm@10.30.3",
+  "comment": "overrides should be reviewed and removed when dependent packages are updated",
+  "pnpm": {
+    "overrides": {
+      "mimimatch": ">9.0.7",
+      "rollup": "4.59.0"
+    }
+  }
 }
