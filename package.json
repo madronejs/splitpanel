@@ -38,7 +38,8 @@
     "build-types": "rm -rf types/* && vue-tsc -p ./tsconfig.json && tsc-alias -p tsconfig.json",
     "build": "rm -rf dist/* && vite build",
     "build-all": "pnpm build-types && pnpm build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "all": "pnpm build-types && pnpm lint && CI=true pnpm test"
   },
   "devDependencies": {
     "@eslint/compat": "~2.0.5",
@@ -73,7 +74,7 @@
     "vue": "^3.5.12"
   },
   "engines": {
-    "node": ">=20.11 || >=22.14",
+    "node": "^22.14 || ^24.14",
     "pnpm": ">= 10"
   },
   "packageManager": "pnpm@10.33.0",
