@@ -1,5 +1,6 @@
 {
   "compilerOptions": {
+    "strict": false,
     "target": "ES2020",
     "jsx": "preserve",
     "experimentalDecorators": true,
@@ -14,12 +15,13 @@
     },
 
     /* Bundler mode */
-    "moduleResolution": "node",
+    "moduleResolution": "bundler",
     "allowImportingTsExtensions": true,
     "resolveJsonModule": true,
     "isolatedModules": true,
     "declaration": true,
     "emitDeclarationOnly": true,
+    "rootDir": "./src",
     "outDir": "./types",
 
     /* Linting */

@@ -41,23 +41,23 @@
     "preview": "vite preview"
   },
   "devDependencies": {
-    "@eslint/compat": "~1.4.0",
+    "@eslint/compat": "~2.0.5",
     "@eslint/eslintrc": "~3.3.5",
-    "@eslint/js": "~9.37.0",
+    "@eslint/js": "~10.0.1",
     "@stylistic/eslint-plugin": "~5.10.0",
     "@types/animejs": "^3.1.13",
-    "@typescript-eslint/eslint-plugin": "^8.46.1",
-    "@typescript-eslint/parser": "^8.46.1",
+    "@typescript-eslint/eslint-plugin": "^8.58.1",
+    "@typescript-eslint/parser": "^8.58.1",
     "@vitejs/plugin-vue": "^6.0.4",
     "@vitejs/plugin-vue-jsx": "^5.1.4",
-    "eslint": "~9.37.0",
+    "eslint": "~10.2.0",
     "eslint-plugin-import": "^2.32.0",
-    "eslint-plugin-unicorn": "^61.0.2",
-    "globals": "~16.4.0",
+    "eslint-plugin-unicorn": "^64.0.0",
+    "globals": "~17.5.0",
     "sass": "^1.97.3",
     "tsc-alias": "^1.8.16",
-    "typescript": "^5.9.3",
-    "typescript-eslint": "8.46.1",
+    "typescript": "^6.0.2",
+    "typescript-eslint": "8.58.1",
     "vite": "^7.3.1",
     "vitest": "^4.1.4",
     "vue-tsc": "^3.2.6"
@@ -81,7 +81,8 @@
   "pnpm": {
     "overrides": {
       "mimimatch": ">9.0.7",
-      "rollup": "4.59.0"
+      "rollup": "4.59.0",
+      "semver": ">=7.7.3"
     }
   }
 }
