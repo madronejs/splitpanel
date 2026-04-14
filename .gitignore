@@ -1,17 +1,11 @@
-# Logs
-logs
-*.log
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-pnpm-debug.log*
-lerna-debug.log*
-
 node_modules
-types
-dist
-dist-ssr
-*.local
+/dist
+/types
+/docs
+/coverage
+
+# Claude Code local(user) settings
+**/.claude/*.local.*
 
 # Editor directories and files
 .vscode/*
