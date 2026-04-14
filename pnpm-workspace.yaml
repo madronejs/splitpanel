@@ -1,2 +1,10 @@
 onlyBuiltDependencies:
   - '@parcel/watcher'
+
+approveBuilds: esbuild
+
+minimumReleaseAge: 1440
+
+minimumReleaseAgeExclude: null
+
+trustPolicy: no-downgrade
