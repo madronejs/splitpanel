@@ -1,0 +1,17 @@
+{
+  "@eslint/compat": "https://github.com/eslint/compat/releases",
+  "@eslint/eslintrc": "https://github.com/eslint/eslintrc/releases",
+  "@eslint/js": "https://github.com/eslint/js/releases",
+  "@stylistic/eslint-plugin": "https://github.com/eslint-stylistic/eslint-stylistic/releases",
+  "@vitejs/plugin-vue-jsx": "https://github.com/vitejs/vite-plugin-vue-jsx/releases",
+  "eslint": "https://github.com/eslint/eslint/releases",
+  "eslint-plugin-unicorn": "https://github.com/sindresorhus/eslint-plugin-unicorn/releases",
+  "globals": "https://github.com/sindresorhus/globals/releases",
+  "lodash": "https://github.com/lodash/lodash/releases",
+  "pnpm": "https://github.com/pnpm/pnpm/releases",
+  "sass": "https://github.com/sass/dart-sass/releases",
+  "typescript": "https://github.com/microsoft/TypeScript/releases",
+  "vite": "https://github.com/vitejs/vite/releases",
+  "vitest": "https://github.com/vitest-dev/vitest/releases",
+  "vue-tsc": "https://github.com/vuejs/language-tools/releases"
+}
