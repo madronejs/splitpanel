@@ -93,6 +93,23 @@ const props = withDefaults(
      * isDropTarget reflect the live drag state via onDragChange.
      */
     draggable?: DraggableConfig<T>;
+    /**
+     * Canonical id sequence. When a declarative `<SplitPanel>` registers
+     * after the wrapper has mounted (the v-if-toggle / `<KeepAlive>`
+     * pattern), the wrapper looks up the new id's position in `order`
+     * and inserts the panel before the first existing child whose order
+     * index is greater. Without this, `addChild` appends — so a panel
+     * that started in slot position 2 ends up at the end of the tree
+     * after a hide/show cycle.
+     *
+     * Insertion-only: the prop is consulted at register time. Changes to
+     * the array after mount don't re-shuffle existing children — call
+     * `grid.syncChildren(...)` for that.
+     *
+     * IDs in the tree that aren't in `order` keep their relative
+     * position; IDs in `order` that aren't in the tree are ignored.
+     */
+    order?: string[];
   }>(),
   {
     id: undefined,
@@ -102,6 +119,7 @@ const props = withDefaults(
     animationMs: undefined,
     debug: false,
     draggable: undefined,
+    order: undefined,
   },
 );
 
@@ -162,11 +180,39 @@ provide(splitGridKey, context as SplitGridContext);
 // dispatches to `grid.addChild` directly.
 const pendingChildren: Array<Node<T>> = [];
 
+/**
+ * Where in the parent's children array to insert a newly-registered
+ * panel. When `:order` is set, the new id's position in `order`
+ * determines the slot: insert before the first existing child whose
+ * order index is greater. IDs absent from `order` (or `order` itself
+ * unset) fall through to `undefined` → `grid.addChild`'s default
+ * append.
+ */
+function insertionIndexFor(newId: string): number | undefined {
+  const order = props.order;
+
+  if (!order) return undefined;
+  const newOrderIdx = order.indexOf(newId);
+
+  if (newOrderIdx < 0) return undefined;
+  const current = handle.instance?.get(resolvedId);
+
+  if (!current || !('sizes' in current)) return undefined;
+  const children = current.node.children;
+
+  for (let i = 0; i < children.length; i += 1) {
+    const idx = order.indexOf(children[i].id);
+
+    if (idx > newOrderIdx) return i;
+  }
+  return undefined;
+}
+
 const rootRegistry: ChildRegistry<T> = {
   containerId: resolvedId,
   registerChild(node) {
     if (handle.instance) {
-      handle.instance.addChild(resolvedId, node);
+      handle.instance.addChild(resolvedId, node, insertionIndexFor(node.id));
     } else {
       pendingChildren.push(node);
     }

@@ -208,6 +208,80 @@ describe('optional id (auto-generated)', () => {
   });
 });
 
+describe(':order — canonical insertion sequence', () => {
+  // The v-if-toggle issue: a panel removed via v-if and re-added later
+  // would normally append to the end of the tree, drifting out of the
+  // template's canonical order. `:order` fixes the insertion index so
+  // the panel lands back in its declared slot.
+  it('inserts a v-if-re-added panel at its canonical position', async () => {
+    const showB = ref(true);
+    const Parent = defineComponent({
+      components: { SplitGridView, SplitPanel },
+      setup: () => ({ showB }),
+      template: `
+        <SplitGridView id="r-order" direction="row" :order="['a', 'b', 'c']">
+          <SplitPanel panel-id="a" />
+          <SplitPanel v-if="showB" panel-id="b" />
+          <SplitPanel panel-id="c" />
+        </SplitGridView>
+      `,
+    });
+    const wrapper = mount(Parent, { attachTo: document.body });
+
+    await nextTick();
+    await nextTick();
+
+    const ids = () => [...document.body.querySelectorAll('.sp-panel')]
+      .map((el) => (el as HTMLElement).dataset.id);
+
+    expect(ids()).toEqual(['a', 'b', 'c']);
+
+    showB.value = false;
+    await nextTick();
+    await nextTick();
+    expect(ids()).toEqual(['a', 'c']);
+
+    showB.value = true;
+    await nextTick();
+    await nextTick();
+    // Without :order, b would have appended to the end (['a', 'c', 'b']).
+    expect(ids()).toEqual(['a', 'b', 'c']);
+
+    wrapper.unmount();
+  });
+
+  // IDs not in `order` keep their relative position — :order is an
+  // override for the panels it names, not a whitelist that drops the rest.
+  it('appends ids that are not in the order list', async () => {
+    const showExtra = ref(false);
+    const Parent = defineComponent({
+      components: { SplitGridView, SplitPanel },
+      setup: () => ({ showExtra }),
+      template: `
+        <SplitGridView id="r-order-extra" direction="row" :order="['a', 'b']">
+          <SplitPanel panel-id="a" />
+          <SplitPanel panel-id="b" />
+          <SplitPanel v-if="showExtra" panel-id="extra" />
+        </SplitGridView>
+      `,
+    });
+    const wrapper = mount(Parent, { attachTo: document.body });
+
+    await nextTick();
+    await nextTick();
+
+    showExtra.value = true;
+    await nextTick();
+    await nextTick();
+
+    const ids = [...document.body.querySelectorAll('.sp-panel')]
+      .map((el) => (el as HTMLElement).dataset.id);
+
+    expect(ids).toEqual(['a', 'b', 'extra']);
+    wrapper.unmount();
+  });
+});
+
 describe('mutually-exclusive children sources', () => {
   it('throws when both :children prop and declarative slots are provided', () => {
     const Parent = defineComponent({
