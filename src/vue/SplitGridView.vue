@@ -41,6 +41,7 @@ import {
   attachHandle, createHandle, detachHandle, dispatchDragChange, registry,
   type SplitGridHandle,
 } from './handle';
+import { useAutoId } from './composables';
 
 type LeafEntry = { el: HTMLElement, leaf: Leaf<T> };
 type ResizerEntry = { el: HTMLElement, state: ResizerState<T> };
@@ -50,11 +51,19 @@ const props = withDefaults(
     /**
      * Root container id. Doubles as the registry key for `useSplitGrid(id)`,
      * so call sites in setup() that ran BEFORE this wrapper mounted resolve
-     * to the same handle. Mounting two wrappers with the same id throws.
+     * to the same handle. When omitted, an instance-scoped id is generated
+     * from the component's Vue uid — unique per instance, no cross-tree
+     * lookup possible. Provide an explicit id ONLY when you need cross-tree
+     * lookup or stable identification across v-if cycles; the cost is that
+     * two wrappers can't share the same explicit id (the second mount
+     * throws on attach). For "I have two stacked panels of the same shape"
+     * use cases, leave the prop unset, or generate per-instance ids via
+     * `useAutoId('my-prefix')`.
+     *
      * One-shot — not reactive (renaming the root is intentionally not a
      * supported operation).
      */
-    id: string;
+    id?: string;
     /**
      * Layout axis. Watched: changing the prop calls `setDirection` on the
      * live grid.
@@ -86,6 +95,7 @@ const props = withDefaults(
     draggable?: DraggableConfig<T>;
   }>(),
   {
+    id: undefined,
     bounds: undefined,
     children: undefined,
     resizer: undefined,
@@ -94,6 +104,14 @@ const props = withDefaults(
     draggable: undefined,
   },
 );
+
+// Auto-id when the consumer didn't pass one. `useAutoId` stamps a stable
+// id from the component's Vue uid — different per instance, same for the
+// instance's lifetime. We hold onto `isAutoId` so unmount can drop the
+// registry entry (auto-ids have no external consumer; leaving them in
+// the registry would leak memory across v-if cycles).
+const resolvedId = useAutoId('sgv', props.id);
+const isAutoId = !props.id;
 
 // `@change` / `@ready` stay as wrapper-level emits for parents who prefer
 // the template-binding ergonomics. The new path (`handle.onChange` /
@@ -105,18 +123,18 @@ const emit = defineEmits<{
 
 const hostRef = useTemplateRef<HTMLDivElement>('hostRef');
 
-// Claim-or-create the handle keyed by `id`. A parent that called
+// Claim-or-create the handle keyed by `resolvedId`. A parent that called
 // `useSplitGrid(props.id)` in setup already populated the registry; we
 // share that same handle so queued listeners drain onto our grid on attach.
 // Otherwise create + register a fresh handle ourselves.
 const handle: SplitGridHandle<T> = (() => {
-  const existing = registry.get(props.id) as SplitGridHandle<T> | undefined;
+  const existing = registry.get(resolvedId) as SplitGridHandle<T> | undefined;
 
   if (existing) return existing;
 
-  const fresh = createHandle<T>(props.id);
+  const fresh = createHandle<T>(resolvedId);
 
-  registry.set(props.id, fresh);
+  registry.set(resolvedId, fresh);
   return fresh;
 })();
 
@@ -145,10 +163,10 @@ provide(splitGridKey, context as SplitGridContext);
 const pendingChildren: Array<Node<T>> = [];
 
 const rootRegistry: ChildRegistry<T> = {
-  containerId: props.id,
+  containerId: resolvedId,
   registerChild(node) {
     if (handle.instance) {
-      handle.instance.addChild(props.id, node);
+      handle.instance.addChild(resolvedId, node);
     } else {
       pendingChildren.push(node);
     }
@@ -250,7 +268,7 @@ function rebuildAllPanelStates(g: SplitGrid<T>): void {
     }
   };
 
-  walk(props.id);
+  walk(resolvedId);
 }
 
 /**
@@ -364,7 +382,7 @@ onMounted(() => {
 
   if (propChildren.length > 0 && slotChildren.length > 0) {
     throw new Error(
-      `<SplitGridView id="${props.id}">: pass children via either the :children `
+      `<SplitGridView id="${resolvedId}">: pass children via either the :children `
       + 'prop OR declarative <SplitPanel> / <SplitContainer> slots, not both.',
     );
   }
@@ -372,7 +390,7 @@ onMounted(() => {
   const initialChildren = propChildren.length > 0 ? propChildren : slotChildren;
 
   const rootDef: Container<T> = {
-    id: props.id,
+    id: resolvedId,
     direction: props.direction,
     bounds: props.bounds,
     resizer: props.resizer,
@@ -438,14 +456,14 @@ onMounted(() => {
 // Direction is reactive: changing the prop calls setDirection on the live
 // grid. No `immediate` — the initial value is baked into the rootDef.
 watch(() => props.direction, (next) => {
-  if (handle.instance) handle.instance.setDirection(props.id, next);
+  if (handle.instance) handle.instance.setDirection(resolvedId, next);
 });
 
 // Bounds is reactive: changing the prop calls setBounds on the live grid.
 // Shallow reference equality only — to update from outside, swap to a
 // new object (`bounds = { ...bounds, min: '200px' }`).
 watch(() => props.bounds, (next) => {
-  if (handle.instance && next) handle.instance.setBounds(props.id, next);
+  if (handle.instance && next) handle.instance.setBounds(resolvedId, next);
 });
 
 onBeforeUnmount(() => {
@@ -457,6 +475,11 @@ onUnmounted(() => {
   disposeDraggable = null;
   handle.instance?.unmount();
   detachHandle(handle);
+  // Auto-id handles have no external consumer that could find them via
+  // `useSplitGrid(id)` later — drop them from the registry to avoid
+  // leaking across v-if cycles. Explicit ids stick around so queued
+  // listeners survive a remount under the same id (documented feature).
+  if (isAutoId) registry.delete(resolvedId);
   leafEntries.clear();
   resizerEntries.clear();
   panelStates.clear();

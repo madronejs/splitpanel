@@ -1,7 +1,8 @@
 // @vitest-environment happy-dom
 /**
  * Flat-props contract for <SplitGridView>:
- *   - id is required and one-shot (becomes both registry key + root id).
+ *   - id is optional; when omitted, an instance-scoped id is auto-generated.
+ *   - explicit id is one-shot (becomes both registry key + root id).
  *   - direction is reactive: prop changes trigger setDirection on the grid.
  *   - bounds is reactive: prop changes trigger setBounds(id, ...) on the grid.
  *   - :children and declarative <SplitPanel>/<SplitContainer> slots are
@@ -112,6 +113,98 @@ describe('flat root props', () => {
 
     expect(after?.min).toBe('200px');
     wrapper.unmount();
+  });
+});
+
+describe('optional id (auto-generated)', () => {
+  // The common case: a consumer drops <SplitGridView> in the template
+  // without caring about cross-tree handle access. The wrapper should
+  // mount without an error and produce a usable grid.
+  it('mounts without an explicit id', async () => {
+    const wrapper = mount(SplitGridView, {
+      props: { direction: PanelDirection.Row, children: [{ id: 'a' }, { id: 'b' }] },
+      attachTo: document.body,
+    });
+
+    await nextTick();
+    await nextTick();
+
+    expect(document.body.querySelectorAll('.sp-panel').length).toBe(2);
+    wrapper.unmount();
+  });
+
+  // Two instances without an explicit id can coexist — the SCB-stacked
+  // use case. With a fixed explicit id both wrappers would compete for
+  // the same registry slot; auto-id gives each a unique scope.
+  it('two instances without explicit ids do not collide', async () => {
+    const Parent = defineComponent({
+      components: { SplitGridView, SplitPanel },
+      template: `
+        <div>
+          <SplitGridView direction="row">
+            <SplitPanel panel-id="a-1" />
+            <SplitPanel panel-id="a-2" />
+          </SplitGridView>
+          <SplitGridView direction="row">
+            <SplitPanel panel-id="b-1" />
+            <SplitPanel panel-id="b-2" />
+          </SplitGridView>
+        </div>
+      `,
+    });
+    const wrapper = mount(Parent, { attachTo: document.body });
+
+    await nextTick();
+    await nextTick();
+
+    // Both trees built their own panels without one stealing the other's.
+    expect(document.body.querySelectorAll('.sp-panel[data-id="a-1"]')).toHaveLength(1);
+    expect(document.body.querySelectorAll('.sp-panel[data-id="b-1"]')).toHaveLength(1);
+    wrapper.unmount();
+  });
+
+  // Auto-id handles have no external consumer that could find them later
+  // via `useSplitGrid(id)`. Leaving them in the registry leaks memory
+  // across v-if cycles; auto-id unmount must clean up.
+  it('auto-id handle is removed from the registry on unmount', async () => {
+    const wrapper = mount(SplitGridView, {
+      props: { direction: PanelDirection.Row, children: [{ id: 'a' }] },
+      attachTo: document.body,
+    });
+
+    await nextTick();
+    await nextTick();
+
+    const sgvKeys = [...registry.keys()].filter((k) => k.startsWith('sgv-'));
+
+    expect(sgvKeys).toHaveLength(1);
+
+    wrapper.unmount();
+    await nextTick();
+
+    const sgvKeysAfter = [...registry.keys()].filter((k) => k.startsWith('sgv-'));
+
+    expect(sgvKeysAfter).toHaveLength(0);
+  });
+
+  // Explicit ids stick around through unmount so queued listeners
+  // registered via `useSplitGrid(id)` survive a v-if remount under the
+  // same id. The contrast with auto-id cleanup above.
+  it('explicit-id handle is preserved in the registry on unmount', async () => {
+    const wrapper = mount(SplitGridView, {
+      props: { id: 'sticky', direction: PanelDirection.Row, children: [{ id: 'a' }] },
+      attachTo: document.body,
+    });
+
+    await nextTick();
+    await nextTick();
+
+    expect(registry.has('sticky')).toBe(true);
+
+    wrapper.unmount();
+    await nextTick();
+
+    expect(registry.has('sticky')).toBe(true);
   });
 });
 
