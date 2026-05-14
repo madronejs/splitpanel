@@ -642,6 +642,56 @@ describe('state queries', () => {
     expect(grid.isMaximized('root')).toBe(false);
   });
 
+  it('getMaximizedIndex returns -1 with no max, or the child index when set', () => {
+    const grid = mount();
+
+    expect(grid.getMaximizedIndex('root')).toBe(-1);
+    grid.maximize('b');
+    expect(grid.getMaximizedIndex('root')).toBe(1);
+    grid.maximize('c');
+    expect(grid.getMaximizedIndex('root')).toBe(2);
+    grid.minimize('c');
+    expect(grid.getMaximizedIndex('root')).toBe(-1);
+  });
+
+  it('getMaximizedIndex returns -1 for leaves and unknown ids', () => {
+    const grid = mount();
+
+    expect(grid.getMaximizedIndex('a')).toBe(-1); // leaf
+    expect(grid.getMaximizedIndex('unknown')).toBe(-1); // not in tree
+  });
+
+  it('areChildrenEqual is true after equalize, false after a size change', () => {
+    const grid = mount();
+
+    grid.equalize('root');
+    expect(grid.areChildrenEqual('root')).toBe(true);
+    grid.setSize('a', '50%');
+    expect(grid.areChildrenEqual('root')).toBe(false);
+    grid.equalize('root');
+    expect(grid.areChildrenEqual('root')).toBe(true);
+  });
+
+  it('areChildrenEqual is true for containers with fewer than two children', () => {
+    const grid = new SplitGrid({
+      root: {
+        id: 'r',
+        direction: PanelDirection.Row,
+        children: [{ id: 'only' }],
+      },
+    });
+
+    grid.mount(host);
+    expect(grid.areChildrenEqual('r')).toBe(true);
+  });
+
+  it('areChildrenEqual is false for leaves and unknown ids', () => {
+    const grid = mount();
+
+    expect(grid.areChildrenEqual('a')).toBe(false);
+    expect(grid.areChildrenEqual('unknown')).toBe(false);
+  });
+
   it('isAtDefault is true on mount and after reset, false after a size change', () => {
     const grid = mount({
       id: 'root',

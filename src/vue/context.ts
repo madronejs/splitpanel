@@ -73,6 +73,22 @@ export interface PanelState<T = unknown> {
    * `undefined` for leaf nodes.
    */
   maximizedChildId: string | null | undefined,
+  /**
+   * Container-only: index of the currently-maximized child within this
+   * container's children array, or `null` if none. Companion to
+   * `maximizedChildId` for consumers building "expand prev / expand
+   * next" UI affordances — they typically want the index, not the id.
+   * `undefined` for leaf nodes.
+   */
+  maximizedChildIndex: number | null | undefined,
+  /**
+   * Container-only: true when this container has 0 or 1 children, or
+   * when every child currently shares the same `Length` (same unit AND
+   * same value). Useful for "is equalize a no-op?" UI affordances —
+   * the toolbar's `:disabled` state on an Equalize button. `undefined`
+   * for leaf nodes.
+   */
+  childrenEqual: boolean | undefined,
 
   /**
    * Set this panel's size on its parent's axis. Sugar for

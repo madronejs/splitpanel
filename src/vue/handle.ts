@@ -92,6 +92,10 @@ export interface SplitGridHandle<T = unknown> {
   getSize: (id: string) => PanelSizeReport | undefined,
   isMaximized: (id: string) => boolean,
   isAtDefault: (id: string) => boolean,
+  /** -1 if no child is maximized (or `containerId` isn't a container). */
+  getMaximizedIndex: (containerId: string) => number,
+  /** True for leaves treated as "trivially equal"; false for unknown ids. */
+  areChildrenEqual: (containerId: string) => boolean,
 
   // Mutating methods — throw pre-attach. Same shape as the previous
   // `SplitGridViewApi`; consumers just drop the template ref.
@@ -251,32 +255,18 @@ export function createHandle<T = unknown>(id: string): SplitGridHandle<T> {
     onStructural,
     onDragChange,
 
-    // Touch `isReady.value` to register a reactive dep — a `computed(() =>
-    // handle.getPanelState(id))` registered pre-attach would otherwise see
-    // `shared` as null, register no deps on the underlying map, and never
-    // re-run when attach happens. Reading isReady first guarantees the
-    // computed re-evaluates on attach, where it then establishes the real
-    // dep on the panelStates Map.
-    getPanelState: (panelId) => {
-      // eslint-disable-next-line @typescript-eslint/no-unused-expressions
-      isReady.value;
-      return shared?.panelStates.get(panelId);
-    },
-    getSize: (panelId) => {
-      // eslint-disable-next-line @typescript-eslint/no-unused-expressions
-      isReady.value;
-      return grid?.getSize(panelId);
-    },
-    isMaximized: (panelId) => {
-      // eslint-disable-next-line @typescript-eslint/no-unused-expressions
-      isReady.value;
-      return grid?.isMaximized(panelId) ?? false;
-    },
-    isAtDefault: (panelId) => {
-      // eslint-disable-next-line @typescript-eslint/no-unused-expressions
-      isReady.value;
-      return grid?.isAtDefault(panelId) ?? false;
-    },
+    // Reactive reads. Gating on `isReady.value` does double duty: (1) the
+    // ternary acts as the "is attached" check (`grid` / `shared` are
+    // non-null exactly when `isReady.value` is true, kept in lockstep
+    // by attach/detach below), and (2) reading `isReady.value` registers
+    // the reactive dep so a `computed(() => handle.getX(...))` created
+    // pre-attach re-evaluates when the wrapper attaches.
+    getPanelState: (panelId) => (isReady.value ? shared!.panelStates.get(panelId) : undefined),
+    getSize: (panelId) => (isReady.value ? grid!.getSize(panelId) : undefined),
+    isMaximized: (panelId) => (isReady.value ? grid!.isMaximized(panelId) : false),
+    isAtDefault: (panelId) => (isReady.value ? grid!.isAtDefault(panelId) : false),
+    getMaximizedIndex: (containerId) => (isReady.value ? grid!.getMaximizedIndex(containerId) : -1),
+    areChildrenEqual: (containerId) => (isReady.value ? grid!.areChildrenEqual(containerId) : false),
 
     setSize: (panelId, size, opts) => requireGrid().setSize(panelId, size, opts),
     maximize: (panelId, opts) => requireGrid().maximize(panelId, opts),

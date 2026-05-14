@@ -264,11 +264,25 @@ function buildPanelState(g: SplitGrid<T>, id: string): PanelState<T> | undefined
   };
 
   const containerLike = !isLeaf
-    ? {
-      childSizes: [...(s as { sizes: Length[] }).sizes],
-      maximizedChildId: (s as { max: { id: string } | null }).max?.id ?? null,
-    }
-    : { childSizes: undefined, maximizedChildId: undefined };
+    ? (() => {
+      const cs = s as { sizes: Length[], max: { id: string } | null };
+      const maxIdx = g.getMaximizedIndex(id);
+
+      return {
+        childSizes: [...cs.sizes],
+        maximizedChildId: cs.max?.id ?? null,
+        // Method returns -1 when no child is maximized; normalize to
+        // `null` to match the existing `maximizedChildId` shape.
+        maximizedChildIndex: maxIdx < 0 ? null : maxIdx,
+        childrenEqual: g.areChildrenEqual(id),
+      };
+    })()
+    : {
+      childSizes: undefined,
+      maximizedChildId: undefined,
+      maximizedChildIndex: undefined,
+      childrenEqual: undefined,
+    };
 
   return {
     id,

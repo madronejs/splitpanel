@@ -1384,6 +1384,39 @@ export class SplitGrid<T = unknown> {
   }
 
   /**
+   * Index of the currently-maximized child within `containerId`'s
+   * children array, or `-1` when no child is maximized (or when
+   * `containerId` isn't a container). Companion to `isMaximized` for
+   * consumers building "expand prev / expand next" UI affordances —
+   * they typically want the index, not the id.
+   */
+  getMaximizedIndex(containerId: string): number {
+    const c = this.byId.get(containerId);
+
+    if (!c || !isContainerState(c) || !c.max) return -1;
+    return c.node.children.findIndex((child) => child.id === c.max!.id);
+  }
+
+  /**
+   * True when `containerId`'s children currently share the same stored
+   * `Length` (same unit AND value), OR when the container has fewer
+   * than two children (no inequality is possible). Useful for "is
+   * equalize a no-op?" UI affordances. Returns `false` for leaves or
+   * unknown ids.
+   */
+  areChildrenEqual(containerId: string): boolean {
+    const c = this.byId.get(containerId);
+
+    if (!c || !isContainerState(c)) return false;
+
+    if (c.sizes.length < 2) return true;
+
+    const first = c.sizes[0];
+
+    return c.sizes.every((sz) => sz?.value === first?.value && sz?.unit === first?.unit);
+  }
+
+  /**
    * True iff the panel's currently rendered size matches what it was
    * defined with at mount time. Compares physical pixels (defined-size
    * resolved against containerAxisPx vs. measured rect), so the check
