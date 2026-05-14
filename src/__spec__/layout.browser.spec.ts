@@ -395,4 +395,56 @@ describe('layout — real grid', () => {
 
     expect(sum(all)).toBeCloseTo(CONTAINER_WIDTH, 0);
   });
+
+  // Regression: after a window/container resize, the runtime updates
+  // `availPx` (via ResizeObserver → measureAll) but used to leave the
+  // CSS `--sp-tracks` string at the value written by the LAST layout op.
+  // CSS Grid re-resolved that stale pct string against the new
+  // container size, and any container with px-sized siblings (or
+  // resizer-track px) drifted off the new bounds. Now writeAllTracks
+  // fires after every measure, so the rendered widths re-match.
+  it('container resize re-emits tracks so px siblings + pct siblings re-fit', async () => {
+    const grid = new SplitGrid({
+      root: {
+        id: 'root',
+        direction: PanelDirection.Row,
+        resizer: { size: 5 },
+        children: [
+          { id: 'player' },
+          { id: 'markers', bounds: { size: '400px', min: '250px', max: '600px' } },
+        ],
+      },
+    });
+
+    grid.mount(host);
+    await grid.settle();
+
+    // Force the player's fr track to freeze into a stored pct. Without
+    // this, CSS resolves `minmax(0, 1fr)` dynamically against the
+    // current container width and there's no drift to test. After any
+    // layout op (setSize / equalize / maximize) the fr → pct freeze
+    // turns the player into a stored-pct track, which is where stale
+    // `--sp-tracks` would bite on resize.
+    grid.equalize('root');
+    await grid.settle();
+    grid.maximize('player');
+    await grid.settle();
+
+    // Resize the container. The ResizeObserver fires; the runtime needs
+    // to re-write --sp-tracks so CSS resolves against the new width.
+    host.style.width = '800px';
+
+    // ResizeObserver dispatches off the rendering steps, then the
+    // runtime debounces via rAF. Four frames gives both a chance to
+    // settle in Chromium under load.
+    for (let i = 0; i < 4; i += 1) {
+      await new Promise((r) => requestAnimationFrame(r));
+    }
+
+    // After maximize + resize to 800: markers clamps to its 250 min,
+    // player takes the remainder (800 − 5 resizer − 250 = 545). The
+    // exact split is the point — what matters is the layout still fits
+    // the new container width.
+    expect(sum(widthsOf('.sp-container > *'))).toBeCloseTo(800, 0);
+  });
 });

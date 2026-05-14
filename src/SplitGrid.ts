@@ -2210,6 +2210,14 @@ export class SplitGrid<T = unknown> {
       if (!this.rootEl) return;
 
       this.measureAll(this.rootEl);
+      // Stored pct values are "% of pctBudgetPx" — `sizesForCss` scales
+      // them to "% of containerAxisPx" at write time. That scale factor
+      // depends on the current container size, so a container resize
+      // invalidates whatever pct string was last written. Re-emit
+      // tracks (animate: false — the user IS the input, we just keep
+      // CSS in lockstep) so panels with px-sized siblings or resizer
+      // tracks still fit the new bounds.
+      this.writeAllTracks(this.rootEl);
     });
   }
 
