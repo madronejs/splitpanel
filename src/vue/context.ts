@@ -106,9 +106,22 @@ export interface ResizerState<T = unknown> {
   /**
    * Node defs on either side of this divider. `before` is undefined for
    * the leading decorative resizer; `after` is undefined for the trailing.
+   * `Node<T>` is a union of `Leaf<T> | Container<T>` — only the leaf
+   * variant carries `data`. For ergonomic typed access to the leaf
+   * payload, prefer `beforeData` / `afterData` below.
    */
   before: Node<T> | undefined,
   after: Node<T> | undefined,
+  /**
+   * Leaf data payload on either side of the divider, when that side IS a
+   * leaf. Same shape as `PanelState.data`: typed as `T | undefined` so
+   * templates don't need to narrow `Node<T>` from a union before reading.
+   *
+   * Returns `undefined` when the neighbor is a container (containers
+   * don't carry data) or absent (leading / trailing decorative resizer).
+   */
+  beforeData: T | undefined,
+  afterData: T | undefined,
 }
 
 /**

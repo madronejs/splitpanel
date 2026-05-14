@@ -358,6 +358,12 @@ function captureResizers(g: SplitGrid<T>): void {
 
     const key = `${containerId}#${handleIdx}`;
 
+    // `data` lives only on Leaf<T> — containers don't carry it. The
+    // typed `*Data` fields below give consumers a clean read without
+    // narrowing `Node<T>` from a union.
+    const beforeData = before && !('children' in before) ? (before as Leaf<T>).data : undefined;
+    const afterData = after && !('children' in after) ? (after as Leaf<T>).data : undefined;
+
     next.set(key, {
       el,
       state: {
@@ -366,6 +372,8 @@ function captureResizers(g: SplitGrid<T>): void {
         direction: parent.node.direction,
         before,
         after,
+        beforeData,
+        afterData,
       },
     });
   }
