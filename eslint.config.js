@@ -84,7 +84,9 @@ export default [
       allowInterfaces: 'with-single-extends',
     }],
     '@typescript-eslint/no-unused-vars': ['error'],
-    '@typescript-eslint/no-use-before-define': ['error'],
+    // Function declarations are hoisted, so use-before-define is safe at
+    // runtime for them — let `let`/`const`/`class`/etc keep the check.
+    '@typescript-eslint/no-use-before-define': ['error', { functions: false }],
     '@typescript-eslint/no-shadow': ['error'],
     'no-shadow': 'off',
     'no-unused-vars': 'off',

@@ -10,32 +10,21 @@ export default defineConfig({
     cssMinify: true,
     minify: process.env.NODE_ENV === 'production',
     lib: {
-      // Single unified entry point
+      // Two entries: the framework-free core (`splitpanel`) and a thin Vue
+      // adapter (`vue`). Consumers pick the subpath that matches their stack;
+      // the Vue bundle is never loaded by a non-Vue consumer.
       entry: {
-        index: resolve(__dirname, 'src/index.ts'),
-        style: resolve(__dirname, 'src/style.ts'),
+        splitpanel: resolve(__dirname, 'src/index.ts'),
+        vue: resolve(__dirname, 'src/vue/index.ts'),
       },
-      // the proper extensions will be added
-      name: 'SplitPanel',
+      name: 'SplitGrid',
+      formats: ['es', 'cjs'],
+      cssFileName: 'splitpanel',
     },
     rollupOptions: {
-      // make sure to externalize deps that shouldn't be bundled
-      // into your library
-      external: ['vue', '@madronejs/core'],
-      output: {
-        // Provide global variables to use in the UMD build
-        // for externalized deps
-        globals: {
-          vue: 'Vue',
-        },
-      },
-    },
-  },
-  css: {
-    preprocessorOptions: {
-      scss: {
-        api: 'modern',
-      },
+      // Vue is an optional peer dep — never bundle it.
+      external: ['vue'],
+      output: { globals: { vue: 'Vue' } },
     },
   },
   resolve: {
