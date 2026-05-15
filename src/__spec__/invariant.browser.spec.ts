@@ -155,6 +155,25 @@ function assertFitsContainer(ops: Op[]): void {
   // assertion meaningful (a real drift bug pushes well past 3px on a
   // 1000px container) while tolerating the rounding floor.
   expect(Math.abs(childrenSum - containerWidth)).toBeLessThan(3);
+
+  // Storage-form invariant: for any container whose c.sizes carries
+  // pct entries, those pct values sum to exactly 100 — the "saturated
+  // layout sums to 100 in storage form" rule from CLAUDE.md. This is
+  // independent of the rendered-px check above: writeTracks' CSS-emit
+  // boundary corrects drift on the way out, so a broken storage sum
+  // can render correctly and still leak through any downstream code
+  // that reads c.sizes (consumers, settle, getRawDefinition, etc.).
+  const rootState = grid.get('root');
+
+  if (rootState && 'sizes' in rootState) {
+    const pctEntries = rootState.sizes.filter((s) => s.unit === 'pct');
+
+    if (pctEntries.length > 0) {
+      const pctSum = pctEntries.reduce((a, s) => a + s.value, 0);
+
+      expect(Math.abs(pctSum - 100)).toBeLessThan(0.5);
+    }
+  }
 }
 
 const arbOp = fc.oneof(

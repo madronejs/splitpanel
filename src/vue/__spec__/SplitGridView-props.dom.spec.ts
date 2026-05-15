@@ -250,6 +250,42 @@ describe(':order — canonical insertion sequence', () => {
     wrapper.unmount();
   });
 
+  // Documented contract: `:order` is consulted at register time only.
+  // Mutating the array after mount must NOT re-shuffle existing
+  // children — consumers wanting to reorder must call grid.syncChildren.
+  it('does not re-shuffle existing children when :order changes at runtime', async () => {
+    const order = ref(['a', 'b', 'c']);
+    const Parent = defineComponent({
+      components: { SplitGridView, SplitPanel },
+      setup: () => ({ order }),
+      template: `
+        <SplitGridView id="r-order-runtime" direction="row" :order="order">
+          <SplitPanel panel-id="a" />
+          <SplitPanel panel-id="b" />
+          <SplitPanel panel-id="c" />
+        </SplitGridView>
+      `,
+    });
+    const wrapper = mount(Parent, { attachTo: document.body });
+
+    await nextTick();
+    await nextTick();
+
+    const ids = () => [...document.body.querySelectorAll('.sp-panel')]
+      .map((el) => (el as HTMLElement).dataset.id);
+
+    expect(ids()).toEqual(['a', 'b', 'c']);
+
+    // Reverse the canonical sequence at runtime. Existing children
+    // should NOT re-order — the prop is insertion-only.
+    order.value = ['c', 'b', 'a'];
+    await nextTick();
+    await nextTick();
+    expect(ids()).toEqual(['a', 'b', 'c']);
+
+    wrapper.unmount();
+  });
+
   // IDs not in `order` keep their relative position — :order is an
   // override for the panels it names, not a whitelist that drops the rest.
   it('appends ids that are not in the order list', async () => {

@@ -54,10 +54,11 @@ describe('toPx', () => {
     expect(toPx({ unit: 'pct', value: 25 }, asContainerAxis(800))).toBe(200);
   });
 
-  it('returns containerAxisPx for fr (best-effort sentinel)', () => {
-    // fr can't truly resolve in this layer; callers should branch on unit
-    // before reaching here. The sentinel keeps math non-NaN.
-    expect(toPx({ unit: 'fr', value: 1 }, asContainerAxis(800))).toBe(800);
+  it('returns NaN for fr — callers must branch on unit before calling', () => {
+    // Previously toPx returned the denom as a "best-effort sentinel" for
+    // fr, which silently concealed unit-mix bugs. NaN surfaces the
+    // misuse at the first downstream comparison instead.
+    expect(toPx({ unit: 'fr', value: 1 }, asContainerAxis(800))).toBeNaN();
   });
 });
 

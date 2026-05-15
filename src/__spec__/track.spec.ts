@@ -14,10 +14,13 @@ describe('trackForChild', () => {
     expect(trackForChild(leaf('a', { size: 'auto', min: '120px' }))).toBe('minmax(120px, 1fr)');
   });
 
-  it('uses minmax(min, max) when an auto track has an explicit max', () => {
-    // fr can't compose inside clamp(), so a max on a flex track becomes the
-    // upper bound of minmax.
-    expect(trackForChild(leaf('a', { size: 'auto', min: '100px', max: '400px' }))).toBe('minmax(100px, 400px)');
+  it('keeps minmax(min, 1fr) form even when an auto track has an explicit max', () => {
+    // Previously emitted minmax(min, max) when max was set on an fr
+    // track. That silently converted the track from flex-fill to a
+    // bounded fixed range — same string, different layout/animation
+    // shape. Max is dropped on fr tracks; consumers needing a ceiling
+    // should use an explicit size with bounds.max.
+    expect(trackForChild(leaf('a', { size: 'auto', min: '100px', max: '400px' }))).toBe('minmax(100px, 1fr)');
   });
 
   it('renders a fixed size with max as clamp(min, size, max)', () => {

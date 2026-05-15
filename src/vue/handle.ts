@@ -126,9 +126,15 @@ export interface SplitGridHandle<T = unknown> {
  * (when no inject is available) and by the wrapper on mount. Persists for
  * the lifetime of the module — handles are durable so v-if / HMR cycles
  * preserve queued listeners. Exported for tests to clear between specs.
+ *
+ * Typed as `SplitGridHandle<unknown>` rather than `any` so the registry
+ * itself doesn't silently widen the data type — each `useSplitGrid<T>(id)`
+ * lookup site narrows via a single cast (see below). With `<any>` here, a
+ * caller could ask for `useSplitGrid<X>('id')` against a handle that was
+ * created for a different `T` and pick up the wrong type with no compiler
+ * complaint anywhere.
  */
-
-export const registry = new Map<string, SplitGridHandle<any>>();
+export const registry = new Map<string, SplitGridHandle<unknown>>();
 
 /** Brand symbol for wrapper-private operations on a handle. Not exported
  *  from the package index. */
@@ -398,11 +404,18 @@ export function useSplitGrid<T = unknown>(id?: string): SplitGridHandle<T> {
   }
 
   if (id) {
+    // The registry stores `SplitGridHandle<unknown>` so it can hold
+    // handles for many T at once. The cast here is the single narrowing
+    // boundary — callers asking for a specific `T` get back that
+    // narrowed view; if the handle was created for a different T, the
+    // mismatch isn't caught at compile time (the registry has no
+    // per-id T to remember), but it's also not silently widened
+    // throughout downstream code as it was under `<any>`.
     let h = registry.get(id) as SplitGridHandle<T> | undefined;
 
     if (!h) {
       h = createHandle<T>(id);
-      registry.set(id, h);
+      registry.set(id, h as SplitGridHandle<unknown>);
     }
     return h;
   }

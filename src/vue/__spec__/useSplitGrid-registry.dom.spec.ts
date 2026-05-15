@@ -199,6 +199,45 @@ describe('Duplicate <SplitGridView id="x"> mounts throw', () => {
       `,
     });
 
-    expect(() => mount(Parent, { attachTo: document.body })).toThrow(/already/i);
+    expect(() => mount(Parent, { attachTo: document.body })).toThrow(/already|duplicate/i);
+  });
+
+  it('losing wrapper does not leak an orphan grid into its host element', () => {
+    // Regression: in the original mount order — g.mount, g.subscribe,
+    // attachHandle — the losing wrapper's g had already installed DOM,
+    // a ResizeObserver, and a subscriber by the time attachHandle threw.
+    // onUnmounted cleaned up handle.instance (the winning grid), not the
+    // orphan. The fix is to pre-check the handle is free BEFORE mounting,
+    // so the failing wrapper never appends its grid container.
+    const Parent = defineComponent({
+      components: { SplitGridView, SplitPanel },
+      template: `
+        <div data-test="root">
+          <div data-test="first">
+            <SplitGridView id="dup-leak" direction="row">
+              <SplitPanel panel-id="a" />
+            </SplitGridView>
+          </div>
+          <div data-test="second">
+            <SplitGridView id="dup-leak" direction="row">
+              <SplitPanel panel-id="b" />
+            </SplitGridView>
+          </div>
+        </div>
+      `,
+    });
+
+    // The throw aborts mount; the DOM tree reflects whatever side effects
+    // ran before the throw. Pre-fix, the second host wraps an orphan
+    // .sp-container. Post-fix, the second host is empty.
+    expect(() => mount(Parent, { attachTo: document.body })).toThrow();
+
+    const first = document.body.querySelector('[data-test="first"]') as HTMLElement | null;
+    const second = document.body.querySelector('[data-test="second"]') as HTMLElement | null;
+
+    // First wrapper mounted normally — single grid container under it.
+    expect(first?.querySelectorAll('.sp-container').length ?? 0).toBe(1);
+    // Second wrapper bailed before mounting — no leaked container.
+    expect(second?.querySelectorAll('.sp-container').length ?? 0).toBe(0);
   });
 });

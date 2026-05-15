@@ -135,6 +135,29 @@ describe('dragHandle: LIFO recovery on reverse', () => {
   });
 });
 
+describe('dragHandle: immediate-neighbor min', () => {
+  it('floors the immediate at its min even when a small drag wouldn\'t reach it', () => {
+    // Regression: dragHandle read immMax but not immMin. If the caller
+    // passed in sizesPx with the immediate below its declared min
+    // (because setBounds bumped min between drags via a path that
+    // bypassed the wrapper's rebalance, or any other stale-state route),
+    // a small drag delta would do a small transfer and leave the
+    // immediate still below min. Now dragHandle floors the immediate
+    // at its min on apply.
+    //
+    // Setup: A=50, min:80. B=200. Drag right by a small amount (20px).
+    // Pre-fix: idx 1 gives 20 → A=70, B=180. A is below its 80 min.
+    // Post-fix: A is floored to 80.
+    const c = container(['80px', undefined]);
+    const sizes = [50, 200];
+    const initial = [...sizes];
+
+    dragHandle(c, sizes, initial, 1, 20, asContainerAxis(300));
+
+    expect(sizes[0]).toBeGreaterThanOrEqual(80);
+  });
+});
+
 describe('dragHandle: edge cases', () => {
   it('no-ops a drag where the grow side is already capped and nothing can move', () => {
     const c = container([undefined, undefined], ['200px']);

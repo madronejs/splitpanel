@@ -521,3 +521,116 @@ describe('PanelState isDropZone', () => {
     expect((document.querySelector('[data-test="b"]') as HTMLElement).dataset.zone).toBe('false');
   });
 });
+
+describe('PanelState: container fields (maximizedChildIndex / childrenEqual)', () => {
+  // These fields were added so containers can drive "is equalize a no-op?"
+  // and "which child is maxed?" UI affordances without subscribing to
+  // onChange or scanning sizes. Locked here so wrapper refactors that
+  // touch buildPanelState don't drop them.
+  it('exposes container fields and re-renders when they change', async () => {
+    const captured: { state: ReturnType<typeof usePanelState> | null } = { state: null };
+    const Inner = defineComponent({
+      setup() {
+        captured.state = usePanelState('root');
+        // eslint-disable-next-line unicorn/consistent-function-scoping
+        return () => h('div');
+      },
+    });
+    const Parent = defineComponent({
+      components: { SplitGridView, Inner },
+      template: `<SplitGridView id="root" direction="row" :children="children">
+        <template #leaf><Inner /></template>
+      </SplitGridView>`,
+      data: () => ({ children: makeChildren() }),
+    });
+
+    mount(Parent, { attachTo: document.body });
+
+    await nextTick();
+    await nextTick();
+
+    expect(captured.state).toBeTruthy();
+
+    const initial = captured.state!.value!;
+
+    // Initial: no child maxed; both children share `1fr` (no `:size`
+    // declared on the children factory), so childrenEqual is true.
+    expect(initial.maximizedChildIndex).toBeNull();
+    expect(initial.maximizedChildId).toBeNull();
+    expect(initial.childrenEqual).toBe(true);
+
+    // Maximize 'b' (index 1). The container PanelState refreshes.
+    useSplitGrid('root').toggleExpand('b');
+    await nextTick();
+    expect(captured.state!.value!.maximizedChildIndex).toBe(1);
+    expect(captured.state!.value!.maximizedChildId).toBe('b');
+    // Sizes diverge after maximize, so equalize would no longer be a no-op.
+    expect(captured.state!.value!.childrenEqual).toBe(false);
+  });
+
+  it('leaf panels report undefined for container-only fields', async () => {
+    const captured: { state: ReturnType<typeof usePanelState> | null } = { state: null };
+    const Inner = defineComponent({
+      setup() {
+        captured.state = usePanelState('a');
+        // eslint-disable-next-line unicorn/consistent-function-scoping
+        return () => h('div');
+      },
+    });
+    const Parent = defineComponent({
+      components: { SplitGridView, Inner },
+      template: `<SplitGridView id="root" direction="row" :children="children">
+        <template #leaf><Inner /></template>
+      </SplitGridView>`,
+      data: () => ({ children: makeChildren() }),
+    });
+
+    mount(Parent, { attachTo: document.body });
+
+    await nextTick();
+    await nextTick();
+
+    expect(captured.state!.value!.maximizedChildIndex).toBeUndefined();
+    expect(captured.state!.value!.childrenEqual).toBeUndefined();
+    expect(captured.state!.value!.childSizes).toBeUndefined();
+  });
+});
+
+describe('ResizerState: beforeData / afterData', () => {
+  // Templates reading the slot prop want typed `T` payloads on either
+  // side of a divider without narrowing `Node<T>` from a union first.
+  it('the #resizer slot scope exposes beforeData and afterData for leaf neighbors', async () => {
+    const wrapper = mount(SplitGridView, {
+      props: {
+        id: 'root',
+        direction: PanelDirection.Row,
+        children: [
+          { id: 'a', data: { label: 'A-data' } },
+          { id: 'b', data: { label: 'B-data' } },
+        ],
+      },
+      attachTo: document.body,
+      slots: {
+        leaf: '<div :data-test="panel.id">{{ panel.id }}</div>',
+        resizer: `
+          <div :data-resizer-test="resizer.index"
+               :data-before-label="resizer.beforeData?.label ?? ''"
+               :data-after-label="resizer.afterData?.label ?? ''">
+            ::
+          </div>
+        `,
+      },
+    });
+
+    await nextTick();
+    await nextTick();
+
+    const resizer = document.querySelector('[data-resizer-test="1"]') as HTMLElement;
+
+    expect(resizer).toBeTruthy();
+    expect(resizer.dataset.beforeLabel).toBe('A-data');
+    expect(resizer.dataset.afterLabel).toBe('B-data');
+
+    wrapper.unmount();
+  });
+});

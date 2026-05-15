@@ -89,9 +89,16 @@ export function asPctBudget(n: number): PctBudgetPx {
 
 /**
  * Resolve a length to pixels against the given denominator. `pct` lengths
- * scale against the denom; `px` lengths pass through; `fr` returns the denom
- * as a best-effort fallback — callers branch on unit before reaching here
- * when they care.
+ * scale against the denom; `px` lengths pass through. `fr` returns `NaN`
+ * — fr is "one flex share," not a definite size, so resolving it against
+ * a denom is a unit error. Callers that can legitimately encounter fr
+ * must branch on unit BEFORE calling.
+ *
+ * Why NaN and not denomPx: silently returning denomPx (the old behavior)
+ * concealed unit-mix bugs — a stray `bounds.max: 'auto'` would land here
+ * as fr, get treated as "100% of denomPx," and produce a fake max that
+ * looked plausible in logs. NaN surfaces the misuse at the first
+ * downstream comparison instead.
  *
  * The denom is branded so the caller has to be explicit about which it
  * means. User-input pct resolves against `ContainerAxisPx` (matching CSS);
@@ -101,8 +108,7 @@ export function toPx(l: Length, denomPx: PctDenomPx): number {
   if (l.unit === 'px') return l.value;
 
   if (l.unit === 'pct') return (l.value / 100) * denomPx;
-  // 'fr': best-effort; callers should branch on unit before reaching here.
-  return denomPx;
+  return Number.NaN;
 }
 
 /** Convert a px value to a percent of the given denom. */

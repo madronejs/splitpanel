@@ -82,6 +82,49 @@ describe('mount / unmount', () => {
     grid.unmount();
     expect(host.children).toHaveLength(0);
   });
+
+  it('unmount cancels any pending scheduleMeasure rAF', () => {
+    // Regression: scheduleMeasure used to set rafScheduled = true and
+    // never cancel the rAF. If the host went away mid-frame, the
+    // dedup guard prevented future measure requests on a re-attached
+    // instance from running. The fix cancels the pending handle and
+    // resets the flag so a fresh scheduleMeasure can fire.
+    const rafSpy = vi.spyOn(globalThis, 'requestAnimationFrame');
+    const cancelSpy = vi.spyOn(globalThis, 'cancelAnimationFrame');
+    const grid = mount();
+
+    // Trigger a scheduleMeasure via ResizeObserver-equivalent path. The
+    // public surface doesn't expose it directly; the existing rAF call
+    // chain (mount → buildContainer paths, or measureAll's write) is
+    // enough to leave at least one rAF in flight after mount.
+    // To force one: bump `scheduleMeasure` via a writeTracks debug path
+    // is invasive; instead, drive a no-op layout that schedules nothing.
+    // The mount itself doesn't schedule (synchronous measure path), so
+    // we synthesize the case: call `scheduleMeasure` via the
+    // ResizeObserver callback path the constructor wired up.
+    //
+    // happy-dom doesn't fire ResizeObserver; reach into the spy and
+    // confirm SOME rAF was enqueued during normal lifecycle, then
+    // confirm unmount cancels what's pending.
+    rafSpy.mockClear();
+
+    // Force a measure schedule by emulating a resize — easier via the
+    // `setDirection` path which calls scheduleMeasure.
+    grid.setDirection('root', PanelDirection.Column);
+    expect(rafSpy).toHaveBeenCalled();
+
+    const lastHandle = rafSpy.mock.results.at(-1)?.value as number | undefined;
+
+    grid.unmount();
+
+    // unmount called cancelAnimationFrame with the pending handle.
+    expect(cancelSpy).toHaveBeenCalled();
+
+    if (lastHandle != null) expect(cancelSpy).toHaveBeenCalledWith(lastHandle);
+
+    rafSpy.mockRestore();
+    cancelSpy.mockRestore();
+  });
 });
 
 describe('addChild / removeChild', () => {
@@ -285,6 +328,57 @@ describe('swap (structural)', () => {
     expect(grid.get('b')?.parent?.node.id).toBe('root');
   });
 
+  it('cross-parent swap emits a single composed event with both container ids', () => {
+    // Previously fired two 'swap' events, one per container. Consumers
+    // had to dedupe by inspecting nodeIds. The composed shape is a
+    // single event with containerId = [pA, pB] and sizes = [aSizes, bSizes].
+    const root: Container = {
+      id: 'root',
+      direction: PanelDirection.Row,
+      children: [
+        { id: 'a' },
+        {
+          id: 'group',
+          direction: PanelDirection.Column,
+          children: [{ id: 'b' }, { id: 'c' }],
+        },
+      ],
+    };
+    const grid = mount(root);
+    const swaps: LayoutChangeEvent[] = [];
+
+    grid.subscribe((e) => {
+      if (e.reason === 'swap') swaps.push(e);
+    });
+
+    grid.swap('a', 'b');
+
+    expect(swaps).toHaveLength(1);
+
+    const ev = swaps[0];
+
+    expect(Array.isArray(ev.containerId)).toBe(true);
+    expect(ev.containerId).toEqual(expect.arrayContaining(['root', 'group']));
+    expect(Array.isArray(ev.sizes)).toBe(true);
+    // sizes follows containerId order: sizes[i] are containerId[i]'s child sizes.
+    expect((ev.sizes as unknown as unknown[]).length).toBe(2);
+    expect(ev.nodeIds).toEqual(expect.arrayContaining(['a', 'b']));
+  });
+
+  it('same-parent swap stays a single-container event', () => {
+    const grid = mount();
+    const swaps: LayoutChangeEvent[] = [];
+
+    grid.subscribe((e) => {
+      if (e.reason === 'swap') swaps.push(e);
+    });
+
+    grid.swap('a', 'c');
+    expect(swaps).toHaveLength(1);
+    expect(typeof swaps[0].containerId).toBe('string');
+    expect(swaps[0].containerId).toBe('root');
+  });
+
   it('rejects ancestor/descendant swap', () => {
     const root: Container = {
       id: 'root',
@@ -424,6 +518,22 @@ describe('setBounds / setDirection', () => {
     expect(sizes.reduce((acc, s) => acc + s.value, 0)).toBeLessThanOrEqual(100);
   });
 
+  it('setBounds on the root persists bounds and emits set-bounds', () => {
+    // Root has no parent container to rebalance against, so the body's
+    // sibling-rebalance branch is skipped — but the bounds patch still
+    // needs to land in node.bounds, and subscribers persisting bounds via
+    // onChange need to see the change.
+    const grid = mount();
+
+    onChange.mockReset();
+    grid.setBounds('root', { min: '100px', max: '900px' });
+    expect(grid.get('root')?.node.bounds?.min).toBe('100px');
+    expect(grid.get('root')?.node.bounds?.max).toBe('900px');
+    expect(onChange).toHaveBeenCalledWith(expect.objectContaining({
+      reason: 'set-bounds', containerId: 'root', nodeIds: ['root'],
+    }));
+  });
+
   it('setDirection toggles the container\'s axis attribute', () => {
     const grid = mount();
     const containerEl = host.querySelector('.sp-container') as HTMLElement;
@@ -453,6 +563,34 @@ describe('layout commands (setSize, equalize, reset)', () => {
     expect(onChange).toHaveBeenCalledWith(expect.objectContaining({ reason: 'set-size' }));
   });
 
+  it('setSize is a no-op when availPx is 0 (pre-measure / detached host)', () => {
+    // Regression: when the host has a zero rect (mid-mount, detached, or
+    // display:none parent), applyTargetSize used to distribute zero across
+    // every child and store [0%, 0%, ...]. The next legitimate measure
+    // would then paint a collapsed grid until equalize/reset ran again.
+    const grid = mount();
+    const before = (grid.get('root') as { sizes: Array<{ unit: string, value: number }> }).sizes
+      .map((s) => ({ ...s }));
+
+    // Stub the rect back to zero so refreshAvail produces availPx = 0
+    // *for this op only*. The mounted state still has the prior 1000×500
+    // sizes from the beforeEach stub frozen into c.sizes.
+    Element.prototype.getBoundingClientRect = vi.fn(() => ({
+      x: 0, y: 0, top: 0, left: 0, right: 0, bottom: 0, width: 0, height: 0, toJSON: () => ({}),
+    } as DOMRect));
+
+    grid.setSize('a', '50%');
+
+    const after = (grid.get('root') as { sizes: Array<{ unit: string, value: number }> }).sizes;
+
+    // Sizes are unchanged (no all-zeros write). The new behavior is the
+    // op short-circuits; before the fix every entry would be 0%.
+    for (const [i, s] of after.entries()) {
+      expect(s.unit).toBe(before[i].unit);
+      expect(s.value).toBeCloseTo(before[i].value, 3);
+    }
+  });
+
   it('equalize emits equalize and writes pct sizes for every child', () => {
     const grid = mount();
 
@@ -463,6 +601,48 @@ describe('layout commands (setSize, equalize, reset)', () => {
     for (const s of sizes) expect(s.unit).toBe('pct');
 
     expect(onChange).toHaveBeenCalledWith(expect.objectContaining({ reason: 'equalize' }));
+  });
+
+  it('equalize on all-pct stores exactly 100/N per child (sum-to-100)', () => {
+    const grid = mount();
+
+    grid.equalize('root');
+
+    const { sizes } = (grid.get('root') as { sizes: Array<{ unit: string, value: number }> });
+
+    // 3 children → each stores 33.33... pct.
+    for (const s of sizes) {
+      expect(s.unit).toBe('pct');
+      expect(s.value).toBeCloseTo(100 / 3, 2);
+    }
+
+    expect(sizes.reduce((a, s) => a + s.value, 0)).toBeCloseTo(100, 1);
+  });
+
+  it('equalize on all-px keeps px units and rendered widths are equal', () => {
+    // Storage form: an all-px container stores `avail/N` px per child.
+    // The sum-to-100 pct invariant doesn't apply (no pct entries).
+    // CSS still renders equal widths via the px tracks directly.
+    const grid = mount({
+      id: 'root',
+      direction: PanelDirection.Row,
+      children: [
+        { id: 'a', bounds: { size: '300px' } },
+        { id: 'b', bounds: { size: '300px' } },
+        { id: 'c', bounds: { size: '300px' } },
+      ],
+    });
+
+    grid.equalize('root');
+
+    const { sizes } = (grid.get('root') as { sizes: Array<{ unit: string, value: number }> });
+
+    for (const s of sizes) expect(s.unit).toBe('px');
+
+    // 1000px container - 12px resizers = 988 avail; 988 / 3 ≈ 329.33 per child.
+    const expected = 988 / 3;
+
+    for (const s of sizes) expect(s.value).toBeCloseTo(expected, 0);
   });
 
   it('reset restores each child\'s bounds.size (or `fr` if unset)', () => {
@@ -497,12 +677,61 @@ describe('layout commands (setSize, equalize, reset)', () => {
 
   it('maximize/minimize set size to 100% / 0%', () => {
     const grid = mount();
-    const spy = vi.spyOn(grid, 'setSize');
+
+    grid.maximize('a');
+
+    const afterMax = grid.get('a');
+
+    if (!afterMax?.parent) throw new Error('expected parent');
+
+    // Stored pct sums to 100 when saturated — maximized 'a' takes the
+    // whole pct budget, siblings drop to their mins (which are px-sized
+    // here so they stay px in storage).
+    expect(afterMax.parent.sizes[0].unit).toBe('pct');
+    expect(afterMax.parent.sizes[0].value).toBeGreaterThan(50);
+
+    grid.minimize('a');
+
+    const afterMin = grid.get('a');
+
+    if (!afterMin?.parent) throw new Error('expected parent');
+
+    // After minimize the target is at its lower clamp (its bounds.min:
+    // '40px' here), so the stored unit reflects the storage convention
+    // — anything except 1fr means the size was actually applied.
+    expect(afterMin.parent.sizes[0].unit).not.toBe('fr');
+  });
+
+  it('maximize / minimize emit distinguishable reasons (not set-size)', () => {
+    // Consumers persisting layout via onChange need to tell "user dragged
+    // to 100%" from "panel maximized" — same final size, different intent.
+    // The two paths used to share `setSize`, which only ever emitted
+    // 'set-size'; now they emit dedicated reasons.
+    const grid = mount();
+    const reasons: string[] = [];
+
+    grid.subscribe((e) => reasons.push(e.reason));
 
     grid.maximize('a');
     grid.minimize('a');
-    expect(spy).toHaveBeenNthCalledWith(1, 'a', '100%', undefined);
-    expect(spy).toHaveBeenNthCalledWith(2, 'a', '0%', undefined);
+
+    expect(reasons).toContain('maximize');
+    expect(reasons).toContain('minimize');
+    // The setSize path was the bug — make sure neither maximize nor
+    // minimize fires 'set-size' as a side effect.
+    expect(reasons).not.toContain('set-size');
+  });
+
+  it('toggleMaximize emits maximize then minimize', () => {
+    const grid = mount();
+    const reasons: string[] = [];
+
+    grid.subscribe((e) => reasons.push(e.reason));
+
+    grid.toggleMaximize('a');
+    grid.toggleMaximize('a');
+
+    expect(reasons).toEqual(['maximize', 'minimize']);
   });
 
   it('maximize records a snapshot so isMaximized reflects the state', () => {
@@ -816,6 +1045,32 @@ describe('syncChildren (bulk diff/sync)', () => {
     expect(ids).toEqual(['new', 'c', 'a']);
     // `b` was not in the new defs.
     expect(grid.get('b')).toBeUndefined();
+  });
+
+  it('fires per-underlying-op events: one add-child / remove-child / swap per granular mutation', () => {
+    // syncChildren composes add/remove/swap; each underlying call still
+    // fires its own onChange (this is documented contract). Subscribers
+    // see N events for an N-step reconcile — never coalesces. This test
+    // locks the count so refactors that batch the inner calls have to
+    // make an intentional decision about the emit shape.
+    const grid = mount();
+    const events: string[] = [];
+
+    grid.subscribe((e) => events.push(e.reason));
+
+    // Mixed: remove b, insert d at index 0, swap a/c. Underlying ops:
+    //   removeChild('b')          → 'remove-child'
+    //   addChild(d, 0)            → 'add-child'
+    //   swap(c, a) (positions 1↔2) → 'swap'
+    grid.syncChildren('root', [
+      { id: 'd', data: { label: 'D' } },
+      { id: 'c' },
+      { id: 'a' },
+    ]);
+
+    expect(events.filter((r) => r === 'remove-child')).toHaveLength(1);
+    expect(events.filter((r) => r === 'add-child')).toHaveLength(1);
+    expect(events.filter((r) => r === 'swap')).toHaveLength(1);
   });
 
   it('no-ops cleanly when defs match the current children', () => {

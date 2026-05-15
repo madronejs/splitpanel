@@ -45,6 +45,7 @@
     "build-types": "rm -rf types/* && vue-tsc -p ./tsconfig.json && tsc-alias -p tsconfig.json",
     "build": "rm -rf dist/* && vite build",
     "build-all": "pnpm build-types && pnpm build",
+    "watch": "vite build --watch",
     "preview": "vite preview",
     "all": "pnpm build-types && pnpm lint && CI=true pnpm test"
   },

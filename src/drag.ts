@@ -81,6 +81,12 @@ export function dragHandle(
   const immMax = immMaxRaw == null
     ? Number.POSITIVE_INFINITY
     : toPx(parseLength(immMaxRaw), containerAxisPx);
+  // Read immMin alongside immMax so the apply step can floor the
+  // immediate at its declared min. Without this, a small reverse drag
+  // could "restore" the immediate to a snapshot that's below a min
+  // that's been bumped since (setBounds between drags, or bounds
+  // mutated directly outside the wrapper).
+  const immMin = toPx(parseLength(c.children[immediate].bounds?.min, PX_ZERO), containerAxisPx);
   const expandBaseline = Math.max(sizesPx[immediate], initialPx[immediate]);
   const expandCap = Math.max(0, immMax - expandBaseline);
 
@@ -127,6 +133,14 @@ export function dragHandle(
   }
 
   if (toGive > 0) sizesPx[immediate] += toGive;
+
+  // Final floor: don't let the apply leave the immediate below its
+  // declared min. Caller-side stale state (e.g. bounds.min raised
+  // between drags via a direct bounds mutation rather than the
+  // wrapper's setBounds, which would rebalance) can violate this
+  // otherwise. Conservation across this drag's involved panels is
+  // restored on the next drag op (re-snapshot).
+  if (sizesPx[immediate] < immMin) sizesPx[immediate] = immMin;
 
   return amount * dir;
 }

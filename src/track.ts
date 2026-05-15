@@ -28,8 +28,14 @@ export function trackForChild(node: Node, current?: Length): string {
   const max = bounds.max == null ? undefined : parseLength(bounds.max);
 
   if (size.unit === 'fr') {
-    // Flex-fill: minmax handles min, max is lost (1fr doesn't compose in clamp).
-    return `minmax(${formatLength(min)}, ${max ? formatLength(max) : '1fr'})`;
+    // Flex-fill: emit `minmax(min, 1fr)` unconditionally. Switching to
+    // `minmax(min, max)` when max is present (the old behavior) silently
+    // converts the track from flex-fill to a bounded fixed range,
+    // which changes its animation profile — adjacent tracks resize
+    // differently as the container width changes. Max on an fr track
+    // is dropped here intentionally; consumers who need a hard ceiling
+    // should use an explicit pct/px size with `bounds.max`.
+    return `minmax(${formatLength(min)}, 1fr)`;
   }
 
   if (max) {

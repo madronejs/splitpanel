@@ -56,9 +56,19 @@ export interface SplitGridConfig<T = unknown> {
   debug?: boolean,
 }
 
-/** Reason codes accompanying every `onChange` event. */
+/**
+ * Reason codes accompanying every `onChange` event.
+ *
+ * `maximize` / `minimize` are distinct from `set-size` so consumers
+ * persisting layout state can tell "user dragged to 100%" (set-size)
+ * from "user clicked the maximize affordance" (maximize). Both paths
+ * write the same physical px through `applySize`; only the reason
+ * differs.
+ */
 export type LayoutChangeReason = | 'drag'
   | 'set-size'
+  | 'maximize'
+  | 'minimize'
   | 'toggle-expand'
   | 'equalize'
   | 'reset'
@@ -72,15 +82,29 @@ export type LayoutChangeReason = | 'drag'
   | 'set-bounds';
 
 export interface LayoutChangeEvent {
-  /** The container whose layout changed. */
-  containerId: string,
+  /**
+   * The container(s) whose layout changed.
+   *
+   * - String: the normal single-container case (every reason except
+   *   cross-parent swap).
+   * - `[string, string]` tuple: cross-parent swap, where BOTH
+   *   containers' children moved. Discriminate with `Array.isArray`.
+   *
+   * Same-parent swap stays a string — both nodes share a container.
+   */
+  containerId: string | [string, string],
   /** What kind of mutation produced the event. */
   reason: LayoutChangeReason,
   /**
-   * Snapshot of the container's child sizes after the change. Cloned, so
-   * consumers can hold the reference safely.
+   * Snapshot of the affected container's child sizes after the change.
+   * Cloned, so consumers can hold the reference safely.
+   *
+   * For multi-container events (cross-parent swap), this is a tuple
+   * whose entries correspond positionally to `containerId`:
+   * `sizes[0]` is `containerId[0]`'s children's sizes; `sizes[1]` is
+   * `containerId[1]`'s.
    */
-  sizes: Length[],
+  sizes: Length[] | [Length[], Length[]],
   /**
    * Ids of nodes directly affected by this mutation. Used by subscribers
    * for per-panel filtering. Empty when the change affects every child
@@ -299,6 +323,14 @@ export class SplitGrid<T = unknown> {
   private rootObserver: ResizeObserver | null = null;
   private rafScheduled = false;
   /**
+   * Handle for the pending `scheduleMeasure` rAF, so `unmount` can cancel
+   * it. Without this, a rAF in flight when the host is torn down lives on
+   * past unmount, and the next remount under the same host (same instance
+   * reused) starts with `rafScheduled = true` — quietly swallowing the
+   * first legitimate `scheduleMeasure` request.
+   */
+  private rafHandle: number | null = null;
+  /**
    * Per-resizer pointer-drag state machines, keyed by resizer element.
    * Created in `attachDrag` and disposed in `detachResizers` so a structural
    * mutation that drops a resizer element also tears down its event
@@ -352,18 +384,29 @@ export class SplitGrid<T = unknown> {
   unmount(): void {
     this.rootObserver?.disconnect();
 
-    // Walk every resizer in the tree and dispose its drag state before the
-    // DOM goes away. `detachResizers` handles same on per-container churn;
-    // this is the full-grid teardown path. We have to do it BEFORE the
+    // Cancel any rAF the ResizeObserver enqueued before we got here. We
+    // also reset `rafScheduled` so a future `scheduleMeasure` (during a
+    // remount on the same instance) isn't silently swallowed by the
+    // dedup guard.
+    if (this.rafHandle != null) cancelAnimationFrame(this.rafHandle);
+
+    this.rafHandle = null;
+    this.rafScheduled = false;
+
+    // Walk every container in the tree and dispose each container's
+    // direct-child resizers via the same `detachResizers` helper used
+    // for per-container churn. We have to do it BEFORE the
     // host.removeChild — once the elements are detached, the WeakMap
     // entries are still reachable from `this.dragStates` (via the keyed
-    // HTMLElement references that GC hasn't collected yet), so we'd leak
-    // their global listeners until the next GC pass.
-    if (this.host && this.rootEl) {
-      for (const r of this.host.querySelectorAll<HTMLElement>('.sp-resizer')) {
-        this.dragStates.get(r)?.dispose();
-        this.dragStates.delete(r);
-      }
+    // HTMLElement references that GC hasn't collected yet), so we'd
+    // leak their global listeners until the next GC pass.
+    //
+    // Going through detachResizers (instead of a host-wide
+    // querySelectorAll) keeps the resizer-disposal selector consistent
+    // (`:scope > .sp-resizer` everywhere) so a future reader doesn't
+    // wonder why teardown and churn use different scopes.
+    for (const s of this.byId.values()) {
+      if (isContainerState(s)) this.detachResizers(s);
     }
 
     if (this.rootEl && this.host?.contains(this.rootEl.el)) {
@@ -390,6 +433,18 @@ export class SplitGrid<T = unknown> {
    * Animates because writeTracks fires under the standard transition.
    */
   setSize(id: string, size: LengthInput, opts?: LayoutOptions): void {
+    this.applySize(id, size, 'set-size', opts);
+  }
+
+  /**
+   * Shared body of `setSize`, `maximize`, and `minimize`. Splitting these
+   * along the emit reason — instead of routing maximize/minimize through
+   * the public `setSize` — keeps the `LayoutChangeReason` faithful to the
+   * user intent that triggered the mutation. Mechanically the three are
+   * identical: clamp the request against `bounds`, run `applyTargetSize`,
+   * emit with the caller's reason.
+   */
+  private applySize(id: string, size: LengthInput, reason: LayoutChangeReason, opts?: LayoutOptions): void {
     const s = this.byId.get(id);
 
     if (!s) return;
@@ -398,7 +453,7 @@ export class SplitGrid<T = unknown> {
 
     if (!parent) return;
 
-    this.prepareForLayoutOp(parent);
+    if (!this.prepareForLayoutOp(parent)) return;
 
     const avail = parent.availPx;
     const totalAxisPx = this.containerAxisPx(parent);
@@ -416,9 +471,10 @@ export class SplitGrid<T = unknown> {
 
     this.applyTargetSize(parent, targetIdx, clampedPx);
     this.writeTracks(parent, opts);
-    this.emit('set-size', parent, [id]);
-    this.log('setSize', () => ({
+    this.emit(reason, parent, [id]);
+    this.log('applySize', () => ({
       id,
+      reason,
       requested: size,
       containerId: parent.node.id,
       containerAxisPx: totalAxisPx,
@@ -655,8 +711,11 @@ export class SplitGrid<T = unknown> {
       // clear max, reindex. No new mutation work — the model edits
       // above already touched both sides.
       this.mutateStructure(pB);
-      this.emit('swap', pA, [idA, idB]);
-      this.emit('swap', pB, [idA, idB]);
+      // Single composed event covering both containers — the tuple
+      // shape on LayoutChangeEvent.containerId / sizes preserves the
+      // "one mutation, one event" contract that every other reason
+      // already follows.
+      this.emit('swap', [pA, pB], [idA, idB]);
     }
 
     this.log('swap', { idA, idB });
@@ -831,12 +890,24 @@ export class SplitGrid<T = unknown> {
     const { parent } = s;
 
     if (!parent) {
-      // The root has no parent container to rebalance against.
+      // Root has no parent container to rebalance against — no sibling
+      // sizes change — but the bounds patch is still persisted on the
+      // node, and subscribers persisting bounds via onChange need to
+      // see the event. Skip the rebalance, fire the emit.
+      if (isContainerState(s)) this.emit('set-bounds', s, [id]);
+
       this.log('setBounds: root', { id, bounds });
       return;
     }
 
-    this.prepareForLayoutOp(parent);
+    if (!this.prepareForLayoutOp(parent)) {
+      // Pre-measure / detached host: bounds patch is persisted on the
+      // node, but the rebalance/emit path runs against zero geometry and
+      // would store all-zero sizes. Skip silently; a later live op will
+      // pick up the fresh bounds.
+      this.log('setBounds: zero avail, deferred rebalance', { id, bounds });
+      return;
+    }
 
     const totalAxisPx = this.containerAxisPx(parent);
     const budget = this.pctBudgetPx(parent);
@@ -875,7 +946,7 @@ export class SplitGrid<T = unknown> {
 
     if (parent) {
       if (parent.max?.id === id) {
-        this.setSize(id, '100%', opts);
+        this.applySize(id, '100%', 'maximize', opts);
         return;
       }
 
@@ -887,7 +958,7 @@ export class SplitGrid<T = unknown> {
     }
 
     this.log('maximize', { id, containerId: parent?.node.id });
-    this.setSize(id, '100%', opts);
+    this.applySize(id, '100%', 'maximize', opts);
   }
 
   /**
@@ -908,7 +979,7 @@ export class SplitGrid<T = unknown> {
     }
 
     this.log('minimize', { id, containerId: parent?.node.id });
-    this.setSize(id, '0%', opts);
+    this.applySize(id, '0%', 'minimize', opts);
   }
 
   /**
@@ -1279,7 +1350,7 @@ export class SplitGrid<T = unknown> {
 
     // Freeze fr → pct first; otherwise the eventual restore would animate
     // between mismatched track shapes and flash the container background.
-    this.prepareForLayoutOp(p);
+    if (!this.prepareForLayoutOp(p)) return;
 
     // Restoring our own snapshot is just a regular swap-and-write.
     if (p.max?.id === id) {
@@ -1393,8 +1464,11 @@ export class SplitGrid<T = unknown> {
   getMaximizedIndex(containerId: string): number {
     const c = this.byId.get(containerId);
 
-    if (!c || !isContainerState(c) || !c.max) return -1;
-    return c.node.children.findIndex((child) => child.id === c.max!.id);
+    if (!c || !isContainerState(c)) return -1;
+
+    // Use the private O(1) helper — the maximized node's state already
+    // carries indexInParent, no need to scan children.
+    return this.findMaximizedIndex(c) ?? -1;
   }
 
   /**
@@ -1481,7 +1555,7 @@ export class SplitGrid<T = unknown> {
 
     if (!c || !isContainerState(c) || c.node.children.length < 2) return;
 
-    this.prepareForLayoutOp(c);
+    if (!this.prepareForLayoutOp(c)) return;
 
     const avail = c.availPx;
     const containerAxisPx = this.containerAxisPx(c);
@@ -1493,13 +1567,20 @@ export class SplitGrid<T = unknown> {
     const maxes = c.node.children.map(() => Number.POSITIVE_INFINITY);
     const sizesPx = distributeProportional(avail, weights, mins, maxes);
 
-    // Storage convention: pct of pctBudgetPx (not container). For an
-    // equalize on an all-pct container this lands at exactly `100/N` per
-    // child — sum to 100 — which is what users mean by "equalize" when
-    // they inspect c.sizes. The CSS pct emitted at writeTracks scales
-    // back down by budget/container so the rendered width is still
-    // `availPx/N` per panel. Px siblings keep their unit (see
-    // `sizesFromPx` docs for the bug class this defends against).
+    // Storage convention: pct of pctBudgetPx (not container).
+    //
+    //  - All-pct: each child stores exactly `100/N` pct — sum to 100.
+    //    Matches what users mean by "equalize" when they inspect c.sizes.
+    //  - Mixed: pct entries get `(100 - px share) / pctCount` each; the
+    //    pct portion still sums to (100 - sum-of-px-pct-equivalent).
+    //  - All-px: every entry stores `avail/N` px. The sum-to-100 pct
+    //    invariant is vacuous here (no pct entries to enforce); the
+    //    CSS-rendered widths are still equal at `availPx/N`.
+    //
+    // Px siblings keep their unit (see `sizesFromPx` docs for the bug
+    // class this defends against). The CSS pct emitted at writeTracks
+    // scales pct entries back down by budget/container so the rendered
+    // width is still `availPx/N` per panel regardless of mix.
     const units: StorageUnit[] = c.sizes.map(
       (sz) => (sz.unit === 'px' ? 'px' : 'pct'),
     );
@@ -1655,6 +1736,15 @@ export class SplitGrid<T = unknown> {
    */
   private applyTargetSize(parent: ContainerState, targetIdx: number, targetPx: number): void {
     const avail = parent.availPx;
+
+    // Pre-measure paths (detached host, display:none, called before the
+    // first rAF) leave availPx = 0. Without this guard, every weight is
+    // zero, distributeProportional returns zeros, sizesFromPx stores
+    // [0%, 0%, …] and writeTracks paints a collapsed grid. The op
+    // can't produce a meaningful result before geometry exists — bail
+    // and leave c.sizes intact for the next live measurement.
+    if (avail <= 0) return;
+
     const containerAxisPx = this.containerAxisPx(parent);
     const currentPx = measureChildrenPx(parent.el, parent.node.direction, parent.node.children.length, childElementAt,);
     // Mins/maxes resolve against containerAxisPx (matching CSS), NOT
@@ -1873,10 +1963,21 @@ export class SplitGrid<T = unknown> {
    * Always run together, always at the top of the op. Pulling this out
    * keeps the layout methods focused on their distinct logic and prevents
    * "forgot to call freezeFrTracks first" regressions.
+   *
+   * Returns `false` when geometry isn't usable (detached host, pre-measure,
+   * display:none parent — anything that lands `availPx` at 0). Callers
+   * should bail without mutating; running the layout math on a zero
+   * budget stores [0%, 0%, …] and paints a collapsed grid. The freeze
+   * step also needs a non-zero budget — `pxToPct(px, 0)` returns
+   * garbage — so we short-circuit before either side runs.
    */
-  private prepareForLayoutOp(c: ContainerState): void {
+  private prepareForLayoutOp(c: ContainerState): boolean {
     this.refreshAvail(c);
+
+    if (c.availPx <= 0) return false;
+
     this.freezeFrTracks(c);
+    return true;
   }
 
   /**
@@ -1962,16 +2063,43 @@ export class SplitGrid<T = unknown> {
    * `nodeIds` lists the nodes directly affected by this change — empty
    * means "every child of `containerId` was touched" (drag, equalize,
    * reset, set-direction).
+   *
+   * Pass a two-element tuple of containers (cross-parent swap) to fire a
+   * single composed event covering both containers; `containerId` and
+   * `sizes` on the event become tuples in the same positional order.
    */
-  private emit(reason: LayoutChangeReason, container: ContainerState, nodeIds: string[] = []): void {
-    const event: LayoutChangeEvent = {
-      containerId: container.node.id,
-      reason,
-      sizes: [...container.sizes],
-      nodeIds,
-    };
+  private emit(
+    reason: LayoutChangeReason,
+    container: ContainerState | readonly [ContainerState, ContainerState],
+    nodeIds: string[] = [],
+  ): void {
+    const event: LayoutChangeEvent = Array.isArray(container)
+      ? {
+          containerId: [container[0].node.id, container[1].node.id],
+          reason,
+          sizes: [[...container[0].sizes], [...container[1].sizes]],
+          nodeIds,
+        }
+      : {
+          containerId: (container as ContainerState).node.id,
+          reason,
+          sizes: [...(container as ContainerState).sizes],
+          nodeIds,
+        };
 
-    this.cfg.onChange?.(event);
+    // Both delivery paths get the same try/catch: a misbehaving
+    // consumer on one path shouldn't break the other (or block
+    // subsequent subscribers in the loop below). The cfg.onChange
+    // path used to run unwrapped, so a thrown error there aborted
+    // the rest of the emit before subscribers ran.
+    if (this.cfg.onChange) {
+      try {
+        this.cfg.onChange(event);
+      } catch (error) {
+        // eslint-disable-next-line no-console
+        console.error('[SplitGrid] cfg.onChange threw:', error);
+      }
+    }
 
     for (const sub of this.subscribers) {
       try {
@@ -2204,8 +2332,9 @@ export class SplitGrid<T = unknown> {
     if (this.rafScheduled) return;
 
     this.rafScheduled = true;
-    requestAnimationFrame(() => {
+    this.rafHandle = requestAnimationFrame(() => {
       this.rafScheduled = false;
+      this.rafHandle = null;
 
       if (!this.rootEl) return;
 

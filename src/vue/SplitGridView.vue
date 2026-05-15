@@ -146,13 +146,15 @@ const hostRef = useTemplateRef<HTMLDivElement>('hostRef');
 // share that same handle so queued listeners drain onto our grid on attach.
 // Otherwise create + register a fresh handle ourselves.
 const handle: SplitGridHandle<T> = (() => {
+  // Registry stores SplitGridHandle<unknown>; narrow at the lookup site.
+  // See useSplitGrid in handle.ts for the rationale (single boundary).
   const existing = registry.get(resolvedId) as SplitGridHandle<T> | undefined;
 
   if (existing) return existing;
 
   const fresh = createHandle<T>(resolvedId);
 
-  registry.set(resolvedId, fresh);
+  registry.set(resolvedId, fresh as SplitGridHandle<unknown>);
   return fresh;
 })();
 
@@ -408,18 +410,27 @@ function captureResizers(g: SplitGrid<T>): void {
  */
 function onLayoutChange(g: SplitGrid<T>, event: LayoutChangeEvent): void {
   const ids = new Set<string>();
+  // Cross-parent swap composes both containers into a single event;
+  // every other reason is single-container. Normalize at the boundary
+  // so the rest of this function treats them uniformly.
+  const containerIds = Array.isArray(event.containerId)
+    ? event.containerId
+    : [event.containerId];
 
-  ids.add(event.containerId);
+  for (const cid of containerIds) ids.add(cid);
 
   for (const id of event.nodeIds) ids.add(id);
 
-  const containerState = g.get(event.containerId);
   const isStructural = event.reason === 'add-child' || event.reason === 'remove-child'
     || event.reason === 'swap';
 
   if (event.nodeIds.length === 0 || isStructural) {
-    if (containerState && 'sizes' in containerState) {
-      for (const child of containerState.node.children) ids.add(child.id);
+    for (const cid of containerIds) {
+      const containerState = g.get(cid);
+
+      if (containerState && 'sizes' in containerState) {
+        for (const child of containerState.node.children) ids.add(child.id);
+      }
     }
   }
 
@@ -476,12 +487,24 @@ onMounted(() => {
     onChange: (event) => emit('change', event),
   });
 
+  // Pre-flight: attachHandle throws if another `<SplitGridView>` is
+  // already mounted under this id. We have to check BEFORE g.mount /
+  // g.subscribe — otherwise the losing wrapper installs DOM, a
+  // ResizeObserver, and a subscriber on a grid that onUnmounted never
+  // tears down (handle.instance points to the winning grid, not ours).
+  if (handle.instance) {
+    throw new Error(
+      `<SplitGridView id="${resolvedId}">: another <SplitGridView> is already `
+      + 'mounted under this id. Duplicate mount?',
+    );
+  }
+
   g.mount(hostRef.value);
   g.subscribe((event) => onLayoutChange(g, event));
 
   // Attach the handle: drains queued onChange/onReady listeners, exposes
   // panelStates for `handle.getPanelState`, flips `isReady` to true.
-  // Throws if another `<SplitGridView>` already mounted under this id.
+  // The pre-flight check above guarantees this doesn't throw.
   attachHandle(handle, g, { panelStates, resizerEntries, ownedResizers });
 
   rebuildAllPanelStates(g);
