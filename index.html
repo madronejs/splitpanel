@@ -3,19 +3,214 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Vite + TS</title>
+    <title>SplitGrid examples</title>
+    <style>
+      :root {
+        --bg: #f7f8fa;
+        --card: #ffffff;
+        --line: #d8dde6;
+        --text: #1a202c;
+        --muted: #5a6577;
+        --panel-bg: #f1f3f6;
+        --panel-bg-alt: #e7eaf0;
+        --bar: #c8ccd4;
+        --bar-active: #4f86ff;
+      }
+
+      html, body { margin: 0; height: auto; }
+      body {
+        font: 14px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+        color: var(--text);
+        background: var(--bg);
+      }
+
+      header {
+        padding: 28px 32px 20px;
+        background: var(--card);
+        border-bottom: 1px solid var(--line);
+        position: sticky;
+        top: 0;
+        z-index: 10;
+      }
+      header h1 { margin: 0 0 6px; font-size: 22px; letter-spacing: -0.01em; }
+      header p { margin: 0; max-width: 760px; color: var(--muted); }
+
+      main { padding: 24px 32px 80px; max-width: 1200px; }
+
+      section { margin-bottom: 36px; }
+      section h2 {
+        margin: 0 0 4px;
+        font-size: 15px;
+        letter-spacing: -0.005em;
+      }
+      section p.note { margin: 0 0 10px; color: var(--muted); font-size: 13px; }
+
+      .example {
+        height: 320px;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        overflow: hidden;
+        background: var(--card);
+      }
+      .example--tall { height: 480px; }
+      .example--short { height: 220px; }
+
+      /* Panels (leaf content). */
+      .sp-panel {
+        background: var(--panel-bg);
+        padding: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 600;
+        color: #2d3748;
+        text-align: center;
+        font-size: 13px;
+        overflow: hidden;
+      }
+      .sp-panel:nth-of-type(odd) { background: var(--panel-bg-alt); }
+
+      /*
+       * The library's default indicator (bar with hover-grow animation) lives
+       * in src/styles.css and is themed via CSS variables. We tint it to the
+       * page palette so the resizer reads against the white panel cards.
+       */
+      .sp-resizer { --sp-indicator-color: #2d3748; }
+      .sp-container[data-dragging] > .sp-resizer { --sp-indicator-color: #4f86ff; }
+    </style>
   </head>
   <body>
-    <div id="app"></div>
-    <script type="module" src="/main.tsx"></script>
+    <header>
+      <h1>SplitGrid examples</h1>
+      <p>
+        Drag any divider to resize — push-cascade kicks in once a neighbor hits its min.
+        Double-click a divider to maximize the panel closer to the layout edge; double-click again to restore.
+        Open the console for debug logs (on the IDE example).
+      </p>
+    </header>
 
-    <!-- <split-panel id="webc">
-      <div slot="resize:foo1">resize</div>
-      <div slot="item:foo1">hi there 1</div>
-      <div slot="resize:foo2">resize</div>
-      <div slot="item:foo2">hi there 2</div>
-      <div slot="item:foo3">hi there 3</div>
-      <div slot="item:foo4">hi there 4</div>
-    </split-panel> -->
+    <main>
+      <section>
+        <h2>1. IDE-style layout</h2>
+        <p class="note">
+          Three panels with mixed units. Sidebar has bounds <code>240px</code> default,
+          clamped to <code>160–400</code>. Middle is a nested column with an
+          auto-fill editor (<code>min 120px</code>) and a <code>30%</code> console.
+          Inspector starts at <code>20%</code> with <code>min 120px</code>.
+          Debug logs are on for this one — exposed as <code>window.ide</code>.
+        </p>
+        <div class="example" id="example-ide"></div>
+      </section>
+
+      <section>
+        <h2>2. Four panels, no constraints</h2>
+        <p class="note">
+          Every child is <code>auto</code> (<code>1fr</code>); no min or max.
+          Panels can collapse all the way to <code>0</code> — useful for seeing the
+          unconstrained default behavior.
+        </p>
+        <div class="example" id="example-fourfr"></div>
+      </section>
+
+      <section>
+        <h2>3. Vertical (column) layout</h2>
+        <p class="note">
+          Top toolbar fixed at <code>56px</code>, main area takes the rest,
+          bottom status bar fixed at <code>32px</code>.
+        </p>
+        <div class="example example--tall" id="example-vertical"></div>
+      </section>
+
+      <section>
+        <h2>4. Deep nesting</h2>
+        <p class="note">
+          Row → column → row, three levels deep. Each container manages its own grid;
+          dragging a divider only retracks its own container.
+        </p>
+        <div class="example example--tall" id="example-nested"></div>
+      </section>
+
+      <section>
+        <h2>5. Custom resizer rendering</h2>
+        <p class="note">
+          The <code>resizer.render</code> hook receives the divider element so the
+          consumer can style it freely. Here the divider is wider (<code>16px</code>),
+          dark, and shows a grip glyph.
+        </p>
+        <div class="example example--short" id="example-custom-resizer"></div>
+      </section>
+
+      <section>
+        <h2>6. Mixed units</h2>
+        <p class="note">
+          <code>200px</code> fixed + <code>auto</code> (fr) + <code>25%</code> +
+          <code>auto</code>. Demonstrates that fixed-px tracks stay put on container
+          resize while <code>auto</code> tracks absorb the change.
+        </p>
+        <div class="example" id="example-mixed"></div>
+      </section>
+
+      <section>
+        <h2>7. Custom resizer via Vue slot</h2>
+        <p class="note">
+          Uses the <code>&lt;SplitGridView&gt;</code> <code>#resizer</code>
+          scoped slot to render rich content inside each divider. Resizer
+          track is <code>28px</code> wide (vs the <code>6–8px</code> default),
+          and the slot receives <code>before</code> / <code>after</code>
+          references to the adjacent panel definitions — used here to label
+          each side. Drag still works because the slot content has
+          <code>pointer-events: none</code>; the wrapper's drag wiring
+          continues to own the actual resize gesture.
+        </p>
+        <div class="example example--short" id="example-vue-resizer"></div>
+      </section>
+
+      <section>
+        <h2>8. Dynamic add/remove (Vue wrapper)</h2>
+        <p class="note">
+          Backed by <code>&lt;SplitGridView&gt;</code> from
+          <code>@madronejs/splitpanel/vue</code>. The toolbar calls
+          <code>addChild</code> / <code>removeChild</code> on the component ref;
+          the <code>#leaf</code> scoped slot renders each panel's content
+          (including its own close button). Vue's reactivity flows through
+          <code>&lt;Teleport&gt;</code> into the leaf elements that SplitGrid
+          manages.
+        </p>
+        <div class="example example--tall" id="example-dynamic"></div>
+      </section>
+
+      <section>
+        <h2>9. Declarative tree (Vue components)</h2>
+        <p class="note">
+          The entire layout is written as
+          <code>&lt;SplitPanel&gt;</code> / <code>&lt;SplitContainer&gt;</code>
+          tags in the template — no imperative <code>addChild</code> calls.
+          Adding / removing tabs is a plain
+          <code>tabs.push(...)</code> / <code>filter(...)</code>;
+          <code>v-if</code> toggles the console and inspector. Each panel's
+          default slot is teleported into the SplitGrid-managed element, so
+          contents move with the panels. Most panels have no
+          <code>panel-id</code> — auto-generated from each component's uid.
+        </p>
+        <div class="example example--tall" id="example-declarative"></div>
+      </section>
+
+      <section>
+        <h2>10. Drag-drop reorder</h2>
+        <p class="note">
+          Pointer-event-based drag-drop via <code>configureDraggable</code>.
+          Grab a tile by its <code>⠿</code> handle and drop on another tile —
+          the default <code>onDrop</code> calls <code>swapData</code>, so the
+          tile contents swap while the slots stay anchored. Reactive flags
+          <code>panel.isDragging</code> / <code>panel.isDropTarget</code> off
+          the slot scope drive the visual feedback. A ghost element (cloned
+          from the source) follows the cursor — anchor / custom renderer
+          configurable via <code>ghostAnchor</code> and <code>ghostRender</code>.
+        </p>
+        <div class="example example--tall" id="example-draggable"></div>
+      </section>
+    </main>
+
+    <script type="module" src="/main.ts"></script>
   </body>
 </html>

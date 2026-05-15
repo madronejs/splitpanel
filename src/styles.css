@@ -1,0 +1,158 @@
+/*
+ * Minimal stylesheet for the grid-based split panel.
+ *
+ * Every container is a CSS Grid driven by a single `--sp-tracks` value. The
+ * browser handles all sizing, including min/max enforcement via `clamp()` in
+ * the track string. JS only writes `--sp-tracks`; no per-child variables.
+ *
+ * `[data-dragging]` disables the transition during pointer drag so the handle
+ * stays glued to the cursor; programmatic changes (setSize, toggleExpand,
+ * window resize) animate.
+ */
+
+.sp-container {
+  display: grid;
+  width: 100%;
+  height: 100%;
+  min-width: 0;
+  min-height: 0;
+  /*
+   * inOutQuart from the previous animejs-based animation: slow start,
+   * fast middle, slow end. Reads as deliberate motion rather than the
+   * "snappy" feel of the CSS `ease` default.
+   */
+  transition:
+    grid-template-columns var(--sp-anim-ms, 750ms) cubic-bezier(0.77, 0, 0.175, 1),
+    grid-template-rows    var(--sp-anim-ms, 750ms) cubic-bezier(0.77, 0, 0.175, 1);
+}
+
+.sp-container[data-direction="row"] {
+  grid-template-columns: var(--sp-tracks);
+  grid-auto-rows: 100%;
+}
+
+.sp-container[data-direction="column"] {
+  grid-template-rows: var(--sp-tracks);
+  grid-auto-columns: 100%;
+}
+
+/*
+ * Suppress the transition for one paint while the runtime is "freezing" any
+ * `fr` tracks to their resolved px-as-pct values. Without this freeze step,
+ * an animation that goes from `minmax(0, 1fr)` → `max(0px, 0%)` would jump
+ * discretely (different CSS function shapes don't smoothly interpolate),
+ * showing the container background through the gap mid-animation.
+ */
+.sp-container[data-dragging],
+.sp-container[data-no-animate] {
+  transition: none;
+  user-select: none;
+}
+
+.sp-panel,
+.sp-container .sp-container {
+  /* Grid items default to min-content; allow shrinking to track size. */
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.sp-resizer {
+  /* The resizer fills its track. Cursor & touch behavior live here. */
+  position: relative;
+  touch-action: none;
+  user-select: none;
+  /*
+   * Default track tint — faint blend of the surrounding text color, so
+   * the divider is visible against any background without the consumer
+   * having to plumb theme variables in. `color-mix` against currentColor
+   * adapts automatically to light/dark mode: dark text on light bg
+   * produces a faint dark tint; light text on dark bg produces a faint
+   * light tint. Override via the `--sp-resizer-bg` var (any valid CSS
+   * color or `transparent` to opt out entirely).
+   */
+  background-color: var(--sp-resizer-bg, color-mix(in oklab, currentColor 8%, transparent));
+  transition: background-color 200ms ease;
+}
+
+.sp-resizer:hover,
+.sp-container[data-dragging] > .sp-resizer {
+  background-color: var(--sp-resizer-bg-hover, color-mix(in oklab, currentColor 16%, transparent));
+}
+
+.sp-container[data-direction="row"] > .sp-resizer  { cursor: col-resize; }
+.sp-container[data-direction="column"] > .sp-resizer { cursor: row-resize; }
+
+/*
+ * Decorative leading/trailing resizers (resizer.first / resizer.last):
+ * no drag cursor, and the runtime doesn't append a `.sp-resizer-handle`
+ * to them — they're chrome that consumers paint into via the resizer slot.
+ */
+.sp-resizer--edge { cursor: default; }
+
+/*
+ * When the consumer teleports content into a resizer (via the wrapper's
+ * `#resizer` slot or a `<SplitPanel>`'s per-panel `#resizer` slot), the
+ * default handle gets in the way of their visuals. Detect "has consumer
+ * content" via `:has(> *:not(.sp-resizer-handle))` — the runtime-built
+ * handle is the only non-consumer child, so anything else means the user
+ * customized this divider. Hide the handle in that case; consumers
+ * wanting to keep both can override the rule.
+ */
+.sp-resizer:has(> *:not(.sp-resizer-handle)) > .sp-resizer-handle { display: none; }
+
+/*
+ * Default resize indicator — a faint bar centered in the divider that grows
+ * subtly on hover. A real DOM child (not a `::before` pseudo) so it can
+ * receive its own dblclick: clicking the handle equalizes the parent
+ * container; clicking the surrounding track toggles maximize/minimize on
+ * the adjacent panel. Every dimension and color is exposed as a CSS
+ * variable, so consumers can theme it without writing their own
+ * selectors. Override `display: none` on `.sp-resizer-handle` to opt out
+ * of the visuals entirely (the equalize-on-dblclick still fires).
+ */
+.sp-resizer-handle {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  translate: -50% -50%;
+  background: var(--sp-indicator-color, currentColor);
+  opacity: var(--sp-indicator-opacity, 0.15);
+  border-radius: var(--sp-indicator-radius, 1px);
+  transition:
+    opacity 120ms ease,
+    width 150ms ease,
+    height 150ms ease,
+    border-radius 150ms ease;
+}
+
+.sp-container[data-direction="row"] > .sp-resizer > .sp-resizer-handle {
+  width: var(--sp-indicator-thickness, 2px);
+  height: var(--sp-indicator-length, 24px);
+}
+
+.sp-container[data-direction="column"] > .sp-resizer > .sp-resizer-handle {
+  width: var(--sp-indicator-length, 24px);
+  height: var(--sp-indicator-thickness, 2px);
+}
+
+/* Hover and active-drag share the highlight state — keeps the indicator
+   from popping back to idle the moment the cursor leaves a resizer that's
+   currently being dragged. */
+.sp-resizer:hover > .sp-resizer-handle,
+.sp-container[data-dragging] > .sp-resizer > .sp-resizer-handle {
+  opacity: var(--sp-indicator-hover-opacity, 0.4);
+  border-radius: var(--sp-indicator-hover-radius, 2px);
+}
+
+.sp-container[data-direction="row"] > .sp-resizer:hover > .sp-resizer-handle,
+.sp-container[data-direction="row"][data-dragging] > .sp-resizer > .sp-resizer-handle {
+  width: var(--sp-indicator-hover-thickness, 4px);
+  height: var(--sp-indicator-hover-length, 48px);
+}
+
+.sp-container[data-direction="column"] > .sp-resizer:hover > .sp-resizer-handle,
+.sp-container[data-direction="column"][data-dragging] > .sp-resizer > .sp-resizer-handle {
+  width: var(--sp-indicator-hover-length, 48px);
+  height: var(--sp-indicator-hover-thickness, 4px);
+}
