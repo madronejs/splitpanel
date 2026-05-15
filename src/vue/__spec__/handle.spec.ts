@@ -172,10 +172,14 @@ describe('hook queue & drain', () => {
     grid.emit(baseEvent({ reason: 'equalize' }));
     grid.emit(baseEvent({ reason: 'reset' }));
     grid.emit(baseEvent({ reason: 'toggle-expand' }));
+    // maximize / minimize were extracted from 'set-size' but are still
+    // size changes — onResize listeners should see them.
+    grid.emit(baseEvent({ reason: 'maximize' }));
+    grid.emit(baseEvent({ reason: 'minimize' }));
     grid.emit(baseEvent({ reason: 'add-child' })); // structural — should NOT fire onResize
     grid.emit(baseEvent({ reason: 'set-data' })); // not a size change either
 
-    expect(cb).toHaveBeenCalledTimes(5);
+    expect(cb).toHaveBeenCalledTimes(7);
   });
 
   it('onStructural fires only for add/remove/swap', () => {

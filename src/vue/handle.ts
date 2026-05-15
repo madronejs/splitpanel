@@ -42,7 +42,7 @@ import type { PanelState, SplitGridContext } from './context';
 
 /** Reasons that count as a "resize" for `onResize`. */
 const RESIZE_REASONS = new Set<LayoutChangeEvent['reason']>([
-  'set-size', 'drag', 'equalize', 'reset', 'toggle-expand',
+  'set-size', 'drag', 'equalize', 'reset', 'toggle-expand', 'maximize', 'minimize',
 ]);
 
 /** Reasons that count as a "structural" change for `onStructural`. */
