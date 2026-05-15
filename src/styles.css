@@ -62,6 +62,22 @@
   position: relative;
   touch-action: none;
   user-select: none;
+  /*
+   * Default track tint — faint blend of the surrounding text color, so
+   * the divider is visible against any background without the consumer
+   * having to plumb theme variables in. `color-mix` against currentColor
+   * adapts automatically to light/dark mode: dark text on light bg
+   * produces a faint dark tint; light text on dark bg produces a faint
+   * light tint. Override via the `--sp-resizer-bg` var (any valid CSS
+   * color or `transparent` to opt out entirely).
+   */
+  background-color: var(--sp-resizer-bg, color-mix(in oklab, currentColor 8%, transparent));
+  transition: background-color 200ms ease;
+}
+
+.sp-resizer:hover,
+.sp-container[data-dragging] > .sp-resizer {
+  background-color: var(--sp-resizer-bg-hover, color-mix(in oklab, currentColor 16%, transparent));
 }
 
 .sp-container[data-direction="row"] > .sp-resizer  { cursor: col-resize; }
