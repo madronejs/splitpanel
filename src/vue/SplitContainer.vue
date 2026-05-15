@@ -43,10 +43,15 @@ const props = defineProps<{
   direction: PanelDirectionInput,
   /**
    * How this container sits inside its parent (min/max/size for the container
-   * itself). Different from the children's bounds.
+   * itself). Different from the children's bounds. Reactive — swap the prop
+   * to a new reference to retrigger the watcher; in-place mutation won't fire.
    */
   bounds?: Bounds,
-  /** Resizer spec applied to dividers between this container's children. */
+  /**
+   * Resizer spec applied to dividers between this container's children.
+   * Mount-time only — runtime changes are not propagated to the live grid
+   * (no setResizer in the core). Pass the desired spec at mount.
+   */
   resizer?: ResizerSpec,
 }>();
 
@@ -89,6 +94,13 @@ useChildRegistry<T>('SplitContainer', resolvedId, myDef);
 // prop's value calls setDirection on the live grid.
 watch(() => props.direction, (next) => {
   if (grid.instance) grid.setDirection(resolvedId, next);
+});
+
+// Bounds reactivity: shallow ref-equality, same convention as
+// <SplitGridView>. Swap the prop's value to a new reference (don't
+// mutate in place — watch won't fire).
+watch(() => props.bounds, (next) => {
+  if (grid.instance && next) grid.setBounds(resolvedId, next);
 });
 </script>
 

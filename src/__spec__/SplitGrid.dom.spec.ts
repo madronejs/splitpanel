@@ -828,6 +828,43 @@ describe('toggleExpand and expandNext/Prev', () => {
     expect(grid.isMaximized('c')).toBe(true);
   });
 
+  it('maximize() snapshots the post-freeze (pct) sizes, not fr', () => {
+    // Regression: maximize() used to snapshot c.sizes BEFORE
+    // prepareForLayoutOp (which freezes fr → pct), so the restore
+    // array on a fresh container persisted fr entries. The eventual
+    // toggleExpand-back wrote those fr entries into c.sizes; writeTracks
+    // then emitted `minmax(0, 1fr)` against a previously-pct track —
+    // the function-shape mismatch styles.css warns about, which
+    // flashes container background through the transition.
+    const grid = mount();
+    const root = grid.get('root');
+
+    if (!root || !('sizes' in root)) throw new Error('expected container');
+
+    // Fresh tree: bounds.size is unset on all children, so c.sizes
+    // is all fr after mount.
+    for (const sz of root.sizes) expect(sz.unit).toBe('fr');
+
+    grid.maximize('a');
+
+    // The snapshot lives on the parent's `max.restore`. With the fix,
+    // it must NOT contain fr entries.
+    const restore = (grid.get('root') as { max: { restore: Array<{ unit: string }> } | null })
+      .max?.restore;
+
+    expect(restore).toBeDefined();
+
+    for (const sz of restore!) expect(sz.unit).not.toBe('fr');
+
+    // Round-trip: toggleExpand-back writes restore into c.sizes. After
+    // the fix, c.sizes stays pct (no fr re-introduction).
+    grid.toggleExpand('a');
+
+    const after = (grid.get('root') as { sizes: Array<{ unit: string }> }).sizes;
+
+    for (const sz of after) expect(sz.unit).not.toBe('fr');
+  });
+
   it('expandPrev cycles backward and stops at the first child', () => {
     const grid = mount();
 
@@ -1330,6 +1367,31 @@ describe('getRawDefinition', () => {
     const a = def!.children!.find((c) => c.id === 'a')!;
 
     expect(a.bounds?.size).toBe('200px');
+  });
+
+  it('falls back to structure-only when the host has no measurable rect', () => {
+    // Regression: withCurrentSizes:true would call measureAxis on every
+    // child against a zero-rect host (pre-paint, detached, display:none),
+    // writing "0px" into every bounds.size — reconstruction produced a
+    // collapsed tree. Now: detect the zero-rect host and fall through
+    // to the no-sizes path so structure stays useful.
+    const grid = mount();
+
+    // Stub the rect to zero AFTER mount so layout has run but the next
+    // getRawDefinition call sees a zero-axis host.
+    Element.prototype.getBoundingClientRect = vi.fn(() => ({
+      x: 0, y: 0, top: 0, left: 0, right: 0, bottom: 0, width: 0, height: 0, toJSON: () => ({}),
+    } as DOMRect));
+
+    const def = grid.getRawDefinition()!;
+
+    expect(def).toBeDefined();
+
+    // No "0px" sizes leaked through — children come back without a
+    // baked-in bounds.size (or with whatever was originally defined).
+    for (const child of def.children ?? []) {
+      expect(child.bounds?.size).not.toBe('0px');
+    }
   });
 
   it('round-trips: rebuilding a grid from getRawDefinition produces matching ids', () => {

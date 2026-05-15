@@ -706,6 +706,17 @@ export class SplitGrid<T = unknown> {
         a.indexInParent = iB;
         b.parent = pA;
         b.indexInParent = iA;
+
+        // Clear BOTH maxes here, inside the single mutator. Without
+        // this, the second `mutateStructure(pB)` below would still
+        // see pB.max referencing an id whose node has just moved to
+        // pA — a stale window between the two mutateStructure calls.
+        // The window is fully synchronous today (no observer can
+        // read into it), but the contract is "max is cleared when
+        // the structural mutation completes," and the structural
+        // mutation is the swap, not the per-container bookkeeping.
+        pA.max = null;
+        pB.max = null;
       });
       // Second container's bookkeeping: detach + rebuild resizers,
       // clear max, reindex. No new mutation work — the model edits
@@ -868,6 +879,12 @@ export class SplitGrid<T = unknown> {
     if (!s) return;
 
     const current: Bounds = s.node.bounds ?? {};
+    // Object spread copies `undefined` values — passing `{ min: undefined }`
+    // CLEARS the existing min rather than leaving it untouched. That's
+    // the intended semantic (lets `<SplitPanel :min="maybeUndef" />` flip
+    // off the min when `maybeUndef` becomes undefined), but worth knowing
+    // if you're calling setBounds programmatically: omit the key to keep
+    // a field, pass `undefined` to clear it.
     const merged: Bounds = { ...current, ...bounds };
 
     // Reference-stable no-op: every field of `merged` matches `current`.
@@ -945,6 +962,17 @@ export class SplitGrid<T = unknown> {
     const parent = s?.parent;
 
     if (parent) {
+      // Freeze fr → pct BEFORE snapshotting. If c.sizes still holds fr
+      // entries (any container that hasn't had a layout op yet), the
+      // snapshot below would persist them; the eventual toggleExpand
+      // restore would write fr back into c.sizes and writeTracks would
+      // emit `minmax(0, 1fr)` against a previously-pct track — the
+      // function-shape mismatch styles.css:39-45 warns against, which
+      // flashes container background through the transition.
+      // prepareForLayoutOp is idempotent; applySize will call it again
+      // and that pass is a no-op for fr-freeze (everything is pct now).
+      if (!this.prepareForLayoutOp(parent)) return;
+
       if (parent.max?.id === id) {
         this.applySize(id, '100%', 'maximize', opts);
         return;
@@ -1654,6 +1682,16 @@ export class SplitGrid<T = unknown> {
 
     const withCurrentSizes = opts.withCurrentSizes !== false;
     const includeData = opts.includeData !== false;
+
+    // When withCurrentSizes is requested but the root has no measurable
+    // layout yet (post-mount, pre-first-paint, or a detached / display:none
+    // host), every measureAxis read returns 0 and every child's bounds.size
+    // ends up `0px` — reconstructing from that result produces a collapsed
+    // tree. Treat this as "not ready" and fall through to the no-sizes
+    // path; the structure is still useful.
+    if (withCurrentSizes && this.containerAxisPx(this.rootEl) <= 0) {
+      return this.getRawDefinition({ ...opts, withCurrentSizes: false });
+    }
 
     const cloneBounds = (b: Bounds | undefined): Bounds | undefined => (b ? { ...b } : undefined);
 

@@ -45,9 +45,16 @@ const props = defineProps<{
    * Application-defined payload exposed via slot scope / panelState. The
    * watcher is shallow — to update from outside, swap the prop's value
    * to a new reference (`tab.data = { ...tab.data, label: 'new' }`) rather
-   * than mutating in place. NEVER bind an inline object literal
-   * (`:data="{ ... }"`) — that creates a fresh reference every render and
-   * loops the watcher.
+   * than mutating in place.
+   *
+   * NEVER bind an inline object literal (`:data="{ ... }"`). Vue's shallow
+   * watcher fires on every parent render (each render produces a fresh
+   * reference), and each fire calls `grid.setData`, which emits a
+   * `set-data` event. The core's `Object.is` guard catches the same-ref
+   * no-op case, but inline literals never hit that path — they thrash
+   * subscribers, can trigger recursive-update warnings, and waste work.
+   * Bind a `ref` or `computed` instead so the reference is stable when
+   * nothing has actually changed.
    */
   data?: T,
 }>();
