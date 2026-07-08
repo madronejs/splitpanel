@@ -50,30 +50,30 @@
     "all": "pnpm build-types && pnpm lint && CI=true pnpm test"
   },
   "devDependencies": {
-    "@eslint/compat": "~2.0.5",
+    "@eslint/compat": "~2.1.0",
     "@eslint/eslintrc": "~3.3.5",
     "@eslint/js": "~10.0.1",
     "@stylistic/eslint-plugin": "~5.10.0",
-    "@typescript-eslint/eslint-plugin": "^8.58.1",
-    "@typescript-eslint/parser": "^8.58.1",
-    "@vitejs/plugin-vue": "^6.0.4",
-    "@vitejs/plugin-vue-jsx": "^5.1.4",
-    "@vitest/browser": "^4.1.6",
-    "@vitest/browser-playwright": "^4.1.6",
-    "@vue/test-utils": "^2.4.10",
-    "eslint": "~10.2.0",
+    "@typescript-eslint/eslint-plugin": "^8.63.0",
+    "@typescript-eslint/parser": "^8.63.0",
+    "@vitejs/plugin-vue": "^6.0.7",
+    "@vitejs/plugin-vue-jsx": "^5.1.6",
+    "@vitest/browser": "^4.1.10",
+    "@vitest/browser-playwright": "^4.1.10",
+    "@vue/test-utils": "^2.4.11",
+    "eslint": "~10.6.0",
     "eslint-plugin-import": "^2.32.0",
     "eslint-plugin-unicorn": "^64.0.0",
     "fast-check": "^4.8.0",
-    "globals": "~17.5.0",
-    "happy-dom": "^20.9.0",
-    "playwright": "^1.60.0",
-    "tsc-alias": "^1.8.16",
+    "globals": "~17.7.0",
+    "happy-dom": "^20.10.6",
+    "playwright": "^1.61.1",
+    "tsc-alias": "^1.9.0",
     "typescript": "^6.0.2",
-    "typescript-eslint": "8.58.1",
-    "vite": "^7.3.1",
-    "vitest": "^4.1.4",
-    "vue-tsc": "^3.2.6"
+    "typescript-eslint": "8.63.0",
+    "vite": "^7.3.5",
+    "vitest": "^4.1.10",
+    "vue-tsc": "^3.3.6"
   },
   "peerDependencies": {
     "vue": "^3.5.12"
@@ -85,23 +85,7 @@
   },
   "engines": {
     "node": "^22.14 || ^24.14",
-    "pnpm": ">= 10"
+    "pnpm": ">= 11"
   },
-  "packageManager": "pnpm@10.33.0",
-  "comment": "overrides should be reviewed and removed when dependent packages are updated",
-  "pnpm": {
-    "overrides": {
-      "mimimatch": ">9.0.7",
-      "rollup": "4.59.0",
-      "semver": ">=7.7.3"
-    },
-    "ignoredOptionalDependencies": [
-      "less",
-      "lightningcss",
-      "sass",
-      "sass-embedded",
-      "stylus",
-      "sugarss"
-    ]
-  }
+  "packageManager": "pnpm@11.10.0"
 }
