@@ -1,0 +1,79 @@
+name: "Validate PR"
+
+permissions:
+  contents: read
+
+on:
+  workflow_dispatch:
+  pull_request:
+    types:
+      - opened
+      - reopened
+      - edited
+      - synchronize
+      - ready_for_review
+    branches:
+      - main
+      - 'release*/**'
+
+jobs:
+  lint-test:
+    name: Lint & Test Code
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout the commit
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install pnpm
+        id: pnpm-install
+        shell: bash
+        run: |
+          corepack enable
+          echo "pnpm_cache_dir=$(pnpm store path)" >> "$GITHUB_OUTPUT"
+
+      - name: Setup pnpm cache
+        uses: actions/cache@v4
+        with:
+          path: ${{ steps.pnpm-install.outputs.pnpm_cache_dir }}
+          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-store-
+
+      - name: Install dependencies
+        shell: bash
+        run: pnpm install --frozen-lockfile
+
+      - name: ESLint
+        shell: bash
+        run: pnpm lint
+
+      # The test run includes the Playwright browser project; the Chromium
+      # binary isn't on the runner by default. Cache the binary across PR
+      # runs, keyed on the lockfile so a Playwright bump refetches it.
+      - name: Cache Playwright browsers
+        id: playwright-cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: ${{ runner.os }}-playwright-${{ hashFiles('pnpm-lock.yaml') }}
+
+      - name: Install Playwright Chromium
+        shell: bash
+        run: |
+          if [ "${{ steps.playwright-cache.outputs.cache-hit }}" = "true" ]; then
+            pnpm exec playwright install-deps chromium   # binary cached; just OS libs
+          else
+            pnpm exec playwright install --with-deps chromium
+          fi
+
+      - name: 'Unit Tests with Coverage'
+        shell: bash
+        run: CI=true pnpm test
