@@ -24,30 +24,13 @@ jobs:
         with:
           fetch-depth: 0
 
+      # Node 24 bundles npm >= 11.5.1, which trusted publishing (OIDC) requires.
       - uses: actions/setup-node@v4
         with:
-          node-version: 22
+          node-version: 24
           registry-url: https://registry.npmjs.org
 
-      - run: corepack enable
-
-      - run: pnpm install --frozen-lockfile
-
-      # Trusted publishing (OIDC) needs npm >= 11.5.1; Node 22 ships npm 10.x.
-      - name: Upgrade npm for trusted publishing
-        run: npm install -g npm@latest
-
-      # `pnpm all` runs the Playwright browser project; the Chromium binary
-      # isn't on the runner by default.
-      - name: Install Playwright Chromium
-        run: pnpm exec playwright install --with-deps chromium
-
-      - name: Verify
-        run: pnpm all   # build-types + lint + test (node + browser)
-
-      - name: Build artifacts
-        run: pnpm build-all
-
+      # Fail fast before install/build/test if this version is already on npm.
       - name: Guard against republishing an existing version
         run: |
           NAME=$(node -p "require('./package.json').name")
@@ -56,6 +39,18 @@ jobs:
             echo "::error::$NAME@$VER is already published"; exit 1
           fi
           echo "VER=$VER" >> "$GITHUB_ENV"
+
+      - run: corepack enable
+
+      - run: pnpm install --frozen-lockfile
+
+      # Browser tests already ran on the PR (validate-pr.yml) and a version
+      # bump can't change rendering — skip them and the Chromium download here.
+      - name: Verify
+        run: pnpm build-types && pnpm lint && CI=true pnpm test:node
+
+      - name: Build artifacts
+        run: pnpm build-all
 
       - name: Publish (dry run)
         if: ${{ inputs.dry_run }}
