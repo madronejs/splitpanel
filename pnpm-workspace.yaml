@@ -1,10 +1,10 @@
-onlyBuiltDependencies:
-  - '@parcel/watcher'
-
-approveBuilds: esbuild
+allowBuilds:
+  esbuild: true
 
 minimumReleaseAge: 1440
 
-minimumReleaseAgeExclude: null
-
 trustPolicy: no-downgrade
+
+# overrides should be reviewed and removed when dependent packages are updated
+overrides:
+  semver: '>=7.7.3'
