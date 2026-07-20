@@ -1,8 +1,19 @@
 {
   "name": "@madronejs/splitpanel",
   "version": "0.2.1",
+  "description": "CSS-Grid-driven split-panel runtime with a framework-free core and an optional Vue 3 wrapper.",
   "private": false,
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/madronejs/splitpanel.git"
+  },
+  "bugs": {
+    "url": "https://github.com/madronejs/splitpanel/issues"
+  },
+  "publishConfig": {
+    "registry": "https://registry.npmjs.org/"
+  },
   "type": "module",
   "files": [
     "dist/*.js",
