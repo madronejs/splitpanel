@@ -57,6 +57,42 @@ function mountView(slot: string) {
   });
 }
 
+// Three panels so a moveData has a slot in the middle to shift data past.
+function mountThreeWithResizer() {
+  return mount(SplitGridView, {
+    props: {
+      id: 'root',
+      direction: PanelDirection.Row,
+      children: [
+        { id: 'a', data: { label: 'A' } },
+        { id: 'b', data: { label: 'B' } },
+        { id: 'c', data: { label: 'C' } },
+      ],
+    },
+    attachTo: document.body,
+    slots: {
+      leaf: '<div :data-test="panel.id">{{ panel.data?.label ?? "" }}</div>',
+      resizer: `
+        <div :data-resizer-test="resizer.index"
+             :data-before-label="resizer.beforeData?.label ?? ''"
+             :data-after-label="resizer.afterData?.label ?? ''">
+          ::
+        </div>
+      `,
+    },
+  });
+}
+
+function resizerLabels(index: number) {
+  const el = document.querySelector(`[data-resizer-test="${index}"]`) as HTMLElement;
+
+  return { before: el?.dataset.beforeLabel, after: el?.dataset.afterLabel };
+}
+
+function leafLabel(id: string) {
+  return (document.querySelector(`[data-test="${id}"]`) as HTMLElement)?.textContent?.trim();
+}
+
 describe('reactive #leaf slot scope', () => {
   it('exposes id, data, isMaximized, isAtDefault on the slot prop', async () => {
     // `data-test` rather than `data-id` because SplitGrid puts `data-id` on
@@ -630,6 +666,75 @@ describe('ResizerState: beforeData / afterData', () => {
     expect(resizer).toBeTruthy();
     expect(resizer.dataset.beforeLabel).toBe('A-data');
     expect(resizer.dataset.afterLabel).toBe('B-data');
+
+    wrapper.unmount();
+  });
+
+  // A resizer's neighbors are slots, so anything that moves data BETWEEN
+  // slots changes what the divider sits between — even though the tree
+  // itself is untouched. `swap` (a structural move) already refreshed;
+  // the data-only ops have to as well.
+  it('refreshes the #resizer slot scope after moveData', async () => {
+    const wrapper = mountThreeWithResizer();
+
+    await nextTick();
+    await nextTick();
+
+    // [A, B, C] → move A into C's slot → data becomes a:B, b:C, c:A.
+    useSplitGrid('root').moveData('a', 'c');
+    await nextTick();
+
+    expect(resizerLabels(1)).toEqual({ before: 'B', after: 'C' });
+    expect(resizerLabels(2)).toEqual({ before: 'C', after: 'A' });
+
+    wrapper.unmount();
+  });
+
+  it('refreshes the #resizer slot scope after swapData', async () => {
+    const wrapper = mountThreeWithResizer();
+
+    await nextTick();
+    await nextTick();
+
+    // Slots stay put and the payloads trade places: a holds B, b holds A.
+    useSplitGrid('root').swapData('a', 'b');
+    await nextTick();
+
+    expect(resizerLabels(1)).toEqual({ before: 'B', after: 'A' });
+    expect(resizerLabels(2)).toEqual({ before: 'A', after: 'C' });
+
+    wrapper.unmount();
+  });
+
+  it('refreshes the #resizer slot scope after setData', async () => {
+    const wrapper = mountThreeWithResizer();
+
+    await nextTick();
+    await nextTick();
+
+    useSplitGrid('root').setData('b', { label: 'B-renamed' });
+    await nextTick();
+
+    expect(resizerLabels(1)).toEqual({ before: 'A', after: 'B-renamed' });
+    expect(resizerLabels(2)).toEqual({ before: 'B-renamed', after: 'C' });
+
+    wrapper.unmount();
+  });
+
+  // moveData shifts data through every slot between source and target, so
+  // the panels in the middle change too — not just the two named ids.
+  it('refreshes intermediate panels when moveData shifts data past them', async () => {
+    const wrapper = mountThreeWithResizer();
+
+    await nextTick();
+    await nextTick();
+
+    useSplitGrid('root').moveData('a', 'c');
+    await nextTick();
+
+    expect(leafLabel('a')).toBe('B');
+    expect(leafLabel('b')).toBe('C');
+    expect(leafLabel('c')).toBe('A');
 
     wrapper.unmount();
   });

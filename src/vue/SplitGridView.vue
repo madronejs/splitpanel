@@ -401,6 +401,31 @@ function captureResizers(g: SplitGrid<T>): void {
 }
 
 /**
+ * Re-derive only the `beforeData` / `afterData` fields of the resizers
+ * adjacent to `ids`. The tree shape is untouched by a data mutation, so
+ * there's nothing to re-query from the DOM — and refreshing just the
+ * affected entries keeps a single panel's data change from invalidating
+ * every resizer slot in the container.
+ */
+function refreshResizerData(ids: Set<string>): void {
+  for (const [key, entry] of resizerEntries) {
+    const { before, after } = entry.state;
+    const touched = (before && ids.has(before.id)) || (after && ids.has(after.id));
+
+    if (!touched) continue;
+
+    resizerEntries.set(key, {
+      el: entry.el,
+      state: {
+        ...entry.state,
+        beforeData: before && !('children' in before) ? (before as Leaf<T>).data : undefined,
+        afterData: after && !('children' in after) ? (after as Leaf<T>).data : undefined,
+      },
+    });
+  }
+}
+
+/**
  * Translate a single `onChange` event into Vue-reactive map updates. Events
  * with explicit `nodeIds` refresh just those entries; events with empty
  * nodeIds (drag / equalize / reset / set-direction) refresh every child of
@@ -423,6 +448,11 @@ function onLayoutChange(g: SplitGrid<T>, event: LayoutChangeEvent): void {
 
   const isStructural = event.reason === 'add-child' || event.reason === 'remove-child'
     || event.reason === 'swap';
+  // Data-only mutations leave the tree alone, but a resizer's slot scope
+  // reports the data on either side of it — so those payloads go stale
+  // exactly like a structural move's would.
+  const isDataChange = event.reason === 'move-data' || event.reason === 'swap-data'
+    || event.reason === 'set-data';
 
   if (event.nodeIds.length === 0 || isStructural) {
     for (const cid of containerIds) {
@@ -444,6 +474,8 @@ function onLayoutChange(g: SplitGrid<T>, event: LayoutChangeEvent): void {
       for (const id of event.nodeIds) leafEntries.delete(id);
     }
     captureResizers(g);
+  } else if (isDataChange) {
+    refreshResizerData(ids);
   }
 }
 

@@ -477,6 +477,14 @@ the same `dist/splitpanel.css` (Vite's `cssFileName: 'splitpanel'`).
   affected container(s) — `handleIdx` closures would otherwise be
   stale. `mutateStructure` does this for you; just route new
   structural ops through it.
+- **A resizer's slot scope reports its neighbors' data.** `beforeData` /
+  `afterData` are snapshots taken when the entry is built, so data-only
+  ops (`moveData` / `swapData` / `setData`) have to refresh the adjacent
+  resizer entries as well as the panel states — the tree shape staying
+  put doesn't mean the slot scope is still accurate. And an op that
+  shifts data across a range of slots must report every id in that
+  range in `nodeIds`, or the panels in between keep rendering stale
+  payloads.
 
 ## File map
 

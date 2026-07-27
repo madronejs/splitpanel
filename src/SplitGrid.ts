@@ -840,7 +840,14 @@ export class SplitGrid<T = unknown> {
 
     for (const [i, child] of ordered.entries()) (child as Leaf<T>).data = data[i];
 
-    this.emit('move-data', parent, [sourceId, targetId]);
+    // Every slot between source and target took on a new payload, not just
+    // the two endpoints — subscribers filter on nodeIds, so under-reporting
+    // here leaves the panels in between rendering stale data.
+    const shifted = ordered
+      .slice(Math.min(srcIdx, tgtIdx), Math.max(srcIdx, tgtIdx) + 1)
+      .map((child) => child.id);
+
+    this.emit('move-data', parent, shifted);
     this.log('moveData', { sourceId, targetId });
   }
 
