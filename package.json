@@ -1,6 +1,6 @@
 {
   "name": "@madronejs/splitpanel",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "description": "CSS-Grid-driven split-panel runtime with a framework-free core and an optional Vue 3 wrapper.",
   "private": false,
   "license": "MIT",

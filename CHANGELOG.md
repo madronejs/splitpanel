@@ -7,10 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.2] - 2026-07-28
+
 ### Fixed
 
 - **`#resizer` slot scope now follows data mutations.** `beforeData` / `afterData` were only re-derived after structural changes (`add-child` / `remove-child` / `swap`), so a `moveData`, `swapData`, or `setData` left every divider reporting its pre-mutation neighbors — a label rendered from the slot scope would stay attached to the wrong panel.
 - **`moveData` reports every slot it shifted.** The emitted `nodeIds` named only the source and target, but the op shifts data through all the slots between them, so subscribers filtering on `nodeIds` (including the Vue wrapper's panel-state refresh) left the panels in between rendering stale data.
+
+### Added
+
+- **Package metadata**: `repository`, `bugs`, and `keywords`, so the npm page links back to the source and issue tracker.
+
+## [0.2.1] - 2026-07-14
+
+Release-pipeline shakedown, no source changes. First version published through the trusted-publishing workflow with npm provenance.
 
 ## [0.2.0] - 2026-05-14
 
