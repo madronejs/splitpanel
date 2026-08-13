@@ -84,13 +84,13 @@ function mountThreeWithResizer() {
 }
 
 function resizerLabels(index: number) {
-  const el = document.querySelector(`[data-resizer-test="${index}"]`) as HTMLElement;
+  const el = document.querySelector(`[data-resizer-test="${CSS.escape(String(index))}"]`) as HTMLElement;
 
   return { before: el?.dataset.beforeLabel, after: el?.dataset.afterLabel };
 }
 
 function leafLabel(id: string) {
-  return (document.querySelector(`[data-test="${id}"]`) as HTMLElement)?.textContent?.trim();
+  return (document.querySelector(`[data-test="${CSS.escape(id)}"]`) as HTMLElement)?.textContent?.trim();
 }
 
 describe('reactive #leaf slot scope', () => {
