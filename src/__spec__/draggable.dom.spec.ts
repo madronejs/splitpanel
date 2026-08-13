@@ -58,7 +58,7 @@ function mount() {
 }
 
 function panelEl(id: string): HTMLElement {
-  return host.querySelector(`.sp-panel[data-id="${id}"]`) as HTMLElement;
+  return host.querySelector(`.sp-panel[data-id="${CSS.escape(id)}"]`) as HTMLElement;
 }
 
 /**

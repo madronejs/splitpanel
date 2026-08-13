@@ -30,7 +30,7 @@ beforeEach(() => {
 });
 
 afterEach(() => {
-  document.body.innerHTML = '';
+  document.body.replaceChildren();
 
   // Tests share id="root" — drop the registry handle so the next test
   // starts clean (no carry-over queued listeners or stale handles).

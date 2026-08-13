@@ -16,8 +16,8 @@ function container(mins: Array<LengthInput | undefined>, maxes: Array<LengthInpu
     children: mins.map((min, i) => ({
       id: `c${i}`,
       bounds: {
-        ...(min == null ? {} : { min }),
-        ...(maxes[i] == null ? {} : { max: maxes[i] }),
+        ...(min != null && { min }),
+        ...(maxes[i] != null && { max: maxes[i] }),
       },
     })),
   };

@@ -102,23 +102,33 @@ function assertFitsContainer(ops: Op[]): void {
         break;
       }
       case 'maximize': {
-        if (ids[op.panel]) grid.maximize(ids[op.panel], opts);
+        const id = ids.at(op.panel);
+
+        if (id) grid.maximize(id, opts);
         break;
       }
       case 'minimize': {
-        if (ids[op.panel]) grid.minimize(ids[op.panel], opts);
+        const id = ids.at(op.panel);
+
+        if (id) grid.minimize(id, opts);
         break;
       }
       case 'setSize': {
-        if (ids[op.panel]) grid.setSize(ids[op.panel], `${op.pct}%`, opts);
+        const id = ids.at(op.panel);
+
+        if (id) grid.setSize(id, `${op.pct}%`, opts);
         break;
       }
       case 'setBoundsMin': {
-        if (ids[op.panel]) grid.setBounds(ids[op.panel], { min: `${op.pct}%` }, opts);
+        const id = ids.at(op.panel);
+
+        if (id) grid.setBounds(id, { min: `${op.pct}%` }, opts);
         break;
       }
       case 'remove': {
-        if (ids[op.panel] && ids.length > 1) grid.removeChild(ids[op.panel]);
+        const id = ids.at(op.panel);
+
+        if (id && ids.length > 1) grid.removeChild(id);
         break;
       }
       case 'add': {

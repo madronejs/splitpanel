@@ -79,7 +79,7 @@ export function dragHandle(
   const immediate = growStart;
   const immMaxRaw = c.children[immediate].bounds?.max;
   const immMax = immMaxRaw == null
-    ? Number.POSITIVE_INFINITY
+    ? Infinity
     : toPx(parseLength(immMaxRaw), containerAxisPx);
   // Read immMin alongside immMax so the apply step can floor the
   // immediate at its declared min. Without this, a small reverse drag

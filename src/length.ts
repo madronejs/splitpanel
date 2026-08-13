@@ -108,7 +108,7 @@ export function toPx(l: Length, denomPx: PctDenomPx): number {
   if (l.unit === 'px') return l.value;
 
   if (l.unit === 'pct') return (l.value / 100) * denomPx;
-  return Number.NaN;
+  return NaN;
 }
 
 /** Convert a px value to a percent of the given denom. */

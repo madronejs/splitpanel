@@ -25,7 +25,6 @@ export function trackForChild(node: Node, current?: Length): string {
   const bounds: Bounds = (node as { bounds?: Bounds }).bounds ?? {};
   const size = current ?? parseLength(bounds.size);
   const min = parseLength(bounds.min, ZERO);
-  const max = bounds.max == null ? undefined : parseLength(bounds.max);
 
   if (size.unit === 'fr') {
     // Flex-fill: emit `minmax(min, 1fr)` unconditionally. Switching to
@@ -37,6 +36,8 @@ export function trackForChild(node: Node, current?: Length): string {
     // should use an explicit pct/px size with `bounds.max`.
     return `minmax(${formatLength(min)}, 1fr)`;
   }
+
+  const max = bounds.max == null ? undefined : parseLength(bounds.max);
 
   if (max) {
     return `clamp(${formatLength(min)}, ${formatLength(size)}, ${formatLength(max)})`;

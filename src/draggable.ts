@@ -122,7 +122,7 @@ function defaultGhostRender<T>(ctx: GhostContext<T>): HTMLElement {
 }
 
 function clampDim(value: number, min?: number, max?: number): number {
-  return Math.max(min ?? 0, Math.min(max ?? Number.POSITIVE_INFINITY, value));
+  return Math.max(min ?? 0, Math.min(max ?? Infinity, value));
 }
 
 function panelIdAt(event: PointerEvent | { target: EventTarget | null }): string | null {
