@@ -1,5 +1,5 @@
 {
-  "@eslint/compat": "https://github.com/eslint/compat/releases",
+  "@eslint/compat": "https://github.com/eslint/rewrite/releases",
   "@eslint/eslintrc": "https://github.com/eslint/eslintrc/releases",
   "@eslint/js": "https://github.com/eslint/js/releases",
   "@stylistic/eslint-plugin": "https://github.com/eslint-stylistic/eslint-stylistic/releases",
@@ -7,7 +7,11 @@
   "@typescript-eslint/parser": "https://github.com/typescript-eslint/typescript-eslint/releases",
   "@vitejs/plugin-vue": "https://github.com/vitejs/vite-plugin-vue/releases",
   "@vitejs/plugin-vue-jsx": "https://github.com/vitejs/vite-plugin-vue-jsx/releases",
+  "@vitest/browser": "https://github.com/vitest-dev/vitest/releases",
+  "@vitest/browser-playwright": "https://github.com/vitest-dev/vitest/releases",
+  "@vue/test-utils": "https://github.com/vuejs/test-utils/releases",
   "eslint": "https://github.com/eslint/eslint/releases",
+  "eslint-plugin-import": "https://github.com/import-js/eslint-plugin-import/releases",
   "eslint-plugin-unicorn": "https://github.com/sindresorhus/eslint-plugin-unicorn/releases",
   "fast-check": "https://github.com/dubzzz/fast-check/releases",
   "globals": "https://github.com/sindresorhus/globals/releases",
