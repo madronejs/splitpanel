@@ -203,9 +203,34 @@ export default [
     'unicorn/no-array-sort': 'off',
     'unicorn/no-null': 'off',
     'unicorn/no-useless-undefined': 'off',
-    'unicorn/prevent-abbreviations': 'off',
+    'unicorn/name-replacements': 'off',
     'unicorn/no-this-assignment': 'off',
     'unicorn/prefer-dom-node-remove': 'off',
+
+    // Single-line TSDoc is the house style; see CLAUDE.md.
+    'unicorn/single-line-block-comment-style': 'off',
+    // Flags the standard swap idiom `[a[i], a[j]] = [a[j], a[i]]`.
+    'unicorn/no-unreadable-array-destructuring': 'off',
+    // `beforeEach(() => { host = ... })` is the test setup pattern here.
+    'unicorn/no-top-level-assignment-in-function': 'off',
+    // Extracting a function per `break` hurts the property-test loops.
+    'unicorn/no-break-in-nested-loop': 'off',
+    // Would rename public option fields such as `includeData`.
+    'unicorn/consistent-boolean-name': 'off',
+    'unicorn/consistent-class-member-order': 'off',
+    // Explicit `globalThis` is deliberate in the DOM-stub tests.
+    'unicorn/no-unnecessary-global-this': 'off',
+    // Conflicts with `no-continue`, which airbnb enables above.
+    'unicorn/prefer-continue': 'off',
+    // Fires on `node.children`, the tree node array — not a DOM collection.
+    'unicorn/better-dom-traversing': 'off',
+    // The settle() tests hold a pending promise on purpose to assert it
+    // has not resolved yet; `await` would defeat them.
+    'unicorn/prefer-await': 'off',
+    // `Iterator#toArray` needs lib esnext.iterator; tsconfig targets ES2022.
+    'unicorn/prefer-iterator-to-array': 'off',
+    // happy-dom's selector engine is fragile; the plain selectors work.
+    'unicorn/prefer-scoped-selector': 'off',
   },
   },
 ];

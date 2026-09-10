@@ -30,7 +30,7 @@ beforeEach(() => {
 });
 
 afterEach(() => {
-  document.body.innerHTML = '';
+  document.body.replaceChildren();
 
   // Tests share id="root" — drop the registry handle so the next test
   // starts clean (no carry-over queued listeners or stale handles).
@@ -298,9 +298,9 @@ describe('auto-generated ids', () => {
 });
 
 describe('reactive props', () => {
-  // Shared parent factory: captures the grid instance from @ready so tests
-  // can read node state without dancing through `findComponent(...).vm`,
-  // which doesn't auto-unwrap defineExpose refs the same way.
+  // Shared parent factory: `@ready` hands over the SplitGrid itself, so tests
+  // read core node state directly instead of reaching through the wrapper's
+  // exposed handle.
   type GridLike = { get: (id: string) => { node: Record<string, unknown> } | undefined };
 
   function makeParent(template: string, extras: Record<string, unknown>) {

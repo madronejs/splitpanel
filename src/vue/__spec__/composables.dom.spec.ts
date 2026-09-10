@@ -32,7 +32,7 @@ beforeEach(() => {
 });
 
 afterEach(() => {
-  document.body.innerHTML = '';
+  document.body.replaceChildren();
 
   // Handles are durable in the registry; clear between tests so duplicate
   // ids don't clash and queued listeners from one test don't bleed into
@@ -84,13 +84,13 @@ function mountThreeWithResizer() {
 }
 
 function resizerLabels(index: number) {
-  const el = document.querySelector(`[data-resizer-test="${index}"]`) as HTMLElement;
+  const el = document.querySelector(`[data-resizer-test="${CSS.escape(String(index))}"]`) as HTMLElement;
 
   return { before: el?.dataset.beforeLabel, after: el?.dataset.afterLabel };
 }
 
 function leafLabel(id: string) {
-  return (document.querySelector(`[data-test="${id}"]`) as HTMLElement)?.textContent?.trim();
+  return (document.querySelector(`[data-test="${CSS.escape(id)}"]`) as HTMLElement)?.textContent?.trim();
 }
 
 describe('reactive #leaf slot scope', () => {
@@ -321,7 +321,7 @@ describe('draggable prop + reactive drag state', () => {
     await nextTick();
 
     for (const id of ['a', 'b']) {
-      const el = document.querySelector(`[data-test="${id}"]`) as HTMLElement;
+      const el = document.querySelector(`[data-test="${CSS.escape(id)}"]`) as HTMLElement;
 
       expect(el.dataset.dragging).toBe('false');
       expect(el.dataset.droptarget).toBe('false');
@@ -481,7 +481,9 @@ describe('PanelState slot-scope methods', () => {
     // via the handle for the 'change' event with reason 'equalize'.
     const events: Array<{ reason: string }> = [];
 
-    grid.onChange((e) => events.push({ reason: e.reason }));
+    grid.onChange((e) => {
+      events.push({ reason: e.reason });
+    });
     captured!.value!.equalize();
     expect(events.some((e) => e.reason === 'equalize')).toBe(true);
   });
@@ -497,7 +499,7 @@ describe('PanelState isDropZone', () => {
     await nextTick();
 
     for (const id of ['a', 'b']) {
-      const el = document.querySelector(`[data-test="${id}"]`) as HTMLElement;
+      const el = document.querySelector(`[data-test="${CSS.escape(id)}"]`) as HTMLElement;
 
       expect(el.dataset.zone).toBe('false');
     }

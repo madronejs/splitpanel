@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { distributeProportional } from '../distribute';
 
-const INF = Number.POSITIVE_INFINITY;
+const INF = Infinity;
 
 const sum = (arr: readonly number[]): number => arr.reduce((a, b) => a + b, 0);
 

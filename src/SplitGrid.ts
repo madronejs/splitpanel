@@ -233,7 +233,7 @@ function clampToBounds(
 ): number {
   const min = toPx(parseLength(bounds?.min, { unit: 'px', value: 0 }), containerAxisPx);
   const max = bounds?.max == null
-    ? Number.POSITIVE_INFINITY
+    ? Infinity
     : toPx(parseLength(bounds.max), containerAxisPx);
 
   return Math.max(min, Math.min(max, px));
@@ -264,7 +264,7 @@ function sumExceptAt(arr: readonly number[], exceptIdx: number): number {
 /** Mirror of `boundsMinPx` for the upper bound — `undefined` reads as +Infinity. */
 function boundsMaxPx(bounds: { max?: LengthInput } | undefined, containerAxisPx: ContainerAxisPx): number {
   return bounds?.max == null
-    ? Number.POSITIVE_INFINITY
+    ? Infinity
     : toPx(parseLength(bounds.max), containerAxisPx);
 }
 
@@ -1325,7 +1325,7 @@ export class SplitGrid<T = unknown> {
    * transition entirely.
    */
   private freezeFrTracks(c: ContainerState): void {
-    if (!c.sizes.some((sz) => sz.unit === 'fr')) return;
+    if (c.sizes.every((sz) => sz.unit !== 'fr')) return;
 
     // Freeze converts every track (fr AND pct — both can drift relative
     // to one another between writes) to its currently-resolved pct value
@@ -1415,7 +1415,7 @@ export class SplitGrid<T = unknown> {
     const target = p.node.children[targetIdx];
     const targetMaxLen = target.bounds?.max;
     const targetMax = targetMaxLen == null
-      ? Number.POSITIVE_INFINITY
+      ? Infinity
       : toPx(parseLength(targetMaxLen), totalAxisPx);
     const siblingMinSum = this.sumSiblingMins(p, targetIdx);
     const targetSize = Math.min(targetMax, Math.max(0, avail - siblingMinSum));
@@ -1599,7 +1599,7 @@ export class SplitGrid<T = unknown> {
     // behavior — see distribute.spec.ts for the helper's contract).
     // Equal weights → degenerates to `availLeft / free.size` per pass.
     const weights = c.node.children.map(() => 1);
-    const maxes = c.node.children.map(() => Number.POSITIVE_INFINITY);
+    const maxes = c.node.children.map(() => Infinity);
     const sizesPx = distributeProportional(avail, weights, mins, maxes);
 
     // Storage convention: pct of pctBudgetPx (not container).

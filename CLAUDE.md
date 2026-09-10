@@ -101,7 +101,8 @@ src/
   vue/
     SplitGridView.vue   Vue 3 wrapper. #leaf and #resizer slots are
                         teleported into the elements SplitGrid creates.
-                        defineExpose surfaces every method.
+                        defineExpose surfaces the handle, which carries
+                        every method.
 demo/
   *.vue                 Per-section demo apps mounted by main.ts.
 ```
@@ -142,10 +143,13 @@ demo/
   sum-to-100 storage invariant alive (`makeRoom` on inserts,
   `absorbVacancy` on removes). Missing any of those steps leads to the
   layout-drift class of bugs.
-- **Refs in `defineExpose` auto-unwrap on parent access.** When the demo
-  does `componentRef.value.instance`, Vue returns the unwrapped value —
-  do NOT add a `.value` after `instance`. Locked in by a regression test
-  in `src/vue/SplitGridView.dom.test.ts`.
+- **`handle.instance` is a getter, `handle.isReady` is a ref.** The handle
+  is a plain object, not a ref, so nothing auto-unwraps: `instance` never
+  takes a `.value` and `isReady` always does. Three ways to reach the
+  handle — `useSplitGrid(id)` (what the demo uses), the `handle` that
+  `defineExpose` surfaces on a template ref, and `@ready`, which emits the
+  `SplitGrid` itself rather than the handle. Locked in by
+  `src/vue/__spec__/SplitGridView.dom.spec.ts`.
 
 ## Vue: reactive prop gotcha
 

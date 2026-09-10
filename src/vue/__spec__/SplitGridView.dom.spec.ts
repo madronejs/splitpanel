@@ -24,7 +24,7 @@ beforeEach(() => {
 });
 
 afterEach(() => {
-  document.body.innerHTML = '';
+  document.body.replaceChildren();
 
   for (const id of registry.keys()) registry.delete(id);
 });

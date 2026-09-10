@@ -710,7 +710,9 @@ describe('layout commands (setSize, equalize, reset)', () => {
     const grid = mount();
     const reasons: string[] = [];
 
-    grid.subscribe((e) => reasons.push(e.reason));
+    grid.subscribe((e) => {
+      reasons.push(e.reason);
+    });
 
     grid.maximize('a');
     grid.minimize('a');
@@ -726,7 +728,9 @@ describe('layout commands (setSize, equalize, reset)', () => {
     const grid = mount();
     const reasons: string[] = [];
 
-    grid.subscribe((e) => reasons.push(e.reason));
+    grid.subscribe((e) => {
+      reasons.push(e.reason);
+    });
 
     grid.toggleMaximize('a');
     grid.toggleMaximize('a');
@@ -1093,7 +1097,9 @@ describe('syncChildren (bulk diff/sync)', () => {
     const grid = mount();
     const events: string[] = [];
 
-    grid.subscribe((e) => events.push(e.reason));
+    grid.subscribe((e) => {
+      events.push(e.reason);
+    });
 
     // Mixed: remove b, insert d at index 0, swap a/c. Underlying ops:
     //   removeChild('b')          → 'remove-child'
@@ -1389,7 +1395,9 @@ describe('getRawDefinition', () => {
 
     // No "0px" sizes leaked through — children come back without a
     // baked-in bounds.size (or with whatever was originally defined).
-    for (const child of def.children ?? []) {
+    const children = def.children ?? [];
+
+    for (const child of children) {
       expect(child.bounds?.size).not.toBe('0px');
     }
   });
@@ -2077,7 +2085,7 @@ describe('resizer.first / resizer.last (decorative edge resizers)', () => {
 
     if (!stateBefore || !('sizes' in stateBefore)) throw new Error('expected container');
 
-    const sizesBefore = stateBefore.sizes.map((s) => (s.unit === 'pct' ? s.value : Number.NaN));
+    const sizesBefore = stateBefore.sizes.map((s) => (s.unit === 'pct' ? s.value : NaN));
 
     grid.setBounds('a', { min: '25%' });
 
@@ -2085,7 +2093,7 @@ describe('resizer.first / resizer.last (decorative edge resizers)', () => {
 
     if (!stateAfter || !('sizes' in stateAfter)) throw new Error('expected container');
 
-    const sizesAfter = stateAfter.sizes.map((s) => (s.unit === 'pct' ? s.value : Number.NaN));
+    const sizesAfter = stateAfter.sizes.map((s) => (s.unit === 'pct' ? s.value : NaN));
 
     // Panel 'a' is at 48.something% post-equalize, well above its new
     // 25% min — so the min adds a floor but doesn't grow the panel.

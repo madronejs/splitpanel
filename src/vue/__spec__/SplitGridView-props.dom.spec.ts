@@ -29,7 +29,7 @@ beforeEach(() => {
 });
 
 afterEach(() => {
-  document.body.innerHTML = '';
+  document.body.replaceChildren();
 
   for (const id of registry.keys()) registry.delete(id);
 });
@@ -72,7 +72,9 @@ describe('flat root props', () => {
 
     const events: string[] = [];
 
-    useSplitGrid('r2').onChange((e) => events.push(`${e.reason}:${e.containerId}`));
+    useSplitGrid('r2').onChange((e) => {
+      events.push(`${e.reason}:${e.containerId}`);
+    });
 
     direction.value = 'column';
     await nextTick();
