@@ -77,7 +77,7 @@
     "eslint-plugin-unicorn": "^74.0.0",
     "fast-check": "^4.10.2",
     "globals": "~17.13.0",
-    "happy-dom": "^20.14.6",
+    "happy-dom": "^21.0.4",
     "playwright": "^1.64.1",
     "tsc-alias": "^1.9.9",
     "typescript": "^6.0.2",
