@@ -74,7 +74,7 @@
     "@vue/test-utils": "^2.5.1",
     "eslint": "~10.13.0",
     "eslint-plugin-import": "^2.32.0",
-    "eslint-plugin-unicorn": "^74.0.0",
+    "eslint-plugin-unicorn": "^79.0.0",
     "fast-check": "^4.10.2",
     "globals": "~17.13.0",
     "happy-dom": "^21.0.4",
