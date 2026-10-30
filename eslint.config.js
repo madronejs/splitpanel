@@ -58,7 +58,7 @@ export default [
   js.configs.recommended,
   // get airbnb out of the way firsts so we can override things we don't like - this should eventually be deprecated and removed
   { rules: airbnbAll },
-  eslintPluginUnicorn.configs['flat/recommended'],
+  eslintPluginUnicorn.configs.recommended,
   ...tseslint.configs.recommended,
   ...style,
 //   settings: {
@@ -231,6 +231,14 @@ export default [
     'unicorn/prefer-iterator-to-array': 'off',
     // happy-dom's selector engine is fragile; the plain selectors work.
     'unicorn/prefer-scoped-selector': 'off',
+    // Standard JSDoc layout keeps the leading `*` on each line.
+    'unicorn/no-asterisk-prefix-in-documentation-comments': 'off',
+    // Control-flow opinions added in unicorn 75-79.
+    'unicorn/prefer-combined-guards': 'off',
+    'unicorn/prefer-early-return': 'off',
+    'unicorn/prefer-ternary': 'off',
+    'unicorn/no-unnecessary-parameters': 'off',
+    'unicorn/prefer-smaller-scope': 'off',
   },
   },
 ];

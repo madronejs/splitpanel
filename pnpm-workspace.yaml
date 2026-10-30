@@ -1,6 +1,7 @@
 allowBuilds:
   esbuild: true
 
+engineStrict: true # fail installation if Node is outside package.json `engines`
 minimumReleaseAge: 1440
 
 trustPolicy: no-downgrade
