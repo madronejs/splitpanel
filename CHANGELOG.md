@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-10-30
+
+### Changed
+
+- **Engines**: Raised the required Node version to `^24.22.1 || ^26.12.1` (was `^22.14 || ^24.14`) and the required pnpm version to `>=12` (was `>= 11`). Node 22 is no longer supported.
+- Updated development dependencies (ESLint 10.13, Vite 8.3, Vitest 5.0, typescript-eslint 8.72, eslint-plugin-unicorn 79, happy-dom 21, Playwright 1.64) and moved the repo to pnpm 12. Dev/build tooling only - no changes to the published API or runtime behavior.
+
 ## [0.2.2] - 2026-07-28
 
 ### Fixed
